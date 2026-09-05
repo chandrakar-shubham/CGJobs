@@ -1,0 +1,6 @@
+{
+  "name": "CGJobs",
+  "description": "छत्तीसगढ़ सरकारी नौकरी और प्रतियोगी परीक्षा समाचार ऐप - हर सरकारी नौकरी की सही जानकारी",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CGJobs - Admin & Backend Management Portal</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#ecfdf5',
+              100: '#d1fae5',
+              500: '#10b981',
+              600: '#059669',
+              700: '#047857',
+              800: '#065f46',
+              900: '#064e3b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Google Font: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
+
+  <!-- TOP APP BAR -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-600 to-emerald-800 flex items-center justify-center text-white font-black text-xl shadow-md">
+          CG
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-lg font-bold text-slate-900 leading-tight">CGJobs Backend & Admin</h1>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-100 text-emerald-800">
+              v1.0 Live
+            </span>
+          </div>
+          <p class="text-xs text-slate-500">Chhattisgarh Recruitment & Current Affairs Server</p>
+        </div>
+      </div>
+
+      <!-- Header Actions -->
+      <div class="flex items-center space-x-3">
+        <button id="btnQuickSync" class="hidden sm:inline-flex items-center px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 shadow-sm transition">
+          <svg class="w-4 h-4 mr-1.5 text-emerald-600 animate-spin-hover" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+          Quick Refresh
+        </button>
+
+        <div class="h-6 w-px bg-slate-200"></div>
+
+        <div class="flex items-center space-x-2" id="userBadge">
+          <div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 font-bold text-xs">
+            AD
+          </div>
+          <span class="text-xs font-semibold text-slate-700 hidden sm:inline" id="adminName">Admin</span>
+          <button id="btnLogout" class="text-xs text-red-600 hover:text-red-700 font-medium ml-1">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- NAVIGATION TABS -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 sm:space-x-4 overflow-x-auto border-t border-slate-100">
+      <button class="nav-tab py-3 px-3 border-b-2 border-brand-600 text-brand-700 font-bold text-xs sm:text-sm whitespace-nowrap" data-tab="dashboard">
+        Dashboard
+      </button>
+      <button class="nav-tab py-3 px-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 font-medium text-xs sm:text-sm whitespace-nowrap" data-tab="news">
+        Manage News
+      </button>
+      <button class="nav-tab py-3 px-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 font-medium text-xs sm:text-sm whitespace-nowrap" data-tab="notifications">
+        Push Notifications
+      </button>
+      <button class="nav-tab py-3 px-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 font-medium text-xs sm:text-sm whitespace-nowrap" data-tab="integrations">
+        NewsAPI & NewsData
+      </button>
+      <button class="nav-tab py-3 px-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 font-medium text-xs sm:text-sm whitespace-nowrap" data-tab="categories">
+        Categories
+      </button>
+      <button class="nav-tab py-3 px-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 font-medium text-xs sm:text-sm whitespace-nowrap" data-tab="users">
+        Subscribers & Admin
+      </button>
+      <button class="nav-tab py-3 px-3 border-b-2 border-transparent text-slate-600 hover:text-slate-900 font-medium text-xs sm:text-sm whitespace-nowrap" data-tab="hosting">
+        Hosting & API
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform transition-all duration-300 translate-y-20 opacity-0 pointer-events-none">
+      <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center space-x-3 text-sm">
+        <span id="toastIcon"></span>
+        <span id="toastMsg">Notification message</span>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 1: DASHBOARD -->
+    <!-- ============================================== -->
+    <div id="tab-dashboard" class="tab-content active space-y-6">
+      <!-- STATS GRID -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Published News</div>
+          <div class="mt-2 text-3xl font-extrabold text-slate-900" id="statTotalNews">0</div>
+          <div class="mt-1 text-xs text-emerald-600 font-medium flex items-center">
+            <span id="statBreakingNews">0</span> breaking / live
+          </div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Active Categories</div>
+          <div class="mt-2 text-3xl font-extrabold text-slate-900" id="statCategories">0</div>
+          <div class="mt-1 text-xs text-slate-500 font-medium">CGPSC, Vyapam, Police, etc.</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">App Subscribers (FCM)</div>
+          <div class="mt-2 text-3xl font-extrabold text-slate-900" id="statSubscribers">0</div>
+          <div class="mt-1 text-xs text-blue-600 font-medium">Connected Android Devices</div>
+        </div>
+        <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+          <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Push Alerts Sent</div>
+          <div class="mt-2 text-3xl font-extrabold text-slate-900" id="statAlerts">0</div>
+          <div class="mt-1 text-xs text-amber-600 font-medium">Instant broadcasts delivered</div>
+        </div>
+      </div>
+
+      <!-- ACTION BANNER / INTEGRATION STATUS -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Live Integrations Card -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm lg:col-span-2 space-y-4">
+          <div class="flex items-center justify-between">
+            <h2 class="text-base font-bold text-slate-900">Live API Integrations Status</h2>
+            <span class="text-xs text-slate-400">Automatic Sync Ready</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <!-- FCM Status -->
+            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-sm text-slate-800">FCM Push</span>
+                  <span id="badgeFcm" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1" id="textFcm">Not configured</p>
+              </div>
+              <button onclick="switchTab('notifications')" class="mt-3 text-xs font-bold text-brand-700 hover:text-brand-800 text-left">Configure Key →</button>
+            </div>
+
+            <!-- NewsAPI Status -->
+            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-sm text-slate-800">NewsAPI.org</span>
+                  <span id="badgeNewsApi" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1" id="textNewsApi">Ready to sync</p>
+              </div>
+              <button onclick="triggerNewsApiSync()" class="mt-3 text-xs font-bold text-brand-700 hover:text-brand-800 text-left">Sync NewsAPI →</button>
+            </div>
+
+            <!-- NewsData.io Status -->
+            <div class="p-4 rounded-xl border border-slate-100 bg-slate-50 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between">
+                  <span class="font-bold text-sm text-slate-800">NewsData.io</span>
+                  <span id="badgeNewsData" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                </div>
+                <p class="text-xs text-slate-500 mt-1" id="textNewsData">Ready to sync</p>
+              </div>
+              <button onclick="triggerNewsDataSync()" class="mt-3 text-xs font-bold text-brand-700 hover:text-brand-800 text-left">Sync NewsData →</button>
+            </div>
+          </div>
+
+          <div class="pt-2 flex flex-wrap items-center gap-3">
+            <button onclick="openAddNewsModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+              + Add News / Job Post
+            </button>
+            <button onclick="switchTab('notifications')" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold rounded-xl shadow-sm transition">
+              Send Push Notification
+            </button>
+            <button onclick="switchTab('hosting')" class="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl shadow-sm transition">
+              Host on Web / Cloud Guide
+            </button>
+          </div>
+        </div>
+
+        <!-- Android App Connection Info -->
+        <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-3 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span class="text-xs font-bold text-emerald-300 uppercase tracking-wider">Android Endpoint</span>
+            </div>
+            <h3 class="mt-2 text-lg font-bold">Client Connection</h3>
+            <p class="mt-1 text-xs text-slate-300">Your Android app can connect to this backend to pull latest jobs and listen to notifications.</p>
+
+            <div class="mt-4 p-3 bg-slate-950/70 border border-slate-700/50 rounded-xl font-mono text-xs text-emerald-400 break-all select-all">
+              <span id="labelApiEndpoint">http://localhost:3000/api</span>
+            </div>
+          </div>
+
+          <div class="mt-5 text-xs text-slate-400">
+            Copy this URL into the Android App's <strong>Server Settings</strong> dialog to connect your mobile client immediately.
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT ACTIVITY LOGS -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-base font-bold text-slate-900">Recent Server & Push Logs</h2>
+          <span class="text-xs text-slate-400">Live operational events</span>
+        </div>
+        <div class="divide-y divide-slate-100 max-h-64 overflow-y-auto" id="logsContainer">
+          <div class="py-2 text-xs text-slate-400">Loading server logs...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 2: MANAGE NEWS -->
+    <!-- ============================================== -->
+    <div id="tab-news" class="tab-content space-y-4">
+      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+        <div class="flex items-center space-x-3 w-full sm:w-auto">
+          <input type="text" id="newsSearchInput" placeholder="Search news by title or keyword..." class="w-full sm:w-72 px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+          <select id="newsCategoryFilter" class="px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500">
+            <option value="all">All Categories</option>
+          </select>
+        </div>
+
+        <button onclick="openAddNewsModal()" class="w-full sm:w-auto px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+          + Create New Post
+        </button>
+      </div>
+
+      <!-- NEWS TABLE -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-slate-200 text-left text-xs">
+            <thead class="bg-slate-50 text-slate-600 font-bold">
+              <tr>
+                <th class="px-4 py-3">Category</th>
+                <th class="px-4 py-3">Title & Summary</th>
+                <th class="px-4 py-3">Vacancies & Dates</th>
+                <th class="px-4 py-3">Published</th>
+                <th class="px-4 py-3 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100" id="newsTableBody">
+              <tr>
+                <td colspan="5" class="px-4 py-8 text-center text-slate-400">Loading news list...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 3: PUSH NOTIFICATIONS -->
+    <!-- ============================================== -->
+    <div id="tab-notifications" class="tab-content space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- COMPOSE NOTIFICATION -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm lg:col-span-2 space-y-4">
+          <div class="border-b border-slate-100 pb-3">
+            <h2 class="text-base font-bold text-slate-900">Broadcast Push Notification</h2>
+            <p class="text-xs text-slate-500">Send an instant alert with deep link to all installed Android app devices</p>
+          </div>
+
+          <form id="formSendPush" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Target Audience</label>
+                <select id="pushTargetType" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500">
+                  <option value="topic">Topic Broadcast: /topics/all_users</option>
+                  <option value="all_tokens">Direct to All Registered Android Devices</option>
+                  <option value="single_token">Specific Device Token</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Category Tag</label>
+                <input type="text" id="pushCategory" value="CGPSC भर्ती" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500">
+              </div>
+            </div>
+
+            <div id="specificTokenBox" class="hidden">
+              <label class="block text-xs font-bold text-slate-700 mb-1">Device FCM Token</label>
+              <input type="text" id="pushTargetValue" placeholder="Paste FCM registration token..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-mono">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Notification Title *</label>
+              <input type="text" id="pushTitle" placeholder="e.g. CGPSC 242 पदों पर भर्ती जारी!" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Alert Message / Summary *</label>
+              <textarea id="pushBody" rows="3" placeholder="ऑनलाइन आवेदन 30 सितंबर तक आमंत्रित। तुरंत विवरण देखें..." required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-brand-500"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Deep Link Article ID (Optional)</label>
+                <input type="text" id="pushArticleId" placeholder="e.g. cgpsc_sse_2026" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Big Picture Image URL (Optional)</label>
+                <input type="url" id="pushImageUrl" placeholder="https://..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+              </div>
+            </div>
+
+            <div class="pt-2 flex items-center justify-end space-x-3">
+              <button type="button" onclick="sendTestAlert()" class="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition">
+                Send Test Alert
+              </button>
+              <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md transition">
+                🚀 Send Push Now
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- FCM CONFIGURATION PANEL -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <div class="border-b border-slate-100 pb-3">
+            <h2 class="text-base font-bold text-slate-900">FCM Setup & Credentials</h2>
+            <p class="text-xs text-slate-500">Firebase Cloud Messaging Configuration</p>
+          </div>
+
+          <form id="formFcmSettings" class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">FCM Server Key (Legacy)</label>
+              <input type="password" id="inputFcmServerKey" placeholder="AAAA... (from Firebase Console)" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-mono">
+              <p class="text-[11px] text-slate-400 mt-1">Firebase Console → Project Settings → Cloud Messaging → Server Key</p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Firebase Project ID</label>
+              <input type="text" id="inputFirebaseProjectId" placeholder="cgjobs-app-12345" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+            </div>
+
+            <div class="pt-2">
+              <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-sm transition">
+                Save FCM Settings
+              </button>
+            </div>
+          </form>
+
+          <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-xs text-emerald-800 space-y-1">
+            <div class="font-bold">How Push Works:</div>
+            <div>1. Android app registers device token with <code>/api/alerts/register-token</code>.</div>
+            <div>2. You compose notifications or sync news from this dashboard.</div>
+            <div>3. Alert appears instantly in Android status bar &amp; in-app Alerts feed.</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- NOTIFICATIONS HISTORY -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+        <h2 class="text-base font-bold text-slate-900 mb-3">Broadcast History & Feed Alerts</h2>
+        <div class="divide-y divide-slate-100 max-h-72 overflow-y-auto" id="alertsHistoryList">
+          <div class="py-3 text-xs text-slate-400">Loading alerts history...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 4: INTEGRATIONS (NewsAPI & NewsData.io) -->
+    <!-- ============================================== -->
+    <div id="tab-integrations" class="tab-content space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- NewsAPI.org Card -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">NewsAPI.org Integration</h2>
+              <p class="text-xs text-slate-500">Global & national news aggregator API</p>
+            </div>
+            <a href="https://newsapi.org/register" target="_blank" class="text-xs font-bold text-brand-600 hover:underline">Get Free Key ↗</a>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">NewsAPI Key</label>
+              <input type="password" id="inputNewsApiKey" placeholder="Enter NewsAPI.org Key..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-mono">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Search Keywords Query</label>
+              <input type="text" id="inputNewsApiQuery" value="Chhattisgarh OR CGPSC OR Vyapam OR 'Sarkari Naukri'" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <input type="checkbox" id="checkNewsApiAutoImport" checked class="rounded text-brand-600 focus:ring-brand-500">
+              <label for="checkNewsApiAutoImport" class="text-xs text-slate-700 font-medium">Auto-import unique articles to App News feed</label>
+            </div>
+
+            <div class="pt-2 flex items-center space-x-3">
+              <button onclick="saveApiKeys()" class="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition">
+                Save Key
+              </button>
+              <button onclick="triggerNewsApiSync()" id="btnSyncNewsApi" class="flex-1 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+                Pull from NewsAPI Now
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- NewsData.io Card -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">NewsData.io Integration</h2>
+              <p class="text-xs text-slate-500">Regional Indian news & Hindi language feed API</p>
+            </div>
+            <a href="https://newsdata.io/register" target="_blank" class="text-xs font-bold text-brand-600 hover:underline">Get Free Key ↗</a>
+          </div>
+
+          <div class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">NewsData.io API Key</label>
+              <input type="password" id="inputNewsDataKey" placeholder="pub_..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-mono">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Search Keywords Query</label>
+              <input type="text" id="inputNewsDataQuery" value="Chhattisgarh OR CGPSC OR 'छत्तीसगढ़ भर्ती'" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+            </div>
+
+            <div class="flex items-center space-x-2">
+              <input type="checkbox" id="checkNewsDataAutoImport" checked class="rounded text-brand-600 focus:ring-brand-500">
+              <label for="checkNewsDataAutoImport" class="text-xs text-slate-700 font-medium">Auto-import unique articles to App News feed</label>
+            </div>
+
+            <div class="pt-2 flex items-center space-x-3">
+              <button onclick="saveApiKeys()" class="px-4 py-2 border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition">
+                Save Key
+              </button>
+              <button onclick="triggerNewsDataSync()" id="btnSyncNewsData" class="flex-1 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+                Pull from NewsData.io Now
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- AUTO SYNC PREFERENCES -->
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-3">
+        <h2 class="text-base font-bold text-slate-900">Automated Background Sync Preferences</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Auto Sync Interval (Minutes)</label>
+            <select id="selectAutoSyncInterval" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+              <option value="0">Disabled (Manual Only)</option>
+              <option value="30">Every 30 Minutes</option>
+              <option value="60" selected>Every 60 Minutes (Recommended)</option>
+              <option value="360">Every 6 Hours</option>
+              <option value="720">Every 12 Hours</option>
+            </select>
+          </div>
+          <div class="flex items-center pt-5">
+            <label class="flex items-center space-x-2 text-xs text-slate-700 font-medium cursor-pointer">
+              <input type="checkbox" id="checkAutoPushOnSync" checked class="rounded text-brand-600 focus:ring-brand-500">
+              <span>Automatically broadcast push notification when new job updates arrive</span>
+            </label>
+          </div>
+        </div>
+        <button onclick="saveSyncPreferences()" class="mt-2 px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl">Save Preferences</button>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 5: CATEGORIES -->
+    <!-- ============================================== -->
+    <div id="tab-categories" class="tab-content space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Add Category -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <h2 class="text-base font-bold text-slate-900">Add New Category</h2>
+          <form id="formAddCategory" class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Category English Name *</label>
+              <input type="text" id="catName" placeholder="e.g. Police & Defence" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Hindi Display Name</label>
+              <input type="text" id="catHindiName" placeholder="e.g. पुलिस व सुरक्षा" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+            </div>
+            <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-sm transition">
+              Create Category
+            </button>
+          </form>
+        </div>
+
+        <!-- Categories List -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm lg:col-span-2">
+          <h2 class="text-base font-bold text-slate-900 mb-4">Active Categories</h2>
+          <div class="divide-y divide-slate-100" id="categoriesList">
+            <div class="py-4 text-xs text-slate-400">Loading categories...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 6: SUBSCRIBERS & ADMIN -->
+    <!-- ============================================== -->
+    <div id="tab-users" class="tab-content space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- Registered Devices / App Subscribers -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm lg:col-span-2 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 class="text-base font-bold text-slate-900">Registered Android Mobile Devices</h2>
+              <p class="text-xs text-slate-500">Devices subscribed to FCM push broadcasts</p>
+            </div>
+            <span class="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold" id="badgeSubscribersCount">0 Devices</span>
+          </div>
+
+          <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto" id="devicesList">
+            <div class="py-4 text-xs text-slate-400">Loading subscriber devices...</div>
+          </div>
+        </div>
+
+        <!-- Admin Profile & Password Change -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+          <h2 class="text-base font-bold text-slate-900">Admin Account Settings</h2>
+          <form id="formAdminPassword" class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Admin Username</label>
+              <input type="text" id="adminUserField" value="admin" disabled class="w-full px-3 py-2 text-xs border border-slate-200 bg-slate-50 rounded-xl text-slate-500">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">Current Password *</label>
+              <input type="password" id="inputOldPassword" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 mb-1">New Password *</label>
+              <input type="password" id="inputNewPassword" minlength="5" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+            </div>
+            <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-sm transition">
+              Update Password
+            </button>
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ============================================== -->
+    <!-- TAB 7: HOSTING GUIDE & API DOCUMENTATION -->
+    <!-- ============================================== -->
+    <div id="tab-hosting" class="tab-content space-y-6">
+      <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
+        <h2 class="text-lg font-bold text-slate-900">How to Host This Backend on Any Website / Cloud Hosting</h2>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          This backend is a standalone, lightweight Node.js Express server. You can host it 100% for free or low cost on popular cloud platforms:
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+          <!-- Option 1: Render -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="font-bold text-sm text-slate-800">1. Render.com (Recommended Free)</div>
+            <p class="text-xs text-slate-600">1. Create a free account on <a href="https://render.com" target="_blank" class="text-brand-600 underline">render.com</a></p>
+            <p class="text-xs text-slate-600">2. Click <strong>New +</strong> → <strong>Web Service</strong></p>
+            <p class="text-xs text-slate-600">3. Connect this repository or upload the <code>backend/</code> folder</p>
+            <p class="text-xs text-slate-600">4. Set Build Command: <code>npm install</code> &amp; Start Command: <code>npm start</code></p>
+            <p class="text-xs text-slate-600">5. You will get a free live HTTPS URL (e.g. <code>https://cgjobs-api.onrender.com</code>)!</p>
+          </div>
+
+          <!-- Option 2: Railway -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="font-bold text-sm text-slate-800">2. Railway.app</div>
+            <p class="text-xs text-slate-600">1. Open <a href="https://railway.app" target="_blank" class="text-brand-600 underline">railway.app</a></p>
+            <p class="text-xs text-slate-600">2. Deploy from GitHub or run <code>railway up</code></p>
+            <p class="text-xs text-slate-600">3. Add environment variables from <code>.env.example</code></p>
+            <p class="text-xs text-slate-600">4. Click Generate Domain to get your live URL.</p>
+          </div>
+
+          <!-- Option 3: VPS / cPanel / Ubuntu -->
+          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50 space-y-2">
+            <div class="font-bold text-sm text-slate-800">3. VPS (DigitalOcean / AWS / Hostinger)</div>
+            <p class="text-xs text-slate-600">1. Copy <code>backend/</code> folder to your server</p>
+            <p class="text-xs text-slate-600">2. Run: <code>npm install</code></p>
+            <p class="text-xs text-slate-600">3. Start with PM2: <code>pm2 start server.js --name cgjobs-backend</code></p>
+            <p class="text-xs text-slate-600">4. Point Nginx reverse-proxy to port 3000.</p>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-100 pt-4 space-y-3">
+          <h3 class="text-sm font-bold text-slate-900">Available REST Endpoints for Android Client</h3>
+          <div class="bg-slate-900 text-slate-100 rounded-xl p-4 font-mono text-xs space-y-2">
+            <div><span class="text-emerald-400 font-bold">GET</span>  /api/health <span class="text-slate-500">// Check server connection & stats</span></div>
+            <div><span class="text-emerald-400 font-bold">GET</span>  /api/news?category=CGPSC&limit=20 <span class="text-slate-500">// Fetch latest jobs & affairs</span></div>
+            <div><span class="text-emerald-400 font-bold">GET</span>  /api/news/:id <span class="text-slate-500">// Single job detail</span></div>
+            <div><span class="text-emerald-400 font-bold">GET</span>  /api/categories <span class="text-slate-500">// Active categories</span></div>
+            <div><span class="text-emerald-400 font-bold">GET</span>  /api/alerts <span class="text-slate-500">// In-app alerts list</span></div>
+            <div><span class="text-blue-400 font-bold">POST</span> /api/alerts/register-token <span class="text-slate-500">// Register mobile FCM token</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL: ADD / EDIT NEWS -->
+  <div id="modalNews" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900" id="modalNewsTitle">Add New Job / News Post</h3>
+        <button onclick="closeNewsModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">✕</button>
+      </div>
+
+      <form id="formNewsItem" class="p-6 overflow-y-auto space-y-4 flex-1">
+        <input type="hidden" id="editNewsId">
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Category *</label>
+            <select id="modalCategory" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"></select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Official Source</label>
+            <input type="text" id="modalSource" placeholder="e.g. CGPSC Raipur / Vyapam" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Title *</label>
+          <input type="text" id="modalTitle" placeholder="e.g. CGPSC राज्य सेवा परीक्षा 242 पद" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl font-medium">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Short Summary (Inshorts 60 words format) *</label>
+          <textarea id="modalSummary" rows="2" placeholder="संक्षिप्त विवरण..." required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Detailed Content</label>
+          <textarea id="modalDetailedContent" rows="4" placeholder="विस्तृत चयन प्रक्रिया, पद विवरण व पात्रता..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Vacancies</label>
+            <input type="text" id="modalVacancies" placeholder="e.g. 242 पद" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Eligibility</label>
+            <input type="text" id="modalEligibility" placeholder="e.g. स्नातक (Graduation)" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Age Limit</label>
+            <input type="text" id="modalAgeLimit" placeholder="e.g. 21 से 40 वर्ष" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Apply URL</label>
+            <input type="url" id="modalApplyUrl" placeholder="https://..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Official Notification PDF URL</label>
+            <input type="url" id="modalOfficialPdfUrl" placeholder="https://..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Application Start</label>
+            <input type="text" id="modalDateStart" placeholder="01 सितंबर 2026" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Last Date</label>
+            <input type="text" id="modalDateLast" placeholder="30 सितंबर 2026" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Exam Date</label>
+            <input type="text" id="modalDateExam" placeholder="14 फरवरी 2027" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-6 pt-2">
+          <label class="flex items-center space-x-2 text-xs font-bold text-slate-700 cursor-pointer">
+            <input type="checkbox" id="modalIsBreaking" class="rounded text-brand-600">
+            <span>Mark as Breaking / Live</span>
+          </label>
+          <label class="flex items-center space-x-2 text-xs font-bold text-brand-700 cursor-pointer">
+            <input type="checkbox" id="modalPushNotification" checked class="rounded text-brand-600">
+            <span>Send Push Alert to Android Devices</span>
+          </label>
+        </div>
+
+        <div class="pt-4 border-t border-slate-100 flex items-center justify-end space-x-3">
+          <button type="button" onclick="closeNewsModal()" class="px-4 py-2 border border-slate-300 rounded-xl text-xs font-bold text-slate-700">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md">Save &amp; Publish</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- LOGIN MODAL -->
+  <div id="modalLogin" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="text-center">
+        <div class="w-12 h-12 rounded-2xl bg-brand-600 text-white font-black text-2xl flex items-center justify-center mx-auto mb-2 shadow-lg">CG</div>
+        <h3 class="text-lg font-bold text-slate-900">Admin Sign In</h3>
+        <p class="text-xs text-slate-500">Sign in to manage CGJobs backend</p>
+      </div>
+
+      <form id="formLogin" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Username</label>
+          <input type="text" id="loginUsername" value="admin" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+          <input type="password" id="loginPassword" value="admin123" required class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl">
+        </div>
+        <button type="submit" class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold rounded-xl shadow-md transition">
+          Log In to Dashboard
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 text-center text-xs text-slate-500">
+      CGJobs Backend &amp; Notification Server • Compatible with Android Jetpack Compose App
+    </div>
+  </footer>
+
+  <script src="/admin.js"></script>
+</body>
+</html>
