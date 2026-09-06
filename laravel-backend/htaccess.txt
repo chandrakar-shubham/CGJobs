@@ -1,0 +1,15 @@
+# CGJobs Laravel Root htaccess (Visible Copy)
+# Rename this file to .htaccess in your root directory if needed.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Prevent direct access to .env, storage, and sensitive files
+    RewriteRule ^\.env - [F,L,NC]
+    RewriteRule ^composer\.(json|lock) - [F,L,NC]
+    RewriteRule ^database/.*\.sqlite - [F,L,NC]
+
+    # Redirect all requests to the public/ folder
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
