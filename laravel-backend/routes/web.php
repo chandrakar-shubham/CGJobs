@@ -48,6 +48,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::resource('sections', SectionController::class);
     Route::resource('alerts', AlertController::class);
     Route::resource('settings', SettingController::class);
-    Route::post('/news-sync', [NewsSyncController::class, 'sync'])->name('news-sync');
+    Route::get('/news-sync', [NewsSyncController::class, 'index'])->name('sync.index');
+    Route::post('/news-sync', [NewsSyncController::class, 'sync'])->name('sync.run');
+    Route::post('/news-sync/run', [NewsSyncController::class, 'sync'])->name('news-sync');
     Route::post('/cache/clear', [CacheController::class, 'clear'])->name('cache.clear');
 });
