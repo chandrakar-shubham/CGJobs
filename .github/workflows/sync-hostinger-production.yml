@@ -1,0 +1,35 @@
+name: Sync Hostinger Production Branch
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'laravel-backend/**'
+      - '.github/workflows/sync-hostinger-production.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build Laravel-only production branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git fetch origin hostinger-production || true
+          SPLIT_BRANCH="sync-hostinger-${GITHUB_RUN_ID}"
+          git subtree split --prefix=laravel-backend -b "$SPLIT_BRANCH"
+
+          git push --force origin "$SPLIT_BRANCH:hostinger-production"
+          git push origin --delete "$SPLIT_BRANCH" || true
