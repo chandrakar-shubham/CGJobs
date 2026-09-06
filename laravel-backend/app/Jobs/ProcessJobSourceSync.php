@@ -40,9 +40,12 @@ class ProcessJobSourceSync implements ShouldQueue
         try {
             $result = $service->sync($source, $from, $to, $this->deep);
 
+            // Normalize every newly created import, including auto-published
+            // imports. This guarantees that image URLs and classification are
+            // captured even when the source is configured for auto publish.
             JobImport::where('job_source_id', $source->id)
                 ->where('id', '>', $beforeId)
-                ->where('status', 'pending')
+                ->whereIn('status', ['pending', 'published'])
                 ->orderBy('id')
                 ->chunkById(20, function ($imports) use ($normalizer) {
                     foreach ($imports as $import) $normalizer->normalize($import);
