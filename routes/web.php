@@ -20,6 +20,8 @@ Route::get('/gk', fn () => app(HomeController::class)->listing('gk'))->name('lis
 Route::get('/jobs/{id}', [HomeController::class, 'job'])->name('job.show');
 Route::get('/current-affairs/{id}', [HomeController::class, 'job'])->name('current-affairs.show');
 Route::get('/gk/{id}', [HomeController::class, 'gk'])->name('gk.show');
+Route::get('/sitemap.xml', [HomeController::class, 'sitemap'])->name('sitemap');
+Route::get('/robots.txt', [HomeController::class, 'robots'])->name('robots');
 
 // Authentication
 Route::get('/admin/login', [AuthController::class, 'showLogin'])->name('admin.login');
