@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppSection;
 use App\Models\Job;
 use App\Models\StaticGk;
 use Illuminate\Http\Request;
@@ -38,37 +39,28 @@ class HomeController extends Controller
     public function listing(string $type, Request $request): View
     {
         $map = [
-            'jobs' => ['title' => 'Latest Government Jobs'],
-            'current-affairs' => ['title' => 'Current Affairs & News'],
-            'gk' => ['title' => 'Static GK'],
+            'jobs' => ['title' => 'Latest Government Jobs', 'section_keys' => ['jobs']],
+            'current-affairs' => ['title' => 'Current Affairs & News', 'section_keys' => ['current-affairs', 'current_affairs', 'news']],
+            'gk' => ['title' => 'Static GK', 'section_keys' => ['gk', 'static-gk', 'static_gk']],
         ];
         abort_unless(isset($map[$type]), 404);
 
         $search = trim((string) $request->query('q', ''));
         $category = trim((string) $request->query('category', ''));
         $sort = (string) $request->query('sort', 'latest');
+        $sectionKeys = $map[$type]['section_keys'];
 
-        // Build the section-scoped base query first. Category options must come
-        // from this section only, never from the other content sections.
         if ($type === 'gk') {
             $query = StaticGk::query();
-            $categoryQuery = StaticGk::query();
-            $searchColumns = ['title', 'hindi_title', 'question', 'answer'];
+            $searchColumns = ['title', 'hindi_title', 'question', 'answer', 'category'];
         } else {
             $query = Job::query();
-            $categoryQuery = Job::query();
             if ($type === 'jobs') {
-                $sectionFilter = function ($q) {
+                $query->where(function ($q) {
                     $q->where('section', 'jobs')->orWhereNull('section');
-                };
-                $query->where($sectionFilter);
-                $categoryQuery->where($sectionFilter);
+                });
             } else {
-                $sectionFilter = function ($q) {
-                    $q->whereIn('section', ['current-affairs', 'current_affairs', 'news']);
-                };
-                $query->where($sectionFilter);
-                $categoryQuery->where($sectionFilter);
+                $query->whereIn('section', $sectionKeys);
             }
             $searchColumns = ['title', 'summary', 'detailed_content', 'category'];
         }
@@ -95,16 +87,35 @@ class HomeController extends Controller
             $query->latest('id');
         }
 
-        // Deliberately derive categories from the section-scoped query without
-        // search/sort/category filters, so the dropdown always lists every
-        // category available for the current section.
-        $categories = $categoryQuery
+        // Prefer the central category system. It is section-aware and is what
+        // the admin/app already uses. Fall back to categories found on content
+        // so existing records still appear even when they have not yet been
+        // assigned to the central category table.
+        $sectionCategories = AppSection::query()
+            ->whereIn('section_key', $sectionKeys)
+            ->where('is_active', true)
+            ->with('categories')
+            ->get()
+            ->flatMap(fn ($section) => $section->categories)
+            ->filter(fn ($cat) => $cat->is_active && $cat->name !== 'All')
+            ->sortBy('display_order')
+            ->pluck('name')
+            ->unique()
+            ->values();
+
+        $contentCategories = (clone $query)
+            ->reorder()
             ->whereNotNull('category')
             ->where('category', '!=', '')
             ->select('category')
             ->distinct()
             ->orderBy('category')
             ->pluck('category');
+
+        $categories = $sectionCategories
+            ->merge($contentCategories)
+            ->unique()
+            ->values();
 
         $items = $query->paginate(18)->withQueryString();
 
