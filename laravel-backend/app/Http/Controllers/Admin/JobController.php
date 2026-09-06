@@ -11,139 +11,137 @@ use Illuminate\Http\Request;
 
 class JobController extends Controller
 {
+    private const JOB_CATEGORIES = ['CGSSB', 'CGPSC', 'Central Govt', 'Contractual'];
+    private const DEPARTMENTS = ['Education','Police','Revenue','PHE','PWD','Health','Women & Child Development','Forest','Agriculture','Panchayat','Transport','Other Departments'];
+
     public function index(Request $request)
     {
         $query = Job::query();
         if ($request->filled('search')) {
-            $s = '%' . $request->search . '%';
-            $query->where(function ($q) use ($s) {
-                $q->where('title', 'like', $s)->orWhere('title_en', 'like', $s)
-                  ->orWhere('summary', 'like', $s)->orWhere('summary_en', 'like', $s)->orWhere('vacancies', 'like', $s);
-            });
+            $s = '%'.$request->search.'%';
+            $query->where(fn($q) => $q->where('title','like',$s)->orWhere('title_en','like',$s)->orWhere('summary','like',$s)->orWhere('summary_en','like',$s)->orWhere('vacancies','like',$s));
         }
+        if ($request->filled('job_category') && in_array($request->job_category, self::JOB_CATEGORIES, true)) $query->where('job_category', $request->job_category);
+        if ($request->filled('department')) $query->where('department', $request->department);
         if ($request->filled('category') && $request->category !== 'All') $query->where('category', $request->category);
         if ($request->filled('section')) $query->where('section', $request->section);
         if ($request->filled('post_type')) $query->where('post_type', $request->post_type);
+
         $jobs = $query->orderByDesc('id')->paginate(15);
         $categories = Category::orderBy('name')->get();
-        return view('admin.jobs.index', compact('jobs', 'categories'));
+        return view('admin.jobs.index', compact('jobs','categories'))->with('jobCategories', self::JOB_CATEGORIES)->with('departments', self::DEPARTMENTS);
     }
 
     public function create(Request $request)
     {
         $defaultSection = $request->query('section', 'jobs');
         $categories = Category::orderBy('name')->get();
-        return view('admin.jobs.create', compact('categories', 'defaultSection'));
+        return view('admin.jobs.create', compact('categories','defaultSection'))->with('jobCategories', self::JOB_CATEGORIES)->with('departments', self::DEPARTMENTS);
     }
 
     public function store(Request $request, FirebaseNotificationService $fcmService, TranslationService $translator)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255', 'summary' => 'required|string', 'detailed_content' => 'nullable|string',
-            'category' => 'required|string', 'section' => 'nullable|string|in:jobs,news', 'post_type' => 'nullable|string',
-            'vacancies' => 'nullable|string', 'salary' => 'nullable|string', 'eligibility' => 'nullable|string', 'age_limit' => 'nullable|string',
-            'selection_process' => 'nullable|string', 'source' => 'nullable|string', 'source_url' => 'nullable|url',
-            'official_notification_url' => 'nullable|url', 'apply_url' => 'nullable|url', 'image_url' => 'nullable|url',
-            'application_start' => 'nullable|string', 'last_date' => 'nullable|string', 'exam_date' => 'nullable|string',
-            'is_breaking' => 'nullable|boolean', 'is_new' => 'nullable|boolean', 'broadcast_push' => 'nullable|boolean',
-        ]);
-
-        $validated['section'] = $request->input('section', 'jobs');
-        $validated['post_type'] = $request->input('post_type', 'job');
+        $validated = $this->validatePost($request);
+        $validated['section'] = $request->input('section','jobs');
+        $validated['post_type'] = $request->input('post_type','job');
         $validated['is_breaking'] = $request->has('is_breaking');
         $validated['is_new'] = $request->has('is_new');
         $validated['published_at'] = date('Y-m-d');
         $validated['relative_time'] = 'हाल ही में';
+        $validated['relative_time_en'] = 'Recently';
         $validated['title_en'] = $validated['title'];
         $validated['summary_en'] = $validated['summary'];
         $validated['detailed_content_en'] = $validated['detailed_content'] ?? null;
-        $validated['category_en'] = $validated['category'];
+        $validated['category_en'] = $validated['department'];
+        $validated['category'] = $validated['department'];
         $validated['eligibility_en'] = $validated['eligibility'] ?? null;
         $validated['selection_process_en'] = $validated['selection_process'] ?? null;
-        $validated['relative_time_en'] = 'Recently';
         $validated['translation_status'] = 'pending';
 
         $job = Job::create($validated);
         $this->translateJob($job, $translator);
-
-        if ($request->has('broadcast_push')) {
-            $fcmService->broadcast(
-                title: "नई भर्ती: " . ($job->title ?: $job->title_en),
-                message: ($job->vacancies ? "[{$job->vacancies}] " : "") . ($job->summary ?: $job->summary_en),
-                category: $job->category,
-                actionUrl: $job->apply_url ?: $job->official_notification_url,
-                articleId: (string)$job->id
-            );
-        }
-        return redirect()->route('admin.jobs.index')->with('success', 'Post published. Hindi translation was generated automatically when available.');
+        $this->sendPushIfRequested($request, $job, $fcmService);
+        return redirect()->route('admin.jobs.index')->with('success','Job published. Main category and department taxonomy saved.');
     }
 
     public function edit(Job $job)
     {
         $categories = Category::orderBy('name')->get();
-        return view('admin.jobs.edit', compact('job', 'categories'));
+        return view('admin.jobs.edit', compact('job','categories'))->with('jobCategories', self::JOB_CATEGORIES)->with('departments', self::DEPARTMENTS);
     }
 
     public function update(Request $request, Job $job, TranslationService $translator)
     {
-        $validated = $request->validate([
-            'title' => 'required|string|max:255', 'summary' => 'required|string', 'detailed_content' => 'nullable|string',
-            'category' => 'required|string', 'section' => 'nullable|string|in:jobs,news', 'post_type' => 'nullable|string',
-            'vacancies' => 'nullable|string', 'salary' => 'nullable|string', 'eligibility' => 'nullable|string', 'age_limit' => 'nullable|string',
-            'selection_process' => 'nullable|string', 'source' => 'nullable|string', 'source_url' => 'nullable|url',
-            'official_notification_url' => 'nullable|url', 'apply_url' => 'nullable|url', 'image_url' => 'nullable|url',
-            'application_start' => 'nullable|string', 'last_date' => 'nullable|string', 'exam_date' => 'nullable|string',
-        ]);
-        $validated['section'] = $request->input('section', $job->section ?: 'jobs');
-        $validated['post_type'] = $request->input('post_type', $job->post_type ?: 'job');
+        $validated = $this->validatePost($request);
+        $validated['section'] = $request->input('section',$job->section ?: 'jobs');
+        $validated['post_type'] = $request->input('post_type',$job->post_type ?: 'job');
         $validated['is_breaking'] = $request->has('is_breaking');
         $validated['is_new'] = $request->has('is_new');
         $validated['title_en'] = $validated['title'];
         $validated['summary_en'] = $validated['summary'];
         $validated['detailed_content_en'] = $validated['detailed_content'] ?? null;
-        $validated['category_en'] = $validated['category'];
+        $validated['category'] = $validated['department'];
+        $validated['category_en'] = $validated['department'];
         $validated['eligibility_en'] = $validated['eligibility'] ?? null;
         $validated['selection_process_en'] = $validated['selection_process'] ?? null;
         $validated['relative_time_en'] = 'Recently';
         $validated['translation_status'] = 'pending';
         $job->update($validated);
         $this->translateJob($job->fresh(), $translator);
-        return redirect()->route('admin.jobs.index')->with('success', 'Post updated. Hindi translation was refreshed automatically when available.');
+        return redirect()->route('admin.jobs.index')->with('success','Job updated.');
     }
 
     public function destroy(Job $job)
     {
         $job->delete();
-        return redirect()->route('admin.jobs.index')->with('success', 'अधिसूचना हटा दी गई (Job deleted)');
+        return redirect()->route('admin.jobs.index')->with('success','अधिसूचना हटा दी गई (Job deleted)');
+    }
+
+    private function validatePost(Request $request): array
+    {
+        return $request->validate([
+            'title'=>'required|string|max:255','summary'=>'required|string','detailed_content'=>'nullable|string',
+            'job_category'=>'required|in:CGSSB,CGPSC,Central Govt,Contractual','department'=>'required|string|max:120',
+            'section'=>'nullable|string|in:jobs,news','post_type'=>'nullable|string','vacancies'=>'nullable|string','salary'=>'nullable|string',
+            'eligibility'=>'nullable|string','age_limit'=>'nullable|string','selection_process'=>'nullable|string','source'=>'nullable|string',
+            'source_url'=>'nullable|url','official_notification_url'=>'nullable|url','apply_url'=>'nullable|url','image_url'=>'nullable|url',
+            'application_start'=>'nullable|string','last_date'=>'nullable|string','exam_date'=>'nullable|string',
+        ]);
+    }
+
+    private function sendPushIfRequested(Request $request, Job $job, FirebaseNotificationService $fcmService): void
+    {
+        if (!$request->has('broadcast_push')) return;
+        $fcmService->broadcast(
+            title: 'नई भर्ती: '.($job->title ?: $job->title_en),
+            message: ($job->vacancies ? "[{$job->vacancies}] " : '').($job->summary ?: $job->summary_en),
+            category: $job->department ?: $job->job_category,
+            actionUrl: $job->apply_url ?: $job->official_notification_url,
+            articleId: (string) $job->id
+        );
     }
 
     private function translateJob(Job $job, TranslationService $translator): void
     {
         try {
-            $translations = $translator->translateMany([
-                'title' => $job->title_en,
-                'summary' => $job->summary_en,
-                'detailed' => $job->detailed_content_en,
-                'category' => $job->category_en,
-                'eligibility' => $job->eligibility_en,
-                'selection' => $job->selection_process_en,
+            $t = $translator->translateMany([
+                'title'=>$job->title_en,'summary'=>$job->summary_en,'detailed'=>$job->detailed_content_en,
+                'category'=>$job->category_en,'eligibility'=>$job->eligibility_en,'selection'=>$job->selection_process_en,
             ]);
-
-            $ready = !empty($translations['title']);
-            $job->title = $translations['title'] ?: $job->title_en;
-            $job->summary = $translations['summary'] ?: $job->summary_en;
-            $job->detailed_content = $translations['detailed'] ?: $job->detailed_content_en;
-            $job->category = $translations['category'] ?: $job->category_en;
-            $job->eligibility = $translations['eligibility'] ?: $job->eligibility_en;
-            $job->selection_process = $translations['selection'] ?: $job->selection_process_en;
-            $job->translation_status = $ready ? 'ready' : 'pending';
-            $job->translation_error = $ready ? null : 'Automatic Hindi translation is temporarily unavailable; the English version remains available.';
-            $job->translated_at = $ready ? now() : null;
-            $job->save();
+            $ready = !empty($t['title']);
+            $job->update([
+                'title'=>$t['title'] ?: $job->title_en,
+                'summary'=>$t['summary'] ?: $job->summary_en,
+                'detailed_content'=>$t['detailed'] ?: $job->detailed_content_en,
+                'category'=>$t['category'] ?: $job->category_en,
+                'eligibility'=>$t['eligibility'] ?: $job->eligibility_en,
+                'selection_process'=>$t['selection'] ?: $job->selection_process_en,
+                'translation_status'=>$ready?'ready':'pending',
+                'translation_error'=>$ready?null:'Automatic Hindi translation temporarily unavailable.',
+                'translated_at'=>$ready?now():null,
+            ]);
         } catch (\Throwable $e) {
-            $job->translation_status = 'failed';
-            $job->translation_error = 'Automatic Hindi translation failed temporarily; the English version remains available.';
-            $job->save();
+            $job->update(['translation_status'=>'failed','translation_error'=>'Automatic Hindi translation temporarily unavailable.']);
         }
     }
 }
