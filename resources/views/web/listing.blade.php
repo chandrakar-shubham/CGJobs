@@ -1,74 +1,22 @@
 @extends('web.layout')
-
 @section('title', $title.' — CGJobs')
-
 @section('content')
-<section class="page-head">
-    <div class="container">
-        <div class="kicker">CGJobs • {{ $type === 'jobs' ? 'Recruitment' : ($type === 'gk' ? 'Exam Ready' : 'Stay Informed') }}</div>
-        <h1>{{ $title }}</h1>
-        <p>{{ $type === 'jobs' ? 'सरकारी भर्ती की जरूरी जानकारी — सरल भाषा, साफ facts और original CGJobs presentation के साथ।' : ($type === 'gk' ? 'प्रतियोगी परीक्षाओं के लिए महत्वपूर्ण Static GK, questions और concise notes।' : 'परीक्षा की तैयारी के लिए महत्वपूर्ण current affairs — सरल भाषा में।') }}</p>
-    </div>
-</section>
-
-<section style="padding-bottom:55px">
-    <div class="container">
-        <form method="GET" action="{{ url()->current() }}" class="card" style="margin-bottom:24px;padding:18px">
-            <div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(160px,1fr) minmax(150px,.8fr) auto;gap:12px;align-items:end">
-                <label style="display:block;font-size:12px;font-weight:800;color:#334155">Search
-                    <input type="search" name="q" value="{{ $search }}" placeholder="{{ $type === 'jobs' ? 'Search jobs, departments, posts...' : ($type === 'gk' ? 'Search questions, topics...' : 'Search current affairs...') }}" style="display:block;width:100%;margin-top:7px;border:1px solid #dbe2ea;border-radius:12px;padding:12px 14px;font:inherit;outline:none">
-                </label>
-                <label style="display:block;font-size:12px;font-weight:800;color:#334155">Category
-                    <select name="category" style="display:block;width:100%;margin-top:7px;border:1px solid #dbe2ea;border-radius:12px;padding:12px 14px;background:#fff;font:inherit">
-                        <option value="">All categories</option>
-                        @foreach($categories as $cat)<option value="{{ $cat }}" @selected($selectedCategory === $cat)>{{ $cat }}</option>@endforeach
-                    </select>
-                </label>
-                <label style="display:block;font-size:12px;font-weight:800;color:#334155">Sort
-                    <select name="sort" style="display:block;width:100%;margin-top:7px;border:1px solid #dbe2ea;border-radius:12px;padding:12px 14px;background:#fff;font:inherit">
-                        <option value="latest" @selected($sort === 'latest')>Latest first</option>
-                        @if($type === 'jobs')<option value="closing" @selected($sort === 'closing')>Closing soon</option>@endif
-                        <option value="oldest" @selected($sort === 'oldest')>Oldest first</option>
-                    </select>
-                </label>
-                <button type="submit" class="btn btn-primary" style="height:45px">Search</button>
-            </div>
-            @if($search || $selectedCategory || $sort !== 'latest')<div style="margin-top:12px"><a href="{{ url()->current() }}" style="font-size:12px;font-weight:800;color:#64748b">Clear filters ×</a></div>@endif
-        </form>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 15px"><div style="font-size:13px;color:#64748b;font-weight:700">{{ $items->total() }} {{ $type === 'jobs' ? 'jobs' : ($type === 'gk' ? 'GK questions' : 'updates') }} found</div></div>
-
-        <div class="grid grid-3">
-            @forelse($items as $item)
-                @if($type === 'gk')
-                    <a class="card" href="{{ route('gk.show', $item->custom_id ?: $item->id) }}">
-                        <div class="meta-row"><span class="pill">{{ $item->category ?: 'GK' }}</span></div>
-                        <h3>{{ $item->hindi_title ?: $item->title }}</h3>
-                        @if($item->question)<p>{{ $item->question }}</p>@endif
-                        @if($item->answer)<div class="gk-answer">{{ $item->answer }}</div>@endif
-                        <span class="read">Read GK →</span>
-                    </a>
-                @else
-                    <a class="card content-card" href="{{ route($type === 'current-affairs' ? 'current-affairs.show' : 'job.show', $item->custom_id ?: $item->id) }}">
-                        @if($item->image_url)<img src="{{ str_starts_with($item->image_url, 'http') ? $item->image_url : asset(ltrim($item->image_url,'/')) }}" alt="{{ $item->title }}" loading="lazy" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;margin-bottom:15px">@endif
-                        <div class="meta-row"><span class="pill">{{ $item->category ?: ($type === 'jobs' ? 'Government Job' : 'Current Affairs') }}</span>@if($item->is_new)<span class="pill pill-new">NEW</span>@endif @if($item->is_breaking)<span class="pill pill-breaking">BREAKING</span>@endif</div>
-                        <h3>{{ $item->title }}</h3>
-                        <p>{{ $item->summary ?: 'CGJobs पर इस update की पूरी जानकारी पढ़ें।' }}</p>
-                        @if($type === 'jobs' && $item->last_date)<div style="margin-top:13px;font-size:11px;font-weight:850">Last date: {{ $item->last_date }}</div>@endif
-                        <span class="read">Read full update →</span>
-                    </a>
-                @endif
-            @empty
-                <div class="card" style="grid-column:1/-1;text-align:center;padding:55px;color:#64748b"><div style="font-size:38px;margin-bottom:10px">⌕</div><h3 style="margin-bottom:7px">No results found</h3><p>Try another keyword or remove one of the filters.</p><a href="{{ url()->current() }}" class="btn btn-primary" style="margin-top:14px">View all</a></div>
-            @endforelse
-        </div>
-
-        @if($items->hasPages())<div class="pager">{{ $items->links() }}</div>@endif
-    </div>
-</section>
-
-<style>
-.content-card{overflow:hidden;transition:transform .18s ease,box-shadow .18s ease}.content-card:hover{transform:translateY(-3px);box-shadow:0 18px 45px rgba(15,23,42,.10)}
-@media (max-width:820px){form.card > div:first-child{grid-template-columns:1fr!important}form.card button{width:100%}}
-</style>
+<section class="page-head"><div class="container"><div class="kicker">CGJobs • {{ $type === 'jobs' ? 'Recruitment' : ($type === 'gk' ? 'Exam Ready' : 'Stay Informed') }}</div><h1>{{ $title }}</h1><p>{{ $type === 'jobs' ? 'सरकारी भर्ती की जरूरी जानकारी — 4 main job categories और concerned department के साथ।' : ($type === 'gk' ? 'प्रतियोगी परीक्षाओं के लिए महत्वपूर्ण Static GK, questions और concise notes।' : 'परीक्षा की तैयारी के लिए महत्वपूर्ण current affairs — सरल भाषा में।') }}</p></div></section>
+<section style="padding-bottom:55px"><div class="container">
+<form method="GET" action="{{ url()->current() }}" class="card" style="margin-bottom:24px;padding:18px"><div style="display:grid;grid-template-columns:minmax(0,2fr) minmax(150px,1fr) minmax(150px,1fr) minmax(150px,1fr) auto;gap:12px;align-items:end">
+<label style="display:block;font-size:12px;font-weight:800;color:#334155">Search<input type="search" name="q" value="{{ $search }}" placeholder="Search jobs, departments, posts..." style="display:block;width:100%;margin-top:7px;border:1px solid #dbe2ea;border-radius:12px;padding:12px 14px;font:inherit;outline:none"></label>
+@if($type==='jobs')
+<label style="display:block;font-size:12px;font-weight:800;color:#334155">Main Category<select name="job_category" style="display:block;width:100%;margin-top:7px;border:1px solid #dbe2ea;border-radius:12px;padding:12px 14px;background:#fff;font:inherit"><option value="">All 4 categories</option>@foreach($jobCategories as $c)<option value="{{ $c }}" @selected($selectedJobCategory===$c)>{{ $c }}</option>@endforeach</select></label>
+<label style="display:block;font-size:12px;font-weight:800;color:#334155">Department<select name="department" style="display:block;width:100%;margin-top:7px;border:1px solid #dbe2ea;border-radius:12px;padding:12px 14px;background:#fff;font:inherit"><option value="">All departments</option>@foreach($departments as $d)<option value="{{ $d }}" @selected($selectedDepartment===$d)>{{ $d }}</option>@endforeach</select></label>
+@endif
+<label style="display:block;font-size:12px;font-weight:800;color:#334155">Sort<select name="sort" style="display:block;width:100%;margin-top:7px;border:1px solid #dbe2ea;border-radius:12px;padding:12px 14px;background:#fff;font:inherit"><option value="latest" @selected($sort==='latest')>Latest first</option>@if($type==='jobs')<option value="closing" @selected($sort==='closing')>Closing soon</option>@endif<option value="oldest" @selected($sort==='oldest')>Oldest first</option></select></label>
+<button type="submit" class="btn btn-primary" style="height:45px">Search</button></div>@if($search || $selectedCategory || ($type==='jobs' && ($selectedJobCategory || $selectedDepartment)) || $sort!=='latest')<div style="margin-top:12px"><a href="{{ url()->current() }}" style="font-size:12px;font-weight:800;color:#64748b">Clear filters ×</a></div>@endif</form>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin:0 0 15px"><div style="font-size:13px;color:#64748b;font-weight:700">{{ $items->total() }} {{ $type==='jobs'?'jobs':($type==='gk'?'GK questions':'updates') }} found</div></div>
+<div class="grid grid-3">@forelse($items as $item)
+@if($type==='gk')<a class="card" href="{{ route('gk.show',$item->custom_id ?: $item->id) }}"><div class="meta-row"><span class="pill">{{ $item->category ?: 'GK' }}</span></div><h3>{{ $item->hindi_title ?: $item->title }}</h3>@if($item->question)<p>{{ $item->question }}</p>@endif @if($item->answer)<div class="gk-answer">{{ $item->answer }}</div>@endif<span class="read">Read GK →</span></a>
+@else<a class="card content-card" href="{{ route($type==='current-affairs'?'current-affairs.show':'job.show',$item->custom_id ?: $item->id) }}">@if($item->image_url || $item->poster_path)<img src="{{ asset(ltrim($item->poster_path ?: $item->image_url,'/')) }}" alt="{{ $item->title }}" loading="lazy" style="width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:14px;margin-bottom:15px">@endif<div class="meta-row"><span class="pill">{{ $type==='jobs' ? ($item->job_category ?: 'CGSSB') : ($item->category ?: 'Current Affairs') }}</span>@if($type==='jobs' && $item->department)<span class="pill">{{ $item->department }}</span>@endif @if($item->is_new)<span class="pill pill-new">NEW</span>@endif @if($item->is_breaking)<span class="pill pill-breaking">BREAKING</span>@endif</div><h3>{{ $item->title }}</h3><p>{{ $item->summary ?: 'CGJobs पर इस update की पूरी जानकारी पढ़ें।' }}</p>@if($type==='jobs' && $item->last_date)<div style="margin-top:13px;font-size:11px;font-weight:850">Last date: {{ $item->last_date }}</div>@endif<span class="read">Read full update →</span></a>@endif
+@empty<div class="card" style="grid-column:1/-1;text-align:center;padding:55px;color:#64748b"><div style="font-size:38px;margin-bottom:10px">⌕</div><h3 style="margin-bottom:7px">No results found</h3><p>Try another keyword or remove one of the filters.</p><a href="{{ url()->current() }}" class="btn btn-primary" style="margin-top:14px">View all</a></div>@endforelse</div>
+@if($items->hasPages())<div class="pager">{{ $items->links() }}</div>@endif
+</div></section>
+<style>.content-card{overflow:hidden;transition:transform .18s ease,box-shadow .18s ease}.content-card:hover{transform:translateY(-3px);box-shadow:0 18px 45px rgba(15,23,42,.10)}@media(max-width:1050px){form.card>div:first-child{grid-template-columns:1fr 1fr!important}}@media(max-width:620px){form.card>div:first-child{grid-template-columns:1fr!important}form.card button{width:100%}}</style>
 @endsection
