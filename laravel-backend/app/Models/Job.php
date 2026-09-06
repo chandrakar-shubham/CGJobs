@@ -9,8 +9,15 @@ class Job extends Model
 {
     use HasFactory;
 
+    public const MAIN_CATEGORIES = ['CGSSB', 'CGPSC', 'Central Govt', 'Contractual'];
+
     protected $fillable = [
-        'custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','section','post_type','source','source_url','image_url','published_at','relative_time','relative_time_en','translation_status','translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility','eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url','apply_url','application_start','last_date','exam_date','admit_card_date','result_date',
+        'custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en',
+        'category','category_en','job_category','department','section','post_type','source','source_url',
+        'image_url','poster_path','published_at','relative_time','relative_time_en','translation_status',
+        'translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility',
+        'eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url',
+        'apply_url','application_start','last_date','exam_date','admit_card_date','result_date',
     ];
 
     protected $casts = ['is_breaking' => 'boolean', 'is_new' => 'boolean', 'translated_at' => 'datetime'];
@@ -34,13 +41,16 @@ class Job extends Model
             'category' => $fallback($this->category_en, $this->category),
             'categoryHindi' => $this->category,
             'categoryEnglish' => $this->category_en ?: $this->category,
+            'jobCategory' => $this->job_category ?: 'CGSSB',
+            'department' => $this->department ?: ($this->category ?: 'Other Departments'),
+            'mainJobCategories' => self::MAIN_CATEGORIES,
             'section' => $this->section ?: 'jobs',
             'postType' => $this->post_type ?: 'job',
             'source' => $this->source ?: 'cgstate.gov.in',
             'sourceUrl' => $this->source_url ?: 'https://cgstate.gov.in',
             'webUrl' => url('/jobs/'.($this->custom_id ?: $this->id)),
-            'imageUrl' => $this->image_url ? url($this->image_url) : null,
-            'imageSource' => 'CGJobs generated cover',
+            'imageUrl' => $this->poster_path || $this->image_url ? url($this->poster_path ?: $this->image_url) : null,
+            'imageSource' => $this->poster_path ? 'CGJobs fixed poster template' : null,
             'publishedAt' => $this->published_at ?: ($this->created_at?->format('Y-m-d') ?: date('Y-m-d')),
             'relativeTime' => $fallback($this->relative_time_en, $this->relative_time ?: 'हाल ही में'),
             'isBreaking' => (bool) $this->is_breaking,
