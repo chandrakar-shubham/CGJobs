@@ -1,14 +1,14 @@
 @extends('layouts.admin')
 
-@section('title', 'भर्ती संपादित करें (Edit Job)')
+@section('title', 'अधिसूचना संपादित करें (Edit Job/News)')
 
 @section('content')
 <div class="max-w-4xl mx-auto space-y-6">
 
     <div class="flex items-center justify-between">
         <div>
-            <h2 class="text-xl font-bold text-slate-900">भर्ती अधिसूचना संपादित करें</h2>
-            <p class="text-xs text-slate-500 mt-0.5">अधिसूचना विवरण अपडेट करें (#{{ $job->id }})</p>
+            <h2 class="text-xl font-bold text-slate-900">अधिसूचना संपादित करें</h2>
+            <p class="text-xs text-slate-500 mt-0.5">ID: {{ $job->custom_id ?: $job->id }}</p>
         </div>
         <a href="{{ route('admin.jobs.index') }}" class="px-3 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition">
             <i class="fa-solid fa-arrow-left mr-1"></i> वापस जाएं
@@ -18,6 +18,37 @@
     <form method="POST" action="{{ route('admin.jobs.update', $job) }}" class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-6">
         @csrf
         @method('PUT')
+
+        <!-- Section & Post Type Selection -->
+        <div class="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    सेक्शन (Section) <span class="text-rose-500">*</span>
+                </label>
+                <select name="section" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <option value="jobs" {{ old('section', $job->section ?: 'jobs') == 'jobs' ? 'selected' : '' }}>
+                        💼 सरकारी भर्तियां (Jobs & Vacancies)
+                    </option>
+                    <option value="news" {{ old('section', $job->section) == 'news' ? 'selected' : '' }}>
+                        📰 समसामयिकी व समाचार (Current Affairs / News)
+                    </option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    पोस्ट का प्रकार (Post Type) <span class="text-rose-500">*</span>
+                </label>
+                <select name="post_type" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
+                    <option value="job" {{ old('post_type', $job->post_type) == 'job' ? 'selected' : '' }}>नई भर्ती (Job Notification)</option>
+                    <option value="news" {{ old('post_type', $job->post_type) == 'news' ? 'selected' : '' }}>दैनिक समाचार (News Article)</option>
+                    <option value="admit_card" {{ old('post_type', $job->post_type) == 'admit_card' ? 'selected' : '' }}>प्रवेश पत्र (Admit Card)</option>
+                    <option value="result" {{ old('post_type', $job->post_type) == 'result' ? 'selected' : '' }}>परीक्षा परिणाम (Result)</option>
+                    <option value="syllabus" {{ old('post_type', $job->post_type) == 'syllabus' ? 'selected' : '' }}>पाठ्यक्रम (Syllabus & Pattern)</option>
+                    <option value="answer_key" {{ old('post_type', $job->post_type) == 'answer_key' ? 'selected' : '' }}>उत्तर कुंजी (Answer Key)</option>
+                </select>
+            </div>
+        </div>
 
         <!-- Title & Category -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -42,11 +73,16 @@
             </div>
         </div>
 
-        <!-- Vacancies, Eligibility, Age Limit -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Vacancies, Salary, Eligibility, Age Limit -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
                 <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">कुल रिक्तियां (Vacancies)</label>
                 <input type="text" name="vacancies" value="{{ old('vacancies', $job->vacancies) }}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">वेतनमान (Salary)</label>
+                <input type="text" name="salary" value="{{ old('salary', $job->salary) }}" placeholder="उदा: ₹19,500 - ₹62,000/-" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
             </div>
 
             <div>
@@ -70,7 +106,7 @@
 
         <!-- Detailed Content -->
         <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">विस्तृत विवरण (Detailed Content)</label>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">विस्तृत विवरण</label>
             <textarea name="detailed_content" rows="4" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">{{ old('detailed_content', $job->detailed_content) }}</textarea>
         </div>
 
@@ -112,7 +148,12 @@
         <div class="pt-2 border-t border-slate-100 flex flex-wrap gap-6 items-center">
             <label class="inline-flex items-center space-x-2 cursor-pointer">
                 <input type="checkbox" name="is_breaking" value="1" {{ old('is_breaking', $job->is_breaking) ? 'checked' : '' }} class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
-                <span class="text-xs font-semibold text-slate-700">ब्रेकिंग / मुख्य भर्ती (HOT Badge)</span>
+                <span class="text-xs font-semibold text-slate-700">ब्रेकिंग / HOT Badge</span>
+            </label>
+
+            <label class="inline-flex items-center space-x-2 cursor-pointer">
+                <input type="checkbox" name="is_new" value="1" {{ old('is_new', $job->is_new) ? 'checked' : '' }} class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
+                <span class="text-xs font-semibold text-slate-700">New Badge</span>
             </label>
         </div>
 
@@ -121,8 +162,8 @@
             <a href="{{ route('admin.jobs.index') }}" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition">
                 रद्द करें
             </a>
-            <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm rounded-xl shadow-md transition">
-                <i class="fa-solid fa-floppy-disk mr-2"></i> परिवर्तन सहेजें (Update Job)
+            <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm rounded-xl shadow-md transition transform active:scale-95">
+                <i class="fa-solid fa-check mr-2"></i> बदलाव सहेजें (Update)
             </button>
         </div>
 

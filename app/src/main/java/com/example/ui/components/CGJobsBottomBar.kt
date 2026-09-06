@@ -9,10 +9,12 @@ import androidx.compose.material.icons.automirrored.filled.Article
 import androidx.compose.material.icons.automirrored.outlined.Article
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.BookmarkBorder
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Icon
@@ -22,7 +24,6 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -58,20 +59,20 @@ fun CGJobsBottomBar(
             indicatorColor = BrandGreenLight
         )
 
-        // 1. Home
+        // 1. Jobs (Home - Inshorts Swipe format)
         NavigationBarItem(
             selected = currentTab == ScreenTab.HOME,
             onClick = { onTabSelected(ScreenTab.HOME) },
             icon = {
                 Icon(
                     imageVector = if (currentTab == ScreenTab.HOME) Icons.Filled.Home else Icons.Outlined.Home,
-                    contentDescription = "Home",
+                    contentDescription = "Jobs",
                     modifier = Modifier.size(24.dp)
                 )
             },
             label = {
                 Text(
-                    text = "Home",
+                    text = "Jobs",
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold
                 )
@@ -80,7 +81,7 @@ fun CGJobsBottomBar(
             modifier = Modifier.testTag("nav_tab_home")
         )
 
-        // 2. Current Affairs (Inshorts News format, replacing bottom Alerts)
+        // 2. Current Affairs (Inshorts News format)
         NavigationBarItem(
             selected = currentTab == ScreenTab.CURRENT_AFFAIRS,
             onClick = { onTabSelected(ScreenTab.CURRENT_AFFAIRS) },
@@ -102,7 +103,29 @@ fun CGJobsBottomBar(
             modifier = Modifier.testTag("nav_tab_current_affairs")
         )
 
-        // 3. Explore
+        // 3. Static GK (Inshorts Facts format)
+        NavigationBarItem(
+            selected = currentTab == ScreenTab.STATIC_GK,
+            onClick = { onTabSelected(ScreenTab.STATIC_GK) },
+            icon = {
+                Icon(
+                    imageVector = if (currentTab == ScreenTab.STATIC_GK) Icons.Filled.MenuBook else Icons.Outlined.MenuBook,
+                    contentDescription = "Static GK",
+                    modifier = Modifier.size(24.dp)
+                )
+            },
+            label = {
+                Text(
+                    text = "Static GK",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            colors = navItemColors,
+            modifier = Modifier.testTag("nav_tab_static_gk")
+        )
+
+        // 4. Explore
         NavigationBarItem(
             selected = currentTab == ScreenTab.EXPLORE,
             onClick = { onTabSelected(ScreenTab.EXPLORE) },
@@ -124,7 +147,7 @@ fun CGJobsBottomBar(
             modifier = Modifier.testTag("nav_tab_explore")
         )
 
-        // 4. Saved
+        // 5. Saved
         NavigationBarItem(
             selected = currentTab == ScreenTab.SAVED,
             onClick = { onTabSelected(ScreenTab.SAVED) },
@@ -145,28 +168,5 @@ fun CGJobsBottomBar(
             colors = navItemColors,
             modifier = Modifier.testTag("nav_tab_saved")
         )
-
-        // 5. Profile
-        NavigationBarItem(
-            selected = currentTab == ScreenTab.PROFILE,
-            onClick = { onTabSelected(ScreenTab.PROFILE) },
-            icon = {
-                Icon(
-                    imageVector = if (currentTab == ScreenTab.PROFILE) Icons.Filled.Person else Icons.Outlined.Person,
-                    contentDescription = "Profile",
-                    modifier = Modifier.size(24.dp)
-                )
-            },
-            label = {
-                Text(
-                    text = "Profile",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            colors = navItemColors,
-            modifier = Modifier.testTag("nav_tab_profile")
-        )
     }
 }
-

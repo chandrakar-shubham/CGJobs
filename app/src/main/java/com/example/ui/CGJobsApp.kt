@@ -30,6 +30,7 @@ import com.example.ui.screens.ProfileScreen
 import com.example.ui.screens.SavedScreen
 import com.example.ui.screens.SearchScreen
 import com.example.ui.screens.SplashScreen
+import com.example.ui.screens.StaticGkScreen
 import com.example.ui.viewmodel.CGJobsViewModel
 import com.example.ui.viewmodel.ScreenTab
 import kotlinx.coroutines.launch
@@ -48,6 +49,7 @@ fun CGJobsApp(
     val currentTab by viewModel.currentTab.collectAsState()
     val newsList by viewModel.newsList.collectAsState()
     val currentAffairsList by viewModel.currentAffairsList.collectAsState()
+    val staticGkList by viewModel.staticGkList.collectAsState()
     val savedNews by viewModel.savedNews.collectAsState()
     val alertsList by viewModel.alertsList.collectAsState()
     val unreadAlertsCount by viewModel.unreadAlertsCount.collectAsState()
@@ -55,6 +57,11 @@ fun CGJobsApp(
     val selectedAlertFilter by viewModel.selectedAlertFilter.collectAsState()
     val isRefreshing by viewModel.isRefreshing.collectAsState()
     val userProfile by viewModel.userProfile.collectAsState()
+
+    val sections by viewModel.sections.collectAsState()
+    val jobsCategories by viewModel.jobsCategories.collectAsState()
+    val newsCategories by viewModel.newsCategories.collectAsState()
+    val staticGkCategories by viewModel.staticGkCategories.collectAsState()
 
     val showInterestsDialog by viewModel.showInterestsDialog.collectAsState()
     val showEditProfileDialog by viewModel.showEditProfileDialog.collectAsState()
@@ -122,6 +129,9 @@ fun CGJobsApp(
                 onNavigateCurrentAffairs = {
                     viewModel.selectTab(ScreenTab.CURRENT_AFFAIRS)
                 },
+                onNavigateStaticGk = {
+                    viewModel.selectTab(ScreenTab.STATIC_GK)
+                },
                 onCategorySelected = { category ->
                     viewModel.selectCategory(category)
                     viewModel.selectTab(ScreenTab.HOME)
@@ -181,14 +191,23 @@ fun CGJobsApp(
                             onCategorySelected = { viewModel.selectCategory(it) },
                             onArticleClick = { viewModel.openArticle(it) },
                             onToggleSave = { viewModel.toggleSave(it) },
-                            onRefresh = { viewModel.refreshFeed() }
+                            onRefresh = { viewModel.refreshFeed() },
+                            categories = jobsCategories
                         )
                     }
                     ScreenTab.CURRENT_AFFAIRS -> {
                         CurrentAffairsScreen(
                             newsList = if (currentAffairsList.isNotEmpty()) currentAffairsList else newsList,
                             onArticleClick = { viewModel.openArticle(it) },
-                            onToggleSave = { viewModel.toggleSave(it) }
+                            onToggleSave = { viewModel.toggleSave(it) },
+                            newsCategories = newsCategories
+                        )
+                    }
+                    ScreenTab.STATIC_GK -> {
+                        StaticGkScreen(
+                            gkList = staticGkList,
+                            onToggleSave = { viewModel.toggleGkSave(it) },
+                            categories = staticGkCategories
                         )
                     }
                     ScreenTab.ALERTS -> {
@@ -215,7 +234,29 @@ fun CGJobsApp(
                             },
                             onArticleClick = { viewModel.openArticle(it) },
                             onToggleSave = { viewModel.toggleSave(it) },
-                            onSearchClick = { viewModel.openSearch() }
+                            onSearchClick = { viewModel.openSearch() },
+                            sections = sections,
+                            onSectionNavigate = { target ->
+                                val parts = target.split(":", limit = 2)
+                                val section = parts.getOrNull(0)
+                                val catName = parts.getOrNull(1) ?: ""
+                                when (section) {
+                                    "jobs" -> {
+                                        viewModel.selectCategory(catName)
+                                        viewModel.selectTab(ScreenTab.HOME)
+                                    }
+                                    "news" -> {
+                                        viewModel.selectTab(ScreenTab.CURRENT_AFFAIRS)
+                                    }
+                                    "static_gk" -> {
+                                        viewModel.selectTab(ScreenTab.STATIC_GK)
+                                    }
+                                    else -> {
+                                        viewModel.selectCategory(catName)
+                                        viewModel.selectTab(ScreenTab.HOME)
+                                    }
+                                }
+                            }
                         )
                     }
                     ScreenTab.SAVED -> {

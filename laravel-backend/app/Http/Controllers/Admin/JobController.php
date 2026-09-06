@@ -27,16 +27,25 @@ class JobController extends Controller
             $query->where('category', $request->category);
         }
 
+        if ($request->filled('section')) {
+            $query->where('section', $request->section);
+        }
+
+        if ($request->filled('post_type')) {
+            $query->where('post_type', $request->post_type);
+        }
+
         $jobs = $query->orderBy('id', 'desc')->paginate(15);
         $categories = Category::orderBy('name')->get();
 
         return view('admin.jobs.index', compact('jobs', 'categories'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
+        $defaultSection = $request->query('section', 'jobs');
         $categories = Category::orderBy('name')->get();
-        return view('admin.jobs.create', compact('categories'));
+        return view('admin.jobs.create', compact('categories', 'defaultSection'));
     }
 
     public function store(Request $request, FirebaseNotificationService $fcmService)
@@ -46,7 +55,10 @@ class JobController extends Controller
             'summary' => 'required|string',
             'detailed_content' => 'nullable|string',
             'category' => 'required|string',
+            'section' => 'nullable|string|in:jobs,news',
+            'post_type' => 'nullable|string',
             'vacancies' => 'nullable|string',
+            'salary' => 'nullable|string',
             'eligibility' => 'nullable|string',
             'age_limit' => 'nullable|string',
             'selection_process' => 'nullable|string',
@@ -63,6 +75,8 @@ class JobController extends Controller
             'broadcast_push' => 'nullable|boolean',
         ]);
 
+        $validated['section'] = $request->input('section', 'jobs');
+        $validated['post_type'] = $request->input('post_type', 'job');
         $validated['is_breaking'] = $request->has('is_breaking');
         $validated['is_new'] = $request->has('is_new');
         $validated['published_at'] = date('Y-m-d');
@@ -97,7 +111,10 @@ class JobController extends Controller
             'summary' => 'required|string',
             'detailed_content' => 'nullable|string',
             'category' => 'required|string',
+            'section' => 'nullable|string|in:jobs,news',
+            'post_type' => 'nullable|string',
             'vacancies' => 'nullable|string',
+            'salary' => 'nullable|string',
             'eligibility' => 'nullable|string',
             'age_limit' => 'nullable|string',
             'selection_process' => 'nullable|string',
@@ -111,6 +128,8 @@ class JobController extends Controller
             'exam_date' => 'nullable|string',
         ]);
 
+        $validated['section'] = $request->input('section', $job->section ?: 'jobs');
+        $validated['post_type'] = $request->input('post_type', $job->post_type ?: 'job');
         $validated['is_breaking'] = $request->has('is_breaking');
         $validated['is_new'] = $request->has('is_new');
 

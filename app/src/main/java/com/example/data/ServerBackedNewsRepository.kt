@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import com.example.data.api.ServerConfig
 import com.example.data.api.model.toDomain
+import com.example.model.AppCategory
+import com.example.model.AppSection
 import com.example.model.JobUpdate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +34,23 @@ class ServerBackedNewsRepository(
             }
         }.getOrDefault(emptyList())
     )
+
+    private val _sectionsStream = MutableStateFlow<List<AppSection>>(
+        runCatching {
+            kotlinx.coroutines.runBlocking {
+                fallbackRepository.getSectionsStream().first()
+            }
+        }.getOrDefault(emptyList())
+    )
+
+    private val _categoriesStream = MutableStateFlow<List<AppCategory>>(
+        runCatching {
+            kotlinx.coroutines.runBlocking {
+                fallbackRepository.getCategoriesStream().first()
+            }
+        }.getOrDefault(emptyList())
+    )
+
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: Flow<Boolean> = _isSyncing.asStateFlow()
 
@@ -47,8 +66,35 @@ class ServerBackedNewsRepository(
 
     suspend fun tryFetchFromServer(): Boolean = withContext(Dispatchers.IO) {
         _isSyncing.value = true
+        var newsSuccess = false
         try {
             val api = ServerConfig.getApiService(context)
+
+            // 1. Fetch live sections and categorized lists
+            try {
+                val sectionsResponse = api.getSections()
+                if (sectionsResponse.success && !sectionsResponse.sections.isNullOrEmpty()) {
+                    val mappedSections = sectionsResponse.sections.map { it.toDomain() }
+                    _sectionsStream.value = mappedSections
+                    Log.d("ServerBackedNewsRepo", "Successfully fetched ${mappedSections.size} sections")
+                }
+            } catch (e: Exception) {
+                Log.w("ServerBackedNewsRepo", "Failed fetching sections from server: ${e.message}")
+            }
+
+            // 2. Fetch categories
+            try {
+                val categoriesResponse = api.getCategories()
+                if (categoriesResponse.success && !categoriesResponse.categories.isNullOrEmpty()) {
+                    val mappedCategories = categoriesResponse.categories.map { it.toDomain() }
+                    _categoriesStream.value = mappedCategories
+                    Log.d("ServerBackedNewsRepo", "Successfully fetched ${mappedCategories.size} categories")
+                }
+            } catch (e: Exception) {
+                Log.w("ServerBackedNewsRepo", "Failed fetching categories from server: ${e.message}")
+            }
+
+            // 3. Fetch news / jobs
             val response = api.getNews(limit = 100)
             if (response.success && !response.news.isNullOrEmpty()) {
                 val mapped = response.news.map { it.toDomain() }
@@ -61,33 +107,47 @@ class ServerBackedNewsRepository(
 
                 _newsStream.value = updated
                 _serverAvailable.value = true
+                newsSuccess = true
                 Log.d("ServerBackedNewsRepo", "Successfully fetched ${updated.size} news from server")
-                _isSyncing.value = false
-                return@withContext true
             }
         } catch (e: Exception) {
             Log.w("ServerBackedNewsRepo", "Server sync notice: ${e.message}. Using offline fallback repository.")
             _serverAvailable.value = false
         }
         _isSyncing.value = false
-        return@withContext false
+        return@withContext newsSuccess
     }
 
     override fun getNewsStream(): Flow<List<JobUpdate>> = _newsStream.asStateFlow()
 
+    override fun getSectionsStream(): Flow<List<AppSection>> = _sectionsStream.asStateFlow()
+
+    override fun getCategoriesStream(section: String?): Flow<List<AppCategory>> {
+        return _categoriesStream.map { list ->
+            if (section.isNullOrBlank()) list
+            else list.filter { it.section.equals(section, ignoreCase = true) }
+        }
+    }
+
     override fun getNewsByCategory(category: String): Flow<List<JobUpdate>> {
         return _newsStream.map { list ->
-            if (category == "सभी" || category.equals("All", ignoreCase = true)) {
+            val clean = category.trim()
+            if (clean == "सभी" || clean.equals("All", ignoreCase = true) || clean.startsWith("सभी") || clean.startsWith("All")) {
                 list
             } else {
-                list.filter {
-                    it.category.equals(category, ignoreCase = true) ||
-                    (category == "व्यापम" && it.category == "CG Vyapam") ||
-                    (category == "समसामयिकी" && it.category == "Current Affairs") ||
-                    (category == "प्रवेश पत्र" && it.category == "Admit Card") ||
-                    (category == "परिणाम" && it.category == "Result") ||
-                    (category == "शिक्षक" && (it.category == "Teaching" || it.category == "CGSSB")) ||
-                    (category == "पुलिस" && (it.category == "Police & Defence" || it.category == "CG Police"))
+                list.filter { item ->
+                    item.category.equals(clean, ignoreCase = true) ||
+                    item.category.contains(clean, ignoreCase = true) ||
+                    clean.contains(item.category, ignoreCase = true) ||
+                    (clean.contains("व्यापम") && item.category.contains("Vyapam", ignoreCase = true)) ||
+                    (clean.contains("समसामयिकी") && item.category.contains("Current Affairs", ignoreCase = true)) ||
+                    (clean.contains("प्रवेश पत्र") && item.category.contains("Admit Card", ignoreCase = true)) ||
+                    (clean.contains("परिणाम") && item.category.contains("Result", ignoreCase = true)) ||
+                    (clean.contains("शिक्षक") && (item.category.contains("Teaching", ignoreCase = true) || item.category.contains("CGSSB", ignoreCase = true))) ||
+                    (clean.contains("पुलिस") && (item.category.contains("Police", ignoreCase = true) || item.category.contains("Defence", ignoreCase = true))) ||
+                    (clean.contains("पटवारी") && item.category.contains("Patwari", ignoreCase = true)) ||
+                    (clean.contains("इंजीनियरिंग") && item.category.contains("Engineering", ignoreCase = true)) ||
+                    (clean.contains("चिकित्सा") && item.category.contains("Medical", ignoreCase = true))
                 }
             }
         }

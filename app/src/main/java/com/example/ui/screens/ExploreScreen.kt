@@ -44,6 +44,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.AppCategory
+import com.example.model.AppSection
 import com.example.model.JobUpdate
 import com.example.ui.components.SecondaryJobCard
 import com.example.ui.components.getCategoryTheme
@@ -80,7 +82,9 @@ fun ExploreScreen(
     onArticleClick: (JobUpdate) -> Unit,
     onToggleSave: (String) -> Unit,
     onSearchClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    sections: List<AppSection> = emptyList(),
+    onSectionNavigate: ((String) -> Unit)? = null
 ) {
     val context = LocalContext.current
 
@@ -98,13 +102,13 @@ fun ExploreScreen(
         item(span = { GridItemSpan(2) }) {
             Column {
                 Text(
-                    text = "Explore",
+                    text = "Explore Sections",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
                 Text(
-                    text = "अपनी रुचि के अनुसार श्रेणी चुनें",
+                    text = "विभिन्न खंड एवं श्रेणियां (Jobs, News, Static GK)",
                     fontSize = 12.5.sp,
                     color = TextSecondary
                 )
@@ -142,61 +146,158 @@ fun ExploreScreen(
             }
         }
 
-        // 8 Grid Categories
-        items(EXPLORE_CATEGORIES) { item ->
-            val theme = getCategoryTheme(item.filterCategory)
+        if (sections.isNotEmpty()) {
+            sections.forEach { section ->
+                item(span = { GridItemSpan(2) }) {
+                    Column(modifier = Modifier.padding(top = 10.dp, bottom = 2.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            val iconEmoji = when (section.id) {
+                                "jobs" -> "💼"
+                                "news" -> "📰"
+                                "static_gk" -> "📚"
+                                else -> "📂"
+                            }
+                            Text(
+                                text = "$iconEmoji ${section.name}",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary
+                            )
+                        }
+                        if (!section.description.isNullOrBlank()) {
+                            Text(
+                                text = section.description,
+                                fontSize = 11.5.sp,
+                                color = TextSecondary,
+                                modifier = Modifier.padding(top = 2.dp)
+                            )
+                        }
+                    }
+                }
 
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
-                    .clickable { onCategoryClick(item.filterCategory) }
-                    .testTag("explore_category_${item.id}"),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                border = BorderStroke(1.dp, BorderLight),
-                elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
-            ) {
-                Column(
+                items(section.categories, key = { "${section.id}_${it.id}" }) { cat ->
+                    val theme = getCategoryTheme(cat.name)
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(20.dp))
+                            .clickable {
+                                if (section.id == "jobs") {
+                                    onCategoryClick(cat.name)
+                                } else {
+                                    onSectionNavigate?.invoke("${section.id}:${cat.name}") ?: onCategoryClick(cat.name)
+                                }
+                            }
+                            .testTag("explore_category_${cat.id}"),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, BorderLight),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(50.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(theme.backgroundColor),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = theme.icon,
+                                    contentDescription = cat.name,
+                                    tint = theme.color,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(10.dp))
+
+                            Text(
+                                text = cat.name,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                                textAlign = TextAlign.Center,
+                                maxLines = 1
+                            )
+
+                            if (!cat.hindiName.isNullOrBlank()) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = cat.hindiName,
+                                    fontSize = 11.sp,
+                                    color = TextSecondary,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            // Fallback Grid Categories
+            items(EXPLORE_CATEGORIES) { item ->
+                val theme = getCategoryTheme(item.filterCategory)
+
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .clip(RoundedCornerShape(20.dp))
+                        .clickable { onCategoryClick(item.filterCategory) }
+                        .testTag("explore_category_${item.id}"),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    border = BorderStroke(1.dp, BorderLight),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
                 ) {
-                    Box(
+                    Column(
                         modifier = Modifier
-                            .size(52.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(theme.backgroundColor),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(
-                            imageVector = theme.icon,
-                            contentDescription = item.name,
-                            tint = theme.color,
-                            modifier = Modifier.size(26.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(52.dp)
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(theme.backgroundColor),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = theme.icon,
+                                contentDescription = item.name,
+                                tint = theme.color,
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        Text(
+                            text = item.name,
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = TextPrimary,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Spacer(modifier = Modifier.height(2.dp))
+
+                        Text(
+                            text = theme.hindiSubtitle,
+                            fontSize = 11.sp,
+                            color = TextSecondary,
+                            textAlign = TextAlign.Center,
+                            maxLines = 1
                         )
                     }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-
-                    Text(
-                        text = item.name,
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = TextPrimary,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Spacer(modifier = Modifier.height(2.dp))
-
-                    Text(
-                        text = theme.hindiSubtitle,
-                        fontSize = 11.sp,
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1
-                    )
                 }
             }
         }

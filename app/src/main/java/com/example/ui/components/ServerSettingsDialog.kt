@@ -1,5 +1,7 @@
 package com.example.ui.components
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,6 +25,7 @@ import androidx.compose.material.icons.filled.Cloud
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.OpenInBrowser
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
@@ -177,11 +180,11 @@ fun ServerSettingsDialog(
                     ) {
                         TextButton(
                             onClick = {
-                                serverUrl = ServerConfig.DEFAULT_LARAVEL_URL
+                                serverUrl = ServerConfig.LIVE_SERVER_URL
                                 pingResult = null
                             }
                         ) {
-                            Text("Laravel", fontSize = 12.sp)
+                            Text("Live Hostinger", fontSize = 12.sp)
                         }
                         TextButton(
                             onClick = {
@@ -189,19 +192,19 @@ fun ServerSettingsDialog(
                                 pingResult = null
                             }
                         ) {
-                            Text("Node.js", fontSize = 12.sp)
+                            Text("Localhost", fontSize = 12.sp)
                         }
                     }
                 }
 
-                // Quick Localhost presets guide
+                // Quick Presets guide
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Quick Presets: Laravel (8000) | Node (5000)",
+                        text = "Quick Presets: Live Hostinger Server | Local Emulator",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -242,6 +245,26 @@ fun ServerSettingsDialog(
                     }
                 }
 
+                // Direct Admin Panel Quick Link Button
+                OutlinedButton(
+                    onClick = {
+                        val adminUrl = if (serverUrl.endsWith("/")) "${serverUrl}admin" else "$serverUrl/admin"
+                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(adminUrl))
+                        runCatching { context.startActivity(intent) }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.OpenInBrowser,
+                        contentDescription = "Open Admin Panel",
+                        modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Open Admin Panel in Browser (/admin)", fontWeight = FontWeight.SemiBold)
+                }
+
                 // Features Info Card
                 Surface(
                     shape = RoundedCornerShape(12.dp),
@@ -269,7 +292,7 @@ fun ServerSettingsDialog(
                             )
                         }
                         Text(
-                            text = "• Web Dashboard at server root (e.g. /index.html)\n• Push Notification composer with deep linking\n• NewsAPI.org & NewsData.io auto sync\n• Manage categories, results, and admit cards",
+                            text = "• Live Admin URL: https://darkgoldenrod-camel-860943.hostingersite.com/admin\n• Real-time synchronization for Jobs, Current Affairs, & Static GK\n• Push Notification composer with instant mobile alerts\n• Manage categories, sections, results, and admit cards",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             lineHeight = 16.sp

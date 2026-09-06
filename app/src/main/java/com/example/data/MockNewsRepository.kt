@@ -1,5 +1,7 @@
 package com.example.data
 
+import com.example.model.AppCategory
+import com.example.model.AppSection
 import com.example.model.ImportantDates
 import com.example.model.JobUpdate
 import kotlinx.coroutines.flow.Flow
@@ -754,5 +756,81 @@ CGPSC रायपुर द्वारा राज्य सेवा पर�
     override suspend fun refreshNews() {
         // Simulates fresh sync from future backend
         _news.value = _news.value
+    }
+
+    private val defaultCategories = listOf(
+        // Jobs
+        AppCategory("all_jobs", "All Jobs", "सभी भर्तियां", "jobs"),
+        AppCategory("cgpsc", "CGPSC", "सीजीपीएससी", "jobs"),
+        AppCategory("cg_vyapam", "CG Vyapam", "व्यापम", "jobs"),
+        AppCategory("police_defence", "Police & Defence", "पुलिस व सुरक्षा", "jobs"),
+        AppCategory("teaching", "Teaching", "शिक्षक भर्ती", "jobs"),
+        AppCategory("patwari_revenue", "Patwari & Revenue", "पटवारी व राजस्व", "jobs"),
+        AppCategory("engineering", "Engineering & Tech", "इंजीनियरिंग", "jobs"),
+        AppCategory("medical_health", "Medical & Health", "स्वास्थ्य व चिकित्सा", "jobs"),
+        AppCategory("admit_card", "Admit Card", "प्रवेश पत्र", "jobs"),
+        AppCategory("result", "Result", "परीक्षा परिणाम", "jobs"),
+        AppCategory("answer_key", "Answer Key", "उत्तर कुंजी", "jobs"),
+        AppCategory("syllabus", "Syllabus", "पाठ्यक्रम", "jobs"),
+
+        // News
+        AppCategory("all_news", "All Current Affairs", "सभी (All)", "news"),
+        AppCategory("national", "National", "राष्ट्रीय", "news"),
+        AppCategory("international", "International", "अंतर्राष्ट्रीय", "news"),
+        AppCategory("chhattisgarh", "State Special", "छत्तीसगढ़", "news"),
+        AppCategory("economy", "Economy & Budget", "अर्थव्यवस्था", "news"),
+        AppCategory("sports", "Sports & Awards", "खेलकूद", "news"),
+        AppCategory("schemes", "Government Schemes", "सरकारी योजनाएं", "news"),
+        AppCategory("environment", "Environment & Forest", "पर्यावरण व भूगोल", "news"),
+
+        // Static GK
+        AppCategory("all_gk", "All Topics", "सभी (All)", "static_gk"),
+        AppCategory("history", "History & Heritage", "इतिहास", "static_gk"),
+        AppCategory("geography", "Geography & Rivers", "भूगोल", "static_gk"),
+        AppCategory("culture_tribes", "Culture & Tribes", "संस्कृति व जनजाति", "static_gk"),
+        AppCategory("polity_economy", "Polity & Economy", "राजव्यवस्था व अर्थव्यवस्था", "static_gk"),
+        AppCategory("state_special", "State Special", "छत्तीसगढ़ विशेष", "static_gk")
+    )
+
+    private val defaultSections = listOf(
+        AppSection(
+            id = "jobs",
+            name = "Jobs & Recruitment",
+            hindiName = "सरकारी नौकरी व भर्ती",
+            description = "Chhattisgarh State Government & Public Sector Recruitments",
+            icon = "work",
+            categories = defaultCategories.filter { it.section == "jobs" },
+            itemCount = 12
+        ),
+        AppSection(
+            id = "news",
+            name = "News & Current Affairs",
+            hindiName = "दैनिक समसामयिकी",
+            description = "Daily Exam-relevant Current Affairs, Policies & Schemes",
+            icon = "article",
+            categories = defaultCategories.filter { it.section == "news" },
+            itemCount = 8
+        ),
+        AppSection(
+            id = "static_gk",
+            name = "Static GK",
+            hindiName = "छत्तीसगढ़ सामान्य ज्ञान",
+            description = "High-yield Static GK cards for competitive exams",
+            icon = "menu_book",
+            categories = defaultCategories.filter { it.section == "static_gk" },
+            itemCount = 6
+        )
+    )
+
+    private val _sectionsStream = MutableStateFlow(defaultSections)
+    private val _categoriesStream = MutableStateFlow(defaultCategories)
+
+    override fun getSectionsStream(): Flow<List<AppSection>> = _sectionsStream.asStateFlow()
+
+    override fun getCategoriesStream(section: String?): Flow<List<AppCategory>> {
+        return _categoriesStream.map { list ->
+            if (section.isNullOrBlank()) list
+            else list.filter { it.section.equals(section, ignoreCase = true) }
+        }
     }
 }

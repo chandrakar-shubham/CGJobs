@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.AppCategory
 import com.example.ui.theme.BorderLight
 import com.example.ui.theme.BrandGreen
 import com.example.ui.theme.Slate100
@@ -46,7 +47,8 @@ val HOME_CATEGORIES = listOf(
 fun CategorySelector(
     selectedCategory: String,
     onCategorySelected: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    categories: List<AppCategory> = emptyList()
 ) {
     Box(
         modifier = modifier
@@ -59,27 +61,62 @@ fun CategorySelector(
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 6.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(HOME_CATEGORIES) { category ->
-                val isSelected = category.equals(selectedCategory, ignoreCase = true) ||
-                        (category == "सभी" && selectedCategory.equals("All", ignoreCase = true))
+            if (categories.isNotEmpty()) {
+                items(categories, key = { it.id }) { cat ->
+                    val isSelected = cat.name.equals(selectedCategory, ignoreCase = true) ||
+                            cat.id.equals(selectedCategory, ignoreCase = true) ||
+                            (cat.hindiName?.equals(selectedCategory, ignoreCase = true) == true) ||
+                            (cat.id == "all_jobs" && (selectedCategory == "सभी" || selectedCategory.equals("All", ignoreCase = true)))
 
-                Box(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(
-                            if (isSelected) BrandGreen else Slate100
+                    val label = when {
+                        !cat.hindiName.isNullOrBlank() && cat.name.equals("All Jobs", ignoreCase = true) -> "सभी भर्तियां"
+                        !cat.hindiName.isNullOrBlank() && cat.name.contains("(") -> cat.name
+                        !cat.hindiName.isNullOrBlank() -> "${cat.name} (${cat.hindiName})"
+                        else -> cat.name
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(
+                                if (isSelected) BrandGreen else Slate100
+                            )
+                            .clickable { onCategorySelected(cat.name) }
+                            .padding(horizontal = 16.dp, vertical = 7.dp)
+                            .testTag("category_chip_${cat.id}"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = label,
+                            color = if (isSelected) Color.White else Slate600,
+                            fontSize = 13.5.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
                         )
-                        .clickable { onCategorySelected(category) }
-                        .padding(horizontal = 16.dp, vertical = 7.dp)
-                        .testTag("category_chip_$category"),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = category,
-                        color = if (isSelected) Color.White else Slate600,
-                        fontSize = 13.5.sp,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
-                    )
+                    }
+                }
+            } else {
+                items(HOME_CATEGORIES) { category ->
+                    val isSelected = category.equals(selectedCategory, ignoreCase = true) ||
+                            (category == "सभी" && selectedCategory.equals("All", ignoreCase = true))
+
+                    Box(
+                        modifier = Modifier
+                            .clip(CircleShape)
+                            .background(
+                                if (isSelected) BrandGreen else Slate100
+                            )
+                            .clickable { onCategorySelected(category) }
+                            .padding(horizontal = 16.dp, vertical = 7.dp)
+                            .testTag("category_chip_$category"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = category,
+                            color = if (isSelected) Color.White else Slate600,
+                            fontSize = 13.5.sp,
+                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium
+                        )
+                    }
                 }
             }
         }

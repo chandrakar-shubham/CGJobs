@@ -10,8 +10,12 @@ import com.example.data.NotificationRepository
 import com.example.data.ServerBackedNewsRepository
 import com.example.data.ServerBackedNotificationRepository
 import com.example.data.UserRepository
+import com.example.data.StaticGkRepository
 import com.example.model.AlertItem
+import com.example.model.AppCategory
+import com.example.model.AppSection
 import com.example.model.JobUpdate
+import com.example.model.StaticGkCard
 import com.example.model.UserProfile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +31,7 @@ import kotlinx.coroutines.launch
 enum class ScreenTab {
     HOME,
     CURRENT_AFFAIRS,
+    STATIC_GK,
     EXPLORE,
     SAVED,
     PROFILE,
@@ -36,7 +41,8 @@ enum class ScreenTab {
 class CGJobsViewModel(
     private val newsRepository: NewsRepository = ServerBackedNewsRepository(),
     private val notificationRepository: NotificationRepository = ServerBackedNotificationRepository(),
-    private val userRepository: UserRepository = MockUserRepository()
+    private val userRepository: UserRepository = MockUserRepository(),
+    private val staticGkRepository: StaticGkRepository = StaticGkRepository()
 ) : ViewModel() {
 
     // Main Navigation
@@ -94,6 +100,22 @@ class CGJobsViewModel(
     val userProfile: StateFlow<UserProfile> = userRepository.getUserProfile()
         .stateIn(viewModelScope, SharingStarted.Eagerly, UserProfile())
 
+    // Synced Sections and Categories from Backend
+    val sections: StateFlow<List<AppSection>> = newsRepository.getSectionsStream()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val allCategories: StateFlow<List<AppCategory>> = newsRepository.getCategoriesStream()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val jobsCategories: StateFlow<List<AppCategory>> = newsRepository.getCategoriesStream("jobs")
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val newsCategories: StateFlow<List<AppCategory>> = newsRepository.getCategoriesStream("news")
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val staticGkCategories: StateFlow<List<AppCategory>> = newsRepository.getCategoriesStream("static_gk")
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     // All News Stream (filtered by home category)
     val newsList: StateFlow<List<JobUpdate>> = _selectedCategory
         .flatMapLatest { category -> newsRepository.getNewsByCategory(category) }
@@ -111,6 +133,10 @@ class CGJobsViewModel(
                         item.title.contains("योजना")
             }
         }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    // Static GK Stream (Inshorts-style study capsule)
+    val staticGkList: StateFlow<List<StaticGkCard>> = staticGkRepository.gkStream
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     // Saved News
@@ -192,6 +218,10 @@ class CGJobsViewModel(
         }
     }
 
+    fun toggleGkSave(id: String) {
+        staticGkRepository.toggleSave(id)
+    }
+
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
@@ -209,6 +239,7 @@ class CGJobsViewModel(
         viewModelScope.launch {
             _isRefreshing.value = true
             newsRepository.refreshNews()
+            staticGkRepository.refreshGk()
             delay(600)
             _isRefreshing.value = false
         }
@@ -254,6 +285,7 @@ class CGJobsViewModel(
         viewModelScope.launch {
             _isRefreshing.value = true
             newsRepository.refreshNews()
+            staticGkRepository.refreshGk()
             (notificationRepository as? ServerBackedNotificationRepository)?.tryFetchAlerts()
             delay(500)
             _isRefreshing.value = false

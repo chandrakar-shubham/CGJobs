@@ -352,8 +352,22 @@ async function quickPushArticle(id) {
 }
 
 // ==========================================
-// CATEGORIES
+// CATEGORIES & SECTIONS
 // ==========================================
+
+let currentCategorySectionFilter = 'all';
+
+function filterCategorySection(section) {
+  currentCategorySectionFilter = section;
+  document.querySelectorAll('.cat-sec-btn').forEach(btn => {
+    if (btn.getAttribute('data-sec') === section) {
+      btn.className = 'cat-sec-btn px-3 py-1 text-xs font-bold rounded-lg bg-slate-900 text-white';
+    } else {
+      btn.className = 'cat-sec-btn px-3 py-1 text-xs font-bold rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-200';
+    }
+  });
+  renderCategoriesList();
+}
 
 async function loadCategories() {
   try {
@@ -361,38 +375,73 @@ async function loadCategories() {
     const data = await res.json();
     currentCategories = data.categories || [];
 
-    // Update filter dropdown
+    // Update section counters
+    const jobsCount = currentCategories.filter(c => c.section === 'jobs').length;
+    const newsCount = currentCategories.filter(c => c.section === 'news').length;
+    const gkCount = currentCategories.filter(c => c.section === 'static_gk').length;
+    
+    if (document.getElementById('secCountJobs')) document.getElementById('secCountJobs').textContent = `${jobsCount} Categories`;
+    if (document.getElementById('secCountNews')) document.getElementById('secCountNews').textContent = `${newsCount} Categories`;
+    if (document.getElementById('secCountGk')) document.getElementById('secCountGk').textContent = `${gkCount} Categories`;
+
+    // Update news filter dropdown
     const filter = document.getElementById('newsCategoryFilter');
     if (filter) {
       filter.innerHTML = `<option value="all">All Categories</option>` +
-        currentCategories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        currentCategories.map(c => `<option value="${c.name}">${c.name} [${c.section || 'jobs'}]</option>`).join('');
     }
 
-    // Update Category Management List
-    const list = document.getElementById('categoriesList');
-    if (list) {
-      list.innerHTML = currentCategories.map(c => `
-        <div class="py-3 flex items-center justify-between">
+    renderCategoriesList();
+  } catch (e) {
+    console.error("Load categories error:", e);
+  }
+}
+
+function renderCategoriesList() {
+  const list = document.getElementById('categoriesList');
+  if (!list) return;
+
+  const filtered = currentCategories.filter(c => {
+    if (currentCategorySectionFilter === 'all') return true;
+    return (c.section || 'jobs') === currentCategorySectionFilter;
+  });
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="py-6 text-center text-xs text-slate-400">No categories found in this section.</div>`;
+    return;
+  }
+
+  const sectionBadges = {
+    jobs: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">💼 Jobs</span>',
+    news: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">📰 News</span>',
+    static_gk: '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-800">📖 Static GK</span>'
+  };
+
+  list.innerHTML = filtered.map(c => {
+    const sec = c.section || 'jobs';
+    const badge = sectionBadges[sec] || `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700">${sec}</span>`;
+    return `
+      <div class="py-3 flex items-center justify-between hover:bg-slate-50/50 px-2 rounded-xl transition">
+        <div class="flex items-center space-x-3">
+          ${badge}
           <div>
             <div class="font-bold text-xs text-slate-800">${escapeHtml(c.name)}</div>
             <div class="text-[11px] text-slate-500">${escapeHtml(c.hindiName || '')}</div>
           </div>
-          <button onclick="deleteCategory('${c.id}')" class="text-xs text-red-600 hover:text-red-700 font-semibold px-2 py-1 bg-red-50 rounded">
-            Delete
-          </button>
         </div>
-      `).join('');
-    }
-  } catch (e) {
-    console.error("Load categories error:", e);
-  }
+        <button onclick="deleteCategory('${c.id}')" class="text-xs text-red-600 hover:text-red-700 font-semibold px-2.5 py-1 bg-red-50 hover:bg-red-100 rounded-lg transition">
+          Delete
+        </button>
+      </div>
+    `;
+  }).join('');
 }
 
 function populateCategorySelect(selectId, selectedValue = '') {
   const sel = document.getElementById(selectId);
   if (!sel) return;
   sel.innerHTML = currentCategories.map(c => `
-    <option value="${c.name}" ${c.name === selectedValue ? 'selected' : ''}>${c.name} (${c.hindiName || ''})</option>
+    <option value="${c.name}" ${c.name === selectedValue ? 'selected' : ''}>[${c.section || 'jobs'}] ${c.name} (${c.hindiName || ''})</option>
   `).join('');
 }
 
@@ -797,6 +846,7 @@ function setupEventListeners() {
   // Add Category Form Submit
   document.getElementById('formAddCategory')?.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const section = document.getElementById('catSection')?.value || 'jobs';
     const name = document.getElementById('catName').value;
     const hindiName = document.getElementById('catHindiName').value;
 
@@ -804,11 +854,11 @@ function setupEventListeners() {
       const res = await fetch(`${API_BASE}/categories`, {
         method: 'POST',
         headers: getHeaders(),
-        body: JSON.stringify({ name, hindiName })
+        body: JSON.stringify({ name, hindiName, section })
       });
       const data = await res.json();
       if (data.success) {
-        showToast(`Category "${name}" created!`);
+        showToast(`Category "${name}" created in [${section}]!`);
         document.getElementById('formAddCategory').reset();
         loadCategories();
         loadDashboard();

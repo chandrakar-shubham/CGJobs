@@ -3,14 +3,16 @@
  */
 const fs = require('fs');
 const path = require('path');
-const { SEED_CATEGORIES, SEED_NEWS, SEED_ALERTS } = require('./seedData');
+const { SEED_SECTIONS, SEED_CATEGORIES, SEED_NEWS, SEED_ALERTS, SEED_STATIC_GK } = require('./seedData');
 
 const DB_FILE = path.join(__dirname, 'database.json');
 
 class DataStore {
   constructor() {
+    this.sections = [];
     this.news = [];
     this.categories = [];
+    this.staticGk = [];
     this.alerts = [];
     this.deviceTokens = [];
     this.settings = {
@@ -37,8 +39,31 @@ class DataStore {
       if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, 'utf8');
         const data = JSON.parse(raw);
+        this.sections = data.sections && data.sections.length > 0 ? data.sections : [...SEED_SECTIONS];
         this.news = data.news || [];
-        this.categories = data.categories || [];
+        this.staticGk = data.staticGk && data.staticGk.length > 0 ? data.staticGk : [...SEED_STATIC_GK];
+        
+        // Ensure categories have section tags and include seed categories
+        const existingCats = data.categories || [];
+        const existingIds = new Set(existingCats.map(c => c.id));
+        
+        // Merge seed categories if missing
+        const mergedCats = existingCats.map(cat => {
+          if (!cat.section) {
+            if (cat.id.includes('gk') || ['history', 'geography'].includes(cat.id)) cat.section = 'static_gk';
+            else if (cat.id.includes('ca') || cat.id === 'current_affairs' || ['national', 'international', 'economy', 'sports'].includes(cat.id)) cat.section = 'news';
+            else cat.section = 'jobs';
+          }
+          return cat;
+        });
+
+        SEED_CATEGORIES.forEach(sc => {
+          if (!existingIds.has(sc.id)) {
+            mergedCats.push(sc);
+          }
+        });
+
+        this.categories = mergedCats;
         this.alerts = data.alerts || [];
         this.deviceTokens = data.deviceTokens || [];
         if (data.settings) {
@@ -50,8 +75,10 @@ class DataStore {
         this.activityLogs = data.activityLogs || [];
       } else {
         // Seed default initial records
+        this.sections = [...SEED_SECTIONS];
         this.news = [...SEED_NEWS];
         this.categories = [...SEED_CATEGORIES];
+        this.staticGk = [...SEED_STATIC_GK];
         this.alerts = [...SEED_ALERTS];
         this.deviceTokens = [
           {
@@ -74,8 +101,10 @@ class DataStore {
       }
     } catch (e) {
       console.error("Error reading database.json, initializing from memory:", e.message);
+      this.sections = [...SEED_SECTIONS];
       this.news = [...SEED_NEWS];
       this.categories = [...SEED_CATEGORIES];
+      this.staticGk = [...SEED_STATIC_GK];
       this.alerts = [...SEED_ALERTS];
     }
   }
@@ -83,8 +112,10 @@ class DataStore {
   save() {
     try {
       const data = {
-        news: this.news,
+        sections: this.sections,
         categories: this.categories,
+        news: this.news,
+        staticGk: this.staticGk,
         alerts: this.alerts,
         deviceTokens: this.deviceTokens,
         settings: this.settings,
@@ -195,23 +226,51 @@ class DataStore {
     return true;
   }
 
-  // --- Category Operations ---
-  getCategories() {
-    return this.categories;
+  // --- Section & Category Operations ---
+  getSections() {
+    return this.sections.map(sec => {
+      const cats = this.getCategories(sec.id);
+      let count = 0;
+      if (sec.id === 'jobs') {
+        count = this.news.filter(n => !n.category.toLowerCase().includes('current affairs')).length;
+      } else if (sec.id === 'news') {
+        count = this.news.filter(n => n.category.toLowerCase().includes('current affairs') || n.title.includes('समसामयिकी')).length;
+      } else if (sec.id === 'static_gk') {
+        count = this.staticGk.length;
+      }
+      return {
+        ...sec,
+        categories: cats,
+        itemsCount: count
+      };
+    });
+  }
+
+  getCategories(section = null) {
+    if (!section || section === 'all') {
+      return this.categories;
+    }
+    const secLower = section.toLowerCase();
+    return this.categories.filter(c => (c.section && c.section.toLowerCase() === secLower));
   }
 
   addCategory(category) {
-    const id = category.id || category.name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-    if (this.categories.some(c => c.id === id || c.name.toLowerCase() === category.name.toLowerCase())) {
-      throw new Error("Category already exists");
+    const section = category.section || 'jobs';
+    const rawId = category.id || (category.name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + section);
+    const id = rawId.toLowerCase();
+    
+    if (this.categories.some(c => c.id === id || (c.name.toLowerCase() === category.name.toLowerCase() && c.section === section))) {
+      throw new Error(`Category already exists in section "${section}"`);
     }
+
     const newCat = {
       id,
       name: category.name,
-      hindiName: category.hindiName || category.name
+      hindiName: category.hindiName || category.name,
+      section: section
     };
     this.categories.push(newCat);
-    this.logActivity(`Created new category: "${newCat.name}" (${newCat.hindiName})`);
+    this.logActivity(`Created category: "${newCat.name}" in [${section}]`);
     this.save();
     return newCat;
   }
@@ -220,7 +279,74 @@ class DataStore {
     const index = this.categories.findIndex(c => c.id === id);
     if (index === -1) return false;
     const removed = this.categories.splice(index, 1)[0];
-    this.logActivity(`Deleted category: "${removed.name}"`);
+    this.logActivity(`Deleted category [${id}]: "${removed.name}" (${removed.section || 'general'})`);
+    this.save();
+    return true;
+  }
+
+  // --- Static GK Operations ---
+  getStaticGk(filter = {}) {
+    let result = [...this.staticGk];
+    if (filter.category && filter.category !== 'all' && filter.category !== 'सभी (All)') {
+      const catLower = filter.category.toLowerCase().trim();
+      result = result.filter(gk => 
+        (gk.category && gk.category.toLowerCase().includes(catLower)) ||
+        (catLower.includes(gk.category ? gk.category.toLowerCase() : ''))
+      );
+    }
+    if (filter.query) {
+      const q = filter.query.toLowerCase().trim();
+      result = result.filter(gk =>
+        (gk.title && gk.title.toLowerCase().includes(q)) ||
+        (gk.summary && gk.summary.toLowerCase().includes(q)) ||
+        (gk.category && gk.category.toLowerCase().includes(q)) ||
+        (gk.examTip && gk.examTip.toLowerCase().includes(q)) ||
+        (gk.facts && gk.facts.some(f => f.toLowerCase().includes(q)))
+      );
+    }
+    return result;
+  }
+
+  getStaticGkById(id) {
+    return this.staticGk.find(gk => gk.id === id);
+  }
+
+  addStaticGk(item) {
+    const id = item.id || ("gk_" + Date.now() + "_" + Math.random().toString(36).substring(2, 6));
+    const newGk = {
+      id,
+      title: item.title,
+      category: item.category || "सामान्य ज्ञान",
+      summary: item.summary || "",
+      facts: Array.isArray(item.facts) ? item.facts : (item.facts ? [item.facts] : []),
+      examTip: item.examTip || null,
+      relatedExam: item.relatedExam || "CGPSC व व्यापम",
+      createdAt: new Date().toISOString()
+    };
+    this.staticGk.unshift(newGk);
+    this.logActivity(`Added Static GK capsule: "${newGk.title}"`);
+    this.save();
+    return newGk;
+  }
+
+  updateStaticGk(id, updates) {
+    const index = this.staticGk.findIndex(g => g.id === id);
+    if (index === -1) return null;
+    this.staticGk[index] = {
+      ...this.staticGk[index],
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    this.logActivity(`Updated Static GK capsule [${id}]: "${this.staticGk[index].title}"`);
+    this.save();
+    return this.staticGk[index];
+  }
+
+  deleteStaticGk(id) {
+    const index = this.staticGk.findIndex(g => g.id === id);
+    if (index === -1) return false;
+    const removed = this.staticGk.splice(index, 1)[0];
+    this.logActivity(`Deleted Static GK [${id}]: "${removed.title}"`);
     this.save();
     return true;
   }

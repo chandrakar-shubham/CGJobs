@@ -17,9 +17,12 @@ object ServerConfig {
     private const val KEY_SERVER_URL = "backend_server_url"
     private const val KEY_SERVER_ENABLED = "backend_server_enabled"
 
-    // Default emulator loopback to the running backend
+    // Production live Hostinger server URL
+    const val LIVE_SERVER_URL = "https://darkgoldenrod-camel-860943.hostingersite.com/"
+
+    // Emulator fallback URLs
     const val DEFAULT_EMULATOR_URL = "http://10.0.2.2:5000/"
-    const val DEFAULT_LARAVEL_URL = "http://10.0.2.2:8000/"
+    const val DEFAULT_LARAVEL_URL = "https://darkgoldenrod-camel-860943.hostingersite.com/"
 
     private var appContext: Context? = null
     private var cachedUrl: String? = null
@@ -45,7 +48,7 @@ object ServerConfig {
                 return cachedUrl!!
             }
         }
-        return DEFAULT_EMULATOR_URL
+        return LIVE_SERVER_URL
     }
 
     fun setServerUrl(context: Context, url: String) {

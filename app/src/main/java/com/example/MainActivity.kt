@@ -1,5 +1,7 @@
 package com.example
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -19,10 +21,43 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         com.example.data.api.ServerConfig.init(applicationContext)
         enableEdgeToEdge()
+
+        handleDeepLink(intent)
+
         setContent {
             val userProfile by viewModel.userProfile.collectAsState()
             CGJobsTheme(darkTheme = userProfile.isDarkMode) {
                 CGJobsApp(viewModel = viewModel)
+            }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleDeepLink(intent)
+    }
+
+    private fun handleDeepLink(intent: Intent?) {
+        val data: Uri? = intent?.data
+        if (data != null) {
+            // Examples: cgjobs://post/job-101 or https://cgjobs.app/post/job-101
+            val pathSegments = data.pathSegments
+            val postId = when {
+                data.scheme == "cgjobs" && data.host == "post" -> {
+                    pathSegments.firstOrNull() ?: data.lastPathSegment
+                }
+                data.scheme == "cgjobs" && data.host == "article" -> {
+                    pathSegments.firstOrNull() ?: data.lastPathSegment
+                }
+                data.host == "cgjobs.app" && pathSegments.isNotEmpty() -> {
+                    pathSegments.lastOrNull()
+                }
+                else -> data.lastPathSegment
+            }
+
+            if (!postId.isNullOrBlank()) {
+                viewModel.openArticleById(postId)
             }
         }
     }

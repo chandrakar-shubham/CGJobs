@@ -67,6 +67,7 @@ fun AppDrawerContent(
     onCloseDrawer: () -> Unit,
     modifier: Modifier = Modifier,
     onNavigateCurrentAffairs: (() -> Unit)? = null,
+    onNavigateStaticGk: (() -> Unit)? = null,
     onOpenServerSettings: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
@@ -149,9 +150,13 @@ fun AppDrawerContent(
 
             DrawerMenuItem(
                 icon = Icons.Outlined.MenuBook,
-                label = "Study Material",
+                label = "Static GK (सामान्य ज्ञान)",
                 onClick = {
-                    onCategorySelected("Syllabus")
+                    if (onNavigateStaticGk != null) {
+                        onNavigateStaticGk()
+                    } else {
+                        onCategorySelected("Syllabus")
+                    }
                     onCloseDrawer()
                 }
             )

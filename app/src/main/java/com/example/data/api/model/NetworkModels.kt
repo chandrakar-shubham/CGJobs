@@ -2,8 +2,11 @@ package com.example.data.api.model
 
 import com.example.model.AlertItem
 import com.example.model.AlertType
+import com.example.model.AppCategory
+import com.example.model.AppSection
 import com.example.model.ImportantDates
 import com.example.model.JobUpdate
+import com.example.model.StaticGkCard
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
@@ -64,13 +67,51 @@ data class SingleNewsResponse(
 data class CategoryDto(
     val id: String,
     val name: String,
-    val hindiName: String? = null
+    val hindiName: String? = null,
+    val section: String? = "jobs"
 )
 
 @JsonClass(generateAdapter = true)
 data class CategoriesApiResponse(
     val success: Boolean,
+    val section: String? = null,
     val categories: List<CategoryDto>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class SectionDto(
+    val id: String,
+    val name: String,
+    val hindiName: String? = null,
+    val description: String? = null,
+    val icon: String? = null,
+    val categories: List<CategoryDto>? = null,
+    val itemCount: Int? = 0
+)
+
+@JsonClass(generateAdapter = true)
+data class SectionsApiResponse(
+    val success: Boolean,
+    val sections: List<SectionDto>? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StaticGkDto(
+    val id: String,
+    val title: String,
+    val category: String,
+    val summary: String,
+    val facts: List<String>? = null,
+    val examTip: String? = null,
+    val relatedExam: String? = null,
+    val imageUrl: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class StaticGkApiResponse(
+    val success: Boolean,
+    val count: Int? = null,
+    val items: List<StaticGkDto>? = null
 )
 
 @JsonClass(generateAdapter = true)
@@ -97,6 +138,42 @@ data class RegisterTokenRequest(
     val deviceModel: String? = null,
     val platform: String? = null
 )
+
+// Extension mappers to map DTOs to Domain models
+fun CategoryDto.toDomain(): AppCategory {
+    return AppCategory(
+        id = id,
+        name = name,
+        hindiName = hindiName,
+        section = section ?: "jobs"
+    )
+}
+
+fun SectionDto.toDomain(): AppSection {
+    return AppSection(
+        id = id,
+        name = name,
+        hindiName = hindiName,
+        description = description,
+        icon = icon,
+        categories = categories?.map { it.toDomain() } ?: emptyList(),
+        itemCount = itemCount ?: 0
+    )
+}
+
+fun StaticGkDto.toDomain(): StaticGkCard {
+    return StaticGkCard(
+        id = id,
+        title = title,
+        category = category,
+        summary = summary,
+        facts = facts ?: emptyList(),
+        examTip = examTip ?: "CGPSC व व्यापम परीक्षाओं हेतु महत्वपूर्ण",
+        relatedExam = relatedExam ?: "CGPSC, व्यापम",
+        imageUrl = imageUrl,
+        isSaved = false
+    )
+}
 
 // Extension mappers to map DTOs to Domain models
 fun NewsDto.toDomain(): JobUpdate {

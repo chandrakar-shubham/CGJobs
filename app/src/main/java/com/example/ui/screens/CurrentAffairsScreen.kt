@@ -69,9 +69,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.model.AppCategory
 import com.example.model.JobUpdate
+import com.example.ui.components.InshortsSwipeableCard
 import com.example.ui.components.getCategoryTheme
 import com.example.ui.components.shareJobUpdate
+import com.example.ui.components.toInshortsPostItem
 import com.example.ui.theme.BorderLight
 import com.example.ui.theme.BrandGold
 import com.example.ui.theme.BrandGoldLight
@@ -88,10 +91,12 @@ import kotlinx.coroutines.launch
 
 val CURRENT_AFFAIRS_FILTERS = listOf(
     "सभी (All)",
-    "छत्तीसगढ़ विशेष",
-    "योजनाएं",
-    "आर्थिकी व रोजगार",
-    "खेल व पुरस्कार"
+    "राष्ट्रीय (National)",
+    "अंतर्राष्ट्रीय (International)",
+    "छत्तीसगढ़ (State)",
+    "अर्थव्यवस्था (Economy)",
+    "खेलकूद (Sports)",
+    "सरकारी योजनाएं"
 )
 
 @Composable
@@ -99,7 +104,8 @@ fun CurrentAffairsScreen(
     newsList: List<JobUpdate>,
     onArticleClick: (JobUpdate) -> Unit,
     onToggleSave: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    newsCategories: List<AppCategory> = emptyList()
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -118,20 +124,35 @@ fun CurrentAffairsScreen(
             newsList
         }
 
-        when (selectedFilter) {
-            "छत्तीसगढ़ विशेष" -> baseList.filter {
-                it.title.contains("छत्तीसगढ़") || it.title.contains("बस्तर") || it.title.contains("रायपुर") || it.title.contains("टाइगर")
+        val cleanFilter = selectedFilter.trim()
+        when {
+            cleanFilter == "सभी (All)" || cleanFilter == "सभी" || cleanFilter.equals("All", ignoreCase = true) || cleanFilter.equals("all_news", ignoreCase = true) || cleanFilter.startsWith("सभी") || cleanFilter.startsWith("All") -> baseList
+            cleanFilter.contains("राष्ट्रीय") || cleanFilter.contains("National") -> baseList.filter {
+                it.title.contains("भारत") || it.title.contains("राष्ट्रीय") || it.title.contains("केंद्र") || it.title.contains("देश") || it.summary.contains("भारत") || it.summary.contains("राष्ट्रीय")
+            }.ifEmpty { baseList.filter { !it.title.contains("अंतर्राष्ट्रीय") } }
+            cleanFilter.contains("अंतर्राष्ट्रीय") || cleanFilter.contains("International") -> baseList.filter {
+                it.title.contains("विश्व") || it.title.contains("अंतर्राष्ट्रीय") || it.title.contains("ग्लोबल") || it.title.contains("विदेशी") || it.summary.contains("अंतर्राष्ट्रीय") || it.summary.contains("विश्व")
             }
-            "योजनाएं" -> baseList.filter {
+            cleanFilter.contains("छत्तीसगढ़") || cleanFilter.contains("State") -> baseList.filter {
+                it.title.contains("छत्तीसगढ़") || it.title.contains("बस्तर") || it.title.contains("रायपुर") || it.title.contains("टाइगर") || it.title.contains("राज्य")
+            }
+            cleanFilter.contains("अर्थव्यवस्था") || cleanFilter.contains("Economy") || cleanFilter.contains("बजट") -> baseList.filter {
+                it.title.contains("बजट") || it.title.contains("रोजगार") || it.title.contains("अर्थ") || it.title.contains("तेंदूपत्ता") || it.title.contains("धान") || it.title.contains("आईटी") || it.summary.contains("बजट") || it.summary.contains("करोड़")
+            }
+            cleanFilter.contains("खेलकूद") || cleanFilter.contains("Sports") -> baseList.filter {
+                it.title.contains("खेल") || it.title.contains("पुरस्कार") || it.title.contains("पद्म") || it.title.contains("ओलंपिक") || it.title.contains("पदक") || it.title.contains("क्रिकेट") || it.summary.contains("खेल")
+            }
+            cleanFilter.contains("योजना") || cleanFilter.contains("Schemes") -> baseList.filter {
                 it.title.contains("योजना") || it.summary.contains("योजना") || it.detailedContent.contains("योजना")
             }
-            "आर्थिकी व रोजगार" -> baseList.filter {
-                it.title.contains("बजट") || it.title.contains("रोजगार") || it.title.contains("तेंदूपत्ता") || it.title.contains("धान") || it.title.contains("आईटी")
+            cleanFilter.contains("पर्यावरण") || cleanFilter.contains("Environment") || cleanFilter.contains("वन") -> baseList.filter {
+                it.title.contains("पर्यावरण") || it.title.contains("वन") || it.title.contains("टाइगर") || it.summary.contains("वन")
             }
-            "खेल व पुरस्कार" -> baseList.filter {
-                it.title.contains("खेल") || it.title.contains("पुरस्कार") || it.title.contains("पद्म") || it.title.contains("ओलंपिक") || it.title.contains("पदक")
-            }
-            else -> baseList
+            else -> baseList.filter {
+                it.category.contains(cleanFilter, ignoreCase = true) ||
+                it.title.contains(cleanFilter, ignoreCase = true) ||
+                it.summary.contains(cleanFilter, ignoreCase = true)
+            }.ifEmpty { baseList }
         }
     }
 
@@ -217,31 +238,72 @@ fun CurrentAffairsScreen(
                 contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(CURRENT_AFFAIRS_FILTERS) { filter ->
-                    val isSelected = filter == selectedFilter
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(if (isSelected) BrandGreen else Slate50)
-                            .border(
-                                width = 1.dp,
-                                color = if (isSelected) BrandGreen else BorderLight,
-                                shape = RoundedCornerShape(16.dp)
-                            )
-                            .clickable {
-                                selectedFilter = filter
-                                coroutineScope.launch {
-                                    pagerState.scrollToPage(0)
+                if (newsCategories.isNotEmpty()) {
+                    items(newsCategories, key = { it.id }) { cat ->
+                        val isSelected = selectedFilter.equals(cat.name, ignoreCase = true) ||
+                                selectedFilter.equals(cat.id, ignoreCase = true) ||
+                                (cat.hindiName?.equals(selectedFilter, ignoreCase = true) == true) ||
+                                (cat.id == "all_news" && (selectedFilter.contains("All") || selectedFilter.contains("सभी")))
+
+                        val label = when {
+                            !cat.hindiName.isNullOrBlank() && cat.name.contains("All") -> "सभी (All)"
+                            !cat.hindiName.isNullOrBlank() -> "${cat.hindiName} (${cat.name})"
+                            else -> cat.name
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (isSelected) BrandGreen else Slate50)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isSelected) BrandGreen else BorderLight,
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .clickable {
+                                    selectedFilter = cat.name
+                                    coroutineScope.launch {
+                                        pagerState.scrollToPage(0)
+                                    }
                                 }
-                            }
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = filter,
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) Color.White else TextPrimary
-                        )
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                                .testTag("current_affairs_chip_${cat.id}")
+                        ) {
+                            Text(
+                                text = label,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else TextPrimary
+                            )
+                        }
+                    }
+                } else {
+                    items(CURRENT_AFFAIRS_FILTERS) { filter ->
+                        val isSelected = filter == selectedFilter
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(if (isSelected) BrandGreen else Slate50)
+                                .border(
+                                    width = 1.dp,
+                                    color = if (isSelected) BrandGreen else BorderLight,
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                                .clickable {
+                                    selectedFilter = filter
+                                    coroutineScope.launch {
+                                        pagerState.scrollToPage(0)
+                                    }
+                                }
+                                .padding(horizontal = 12.dp, vertical = 6.dp)
+                        ) {
+                            Text(
+                                text = filter,
+                                fontSize = 12.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else TextPrimary
+                            )
+                        }
                     }
                 }
             }
@@ -271,17 +333,13 @@ fun CurrentAffairsScreen(
                         .testTag("current_affairs_pager")
                 ) { page ->
                     val currentNews = displayList[page]
-                    InshortNewsCard(
-                        news = currentNews,
+                    InshortsSwipeableCard(
+                        item = currentNews.toInshortsPostItem(isJob = false),
                         pageIndex = page,
                         totalPages = displayList.size,
                         onArticleClick = { onArticleClick(currentNews) },
                         onToggleSave = { onToggleSave(currentNews.id) },
-                        onShare = { shareJobUpdate(context, currentNews) },
-                        onOpenSourceUrl = { url ->
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-                            context.startActivity(intent)
-                        },
+                        onDeepLinkClick = { onArticleClick(currentNews) },
                         modifier = Modifier.fillMaxSize()
                     )
                 }

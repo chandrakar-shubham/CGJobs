@@ -60,12 +60,23 @@ app.get('/api/health', (req, res) => {
 
 // Fetch all news with optional filtering
 app.get('/api/news', (req, res) => {
-  const { category, query, limit = 50 } = req.query;
-  const list = store.getNews({ category, query });
+  const { category, query, section, limit = 50 } = req.query;
+  const list = store.getNews({ category, query, section });
   res.json({
     success: true,
     count: list.length,
     news: list.slice(0, parseInt(limit, 10))
+  });
+});
+
+// Fetch jobs feed
+app.get('/api/jobs', (req, res) => {
+  const { category, query, limit = 50 } = req.query;
+  const list = store.getNews({ category, query, section: 'jobs' });
+  res.json({
+    success: true,
+    count: list.length,
+    jobs: list.slice(0, parseInt(limit, 10))
   });
 });
 
@@ -78,12 +89,42 @@ app.get('/api/news/:id', (req, res) => {
   res.json({ success: true, item });
 });
 
-// Fetch all categories
-app.get('/api/categories', (req, res) => {
+// Fetch all sections with their metadata and respective synced categories
+app.get('/api/sections', (req, res) => {
   res.json({
     success: true,
-    categories: store.getCategories()
+    sections: store.getSections()
   });
+});
+
+// Fetch categories with optional section filtering (?section=jobs|news|static_gk)
+app.get('/api/categories', (req, res) => {
+  const { section } = req.query;
+  res.json({
+    success: true,
+    section: section || "all",
+    categories: store.getCategories(section)
+  });
+});
+
+// Fetch static GK capsules
+app.get('/api/static-gk', (req, res) => {
+  const { category, query, limit = 100 } = req.query;
+  const items = store.getStaticGk({ category, query });
+  res.json({
+    success: true,
+    count: items.length,
+    items: items.slice(0, parseInt(limit, 10))
+  });
+});
+
+// Fetch single static GK capsule
+app.get('/api/static-gk/:id', (req, res) => {
+  const item = store.getStaticGkById(req.params.id);
+  if (!item) {
+    return res.status(404).json({ error: "Static GK card not found" });
+  }
+  res.json({ success: true, item });
 });
 
 // Fetch alerts / notifications feed
@@ -240,14 +281,14 @@ app.delete('/api/news/:id', adminAuthMiddleware, (req, res) => {
 });
 
 // ==========================================
-// 4. CATEGORY MANAGEMENT
+// 4. CATEGORY & SECTION MANAGEMENT
 // ==========================================
 
 app.post('/api/categories', adminAuthMiddleware, (req, res) => {
   try {
-    const { name, hindiName } = req.body;
+    const { name, hindiName, section } = req.body;
     if (!name) return res.status(400).json({ error: "Category name is required" });
-    const cat = store.addCategory({ name, hindiName });
+    const cat = store.addCategory({ name, hindiName, section });
     res.json({ success: true, category: cat });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -257,6 +298,35 @@ app.post('/api/categories', adminAuthMiddleware, (req, res) => {
 app.delete('/api/categories/:id', adminAuthMiddleware, (req, res) => {
   const ok = store.deleteCategory(req.params.id);
   if (!ok) return res.status(404).json({ error: "Category not found" });
+  res.json({ success: true });
+});
+
+// ==========================================
+// 4.1 STATIC GK MANAGEMENT
+// ==========================================
+
+app.post('/api/static-gk', adminAuthMiddleware, (req, res) => {
+  try {
+    const { title, summary } = req.body;
+    if (!title || !summary) {
+      return res.status(400).json({ error: "Title and summary are required" });
+    }
+    const item = store.addStaticGk(req.body);
+    res.json({ success: true, item });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/static-gk/:id', adminAuthMiddleware, (req, res) => {
+  const updated = store.updateStaticGk(req.params.id, req.body);
+  if (!updated) return res.status(404).json({ error: "Item not found" });
+  res.json({ success: true, item: updated });
+});
+
+app.delete('/api/static-gk/:id', adminAuthMiddleware, (req, res) => {
+  const ok = store.deleteStaticGk(req.params.id);
+  if (!ok) return res.status(404).json({ error: "Item not found" });
   res.json({ success: true });
 });
 
