@@ -42,6 +42,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::put('/job-sources/{jobSource}', [JobSourceController::class, 'update'])->name('job-sources.update');
     Route::delete('/job-sources/{jobSource}', [JobSourceController::class, 'destroy'])->name('job-sources.destroy');
     Route::post('/job-sources/{jobSource}/sync', [JobSourceController::class, 'sync'])->name('job-sources.sync');
+    Route::post('/job-sources/{jobSource}/refresh-pending', [JobSourceController::class, 'refreshPending'])->name('job-sources.refresh-pending');
 
     Route::get('/job-imports/{jobImport}/edit', [JobSourceController::class, 'editImport'])->name('job-imports.edit');
     Route::put('/job-imports/{jobImport}', [JobSourceController::class, 'updateImport'])->name('job-imports.update');
@@ -54,7 +55,6 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::resource('sections', SectionController::class);
     Route::resource('alerts', AlertController::class);
 
-    // Settings are a singleton page, not a CRUD resource.
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
 
