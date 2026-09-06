@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AlertController;
 use App\Http\Controllers\Admin\AuthController;
+use App\Http\Controllers\Admin\CacheController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\JobController;
@@ -48,4 +49,5 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::delete('/alerts/{alert}', [AlertController::class, 'destroy'])->name('alerts.destroy');
     Route::get('/sync', [NewsSyncController::class, 'index'])->name('sync.index');
     Route::post('/sync', [NewsSyncController::class, 'sync'])->name('sync.run');
+    Route::post('/cache/clear', [CacheController::class, 'clear'])->name('cache.clear');
 });
