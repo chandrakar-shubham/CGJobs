@@ -12,7 +12,7 @@ class Job extends Model
     public const MAIN_CATEGORIES = ['CGSSB', 'CGPSC', 'Central Govt', 'Contractual'];
 
     protected $fillable = [
-        'custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','job_category','department','section','post_type','source','source_url','image_url','poster_path','published_at','relative_time','relative_time_en','translation_status','translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility','eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url','apply_url','application_start','last_date','exam_date','admit_card_date','result_date',
+        'custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','job_category','department','published_by','section','post_type','source','source_url','image_url','poster_path','published_at','relative_time','relative_time_en','translation_status','translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility','eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url','apply_url','application_start','last_date','exam_date','admit_card_date','result_date',
     ];
 
     protected $casts = ['is_breaking' => 'boolean', 'is_new' => 'boolean', 'translated_at' => 'datetime'];
@@ -42,8 +42,8 @@ class Job extends Model
             'mainJobCategories' => self::MAIN_CATEGORIES,
             'section' => $this->section ?: 'jobs',
             'postType' => $this->post_type ?: 'job',
-            'source' => $this->source ?: 'cgstate.gov.in',
-            'sourceUrl' => $this->source_url ?: 'https://cgstate.gov.in',
+            'source' => $this->published_by ?: $this->job_category ?: 'CGJobs',
+            'sourceUrl' => null,
             'webUrl' => url('/jobs/'.($this->custom_id ?: $this->id)),
             'imageUrl' => $posterUrl,
             'posterUrl' => $posterUrl,
