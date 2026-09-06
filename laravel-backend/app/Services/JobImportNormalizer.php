@@ -7,47 +7,205 @@ use Illuminate\Support\Facades\Http;
 
 class JobImportNormalizer
 {
+    private const MAIN_CATEGORIES = ['CGSSB', 'CGPSC', 'Central Govt', 'Contractual'];
+
+    private const DEPARTMENTS = [
+        'Education' => ['education','teacher','shikshak','school','vyakhyata','lecturer','professor','samagra shiksha','sages'],
+        'Police' => ['police','constable','sub inspector','si ','home guard','nagar sena'],
+        'Revenue' => ['revenue','rajasva','patwari','tehsildar','naib tehsildar'],
+        'PHE' => ['phe','public health engineering','water supply','jal sansadhan'],
+        'PWD' => ['pwd','public works','sub engineer','civil engineer','works department'],
+        'Health' => ['health','doctor','nurse','nhm','hospital','medical','pharmacist','lab assistant','lab technician','dme','ayurved'],
+        'Women & Child Development' => ['women','child development','anganwadi','wcd','supervisor'],
+        'Forest' => ['forest','van vibhag','wildlife','ranger','forest guard'],
+        'Agriculture' => ['agriculture','krishi','agricultural','horticulture'],
+        'Panchayat' => ['panchayat','rural development','gram panchayat'],
+        'Transport' => ['transport','motor vehicle','rto','parivahan'],
+    ];
+
     public function normalize(JobImport $import): JobImport
     {
         if (!$import->external_url) return $import;
+
         try {
-            $html = Http::timeout(20)->retry(2, 500)->withHeaders(['User-Agent'=>'Mozilla/5.0 (compatible; CGJobsBot/1.0)','Accept'=>'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'])->get($import->external_url)->throw()->body();
-            [$title, $publisher] = $this->extractTitleAndPublisher($html);
+            $html = Http::timeout(20)->retry(2, 500)->withHeaders([
+                'User-Agent' => 'Mozilla/5.0 (compatible; CGJobsBot/1.0)',
+                'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            ])->get($import->external_url)->throw()->body();
+
+            [$title, $publisher, $pageText] = $this->extractTitleAndPublisher($html);
             $content = $this->removeSourceBranding($import->content ?: $import->summary ?: '');
             $summary = $this->removeSourceBranding($import->summary ?: $content);
-            $updates=[];
-            if($title)$updates['title']=$title;
-            if($summary)$updates['summary']=$summary;
-            if($content)$updates['content']=$content;
-            $updates['published_by']=$import->job_category ?: 'CGSSB';
-            if($updates)$import->update($updates);
-            if($import->status==='published'&&$import->job){
-                $job=$import->job;
+            $combined = mb_strtolower(($title ?: $import->title).' '.$content.' '.$summary.' '.$pageText);
+
+            // Explicit recruitment signals always win. The source default is
+            // intentionally ignored here so a JobsKind default of CGSSB cannot
+            // incorrectly classify CGPSC/Central Govt/Contractual posts.
+            $jobCategory = $this->detectMainCategory($combined, $import->job_category ?: null);
+            $department = $this->detectDepartment($combined, $import->department ?: $import->category);
+
+            $updates = [
+                'job_category' => $jobCategory,
+                'department' => $department,
+                'category' => $department,
+                'published_by' => $jobCategory,
+            ];
+
+            if ($title) $updates['title'] = $title;
+            if ($summary) $updates['summary'] = $summary;
+            if ($content) $updates['content'] = $content;
+
+            $import->update($updates);
+
+            if ($import->status === 'published' && $import->job) {
+                $job = $import->job;
                 $job->update([
-                    'title'=>$updates['title']??$job->title,'title_en'=>$updates['title']??$job->title_en,
-                    'summary'=>$updates['summary']??$job->summary,'summary_en'=>$updates['summary']??$job->summary_en,
-                    'detailed_content'=>$updates['content']??$job->detailed_content,'detailed_content_en'=>$updates['content']??$job->detailed_content_en,
-                    'published_by'=>$updates['published_by']??($job->published_by?:$job->job_category),'source'=>'CGJobs',
+                    'title' => $updates['title'] ?? $job->title,
+                    'title_en' => $updates['title'] ?? $job->title_en,
+                    'summary' => $updates['summary'] ?? $job->summary,
+                    'summary_en' => $updates['summary'] ?? $job->summary_en,
+                    'detailed_content' => $updates['content'] ?? $job->detailed_content,
+                    'detailed_content_en' => $updates['content'] ?? $job->detailed_content_en,
+                    'category' => $department,
+                    'category_en' => $department,
+                    'job_category' => $jobCategory,
+                    'department' => $department,
+                    'published_by' => $jobCategory,
+                    // The scraper is an internal acquisition mechanism, not
+                    // the public publisher/source shown to users.
+                    'source' => 'CGJobs',
+                    // Never expose the source website URL through the public job.
+                    'source_url' => null,
                 ]);
             }
-        } catch(\Throwable $e){report($e);}
-        return $import->fresh(['job','source']);
+        } catch (\Throwable $e) {
+            report($e);
+        }
+
+        return $import->fresh(['job', 'source']);
     }
 
     private function extractTitleAndPublisher(string $html): array
     {
-        $dom=new \DOMDocument();libxml_use_internal_errors(true);@$dom->loadHTML('<?xml encoding="UTF-8">'.$html,LIBXML_NOWARNING|LIBXML_NOERROR);libxml_clear_errors();$xpath=new \DOMXPath($dom);$titleCandidates=[];
-        foreach($xpath->query('//article//h1 | //main//h1 | //h1') as $node)$titleCandidates[]=$this->clean($node->textContent);
-        foreach($xpath->query('//script[@type="application/ld+json"]') as $script){$json=json_decode($script->textContent,true);$this->collectJsonLdHeadlines($json,$titleCandidates);}
-        foreach($xpath->query('//meta[@property="og:title"] | //meta[@name="twitter:title"] | //title') as $node)$titleCandidates[]=$this->clean($node->getAttribute('content')?:$node->textContent);
-        $title=null;foreach($titleCandidates as $candidate){$candidate=$this->cleanTitle($candidate);if($this->isUsefulTitle($candidate)){$title=$candidate;break;}}
-        $body=$this->clean($dom->textContent);$publisher=null;
-        if(preg_match('/(?:विभाग\s*का\s*नाम|department\s*name)\s*[:\-]+\s*(.*?)\s*(?:रिक्रूटमेंट\s*बोर्ड|recruitment\s*board|employment\s*type|वेतनमान|official\s*website|आधिकारिक\s*वेबसाइट)/iu',$body,$m))$publisher=$this->clean($m[1]);
-        return[$title,$publisher];
+        $dom = new \DOMDocument();
+        libxml_use_internal_errors(true);
+        @$dom->loadHTML('<?xml encoding="UTF-8">'.$html, LIBXML_NOWARNING | LIBXML_NOERROR);
+        libxml_clear_errors();
+
+        $xpath = new \DOMXPath($dom);
+        $titleCandidates = [];
+
+        // H1 is the strongest signal: it is the article's visible recruitment
+        // title. Never let the site's og:title/HTML title override it.
+        foreach ($xpath->query('//article//h1 | //main//h1 | //h1') as $node) {
+            $titleCandidates[] = $this->cleanTitle($node->textContent);
+        }
+
+        foreach ($xpath->query('//script[@type="application/ld+json"]') as $script) {
+            $json = json_decode($script->textContent, true);
+            $this->collectJsonLdHeadlines($json, $titleCandidates);
+        }
+
+        foreach ($xpath->query('//meta[@property="og:title"] | //meta[@name="twitter:title"] | //title') as $node) {
+            $titleCandidates[] = $this->cleanTitle($node->getAttribute('content') ?: $node->textContent);
+        }
+
+        $title = null;
+        foreach ($titleCandidates as $candidate) {
+            if ($this->isUsefulTitle($candidate)) {
+                $title = $candidate;
+                break;
+            }
+        }
+
+        $body = $this->clean($dom->textContent);
+        $publisher = null;
+        if (preg_match('/(?:विभाग\s*का\s*नाम|department\s*name)\s*[:\-]+\s*(.*?)\s*(?:रिक्रूटमेंट\s*बोर्ड|recruitment\s*board|employment\s*type|वेतनमान|official\s*website|आधिकारिक\s*वेबसाइट)/iu', $body, $m)) {
+            $publisher = $this->clean($m[1]);
+        }
+
+        return [$title, $publisher, $body];
     }
-    private function collectJsonLdHeadlines($value,array &$out):void{if(!is_array($value))return;if(!empty($value['headline'])&&is_string($value['headline']))$out[]=$this->clean($value['headline']);foreach($value as $child)$this->collectJsonLdHeadlines($child,$out);}
-    private function cleanTitle(?string $title):?string{$title=$this->clean((string)$title);if($title==='')return null;$title=preg_replace('/^Jobskind(?:\.com)?\s*[:\-|]\s*/iu','',$title);$title=preg_replace('/\s*[\-|:]\s*Jobskind(?:\.com)?\s*$/iu','',$title);return trim($title);}
-    private function isUsefulTitle(?string $title):bool{if(!$title||mb_strlen($title)<12)return false;if(preg_match('/^(jobskind(?:\.com)?|jobs?kind\.com|jobs?kind)$/iu',trim($title)))return false;if(preg_match('/^(home|latest jobs|jobs|recruitment|employment news)$/iu',trim($title)))return false;return(bool)preg_match('/(recruit|bharti|भर्ती|vacancy|पद|notification|नोटिफिकेशन|assistant|teacher|officer|staff|constable|admit|result|internship)/iu',$title);}
-    private function removeSourceBranding(string $text):string{$text=preg_replace('/[^.!?\n]*(?:jobskind(?:\.com)?|jobs\s*kind(?:\.com)?)[^.!?\n]*[.!?]?/iu',' ',$text);$text=preg_replace('/©\s*\d{4}[^\n]*/u',' ',$text);$text=preg_replace('/\s{2,}/u',' ',$text);return trim($text);}
-    private function clean(string $text):string{$text=html_entity_decode(strip_tags($text),ENT_QUOTES|ENT_HTML5,'UTF-8');return trim(preg_replace('/\s+/u',' ',$text));}
+
+    private function detectMainCategory(string $text, ?string $existing = null): string
+    {
+        $text = mb_strtolower($text);
+
+        // Order matters: explicit signals are authoritative.
+        if (preg_match('/\b(cgpsc|chhattisgarh public service commission|public service commission)\b/iu', $text)) {
+            return 'CGPSC';
+        }
+
+        if (preg_match('/\b(cgssb|staff selection board|vyapam|vyavsayik pariksha|chhattisgarh professional examination|cg vyapam)\b/iu', $text)) {
+            return 'CGSSB';
+        }
+
+        if (preg_match('/\b(contractual|contract|samvida|samvida bharti|anubandh|outsourcing|walk[- ]?in)\b/iu', $text)
+            || preg_match('/संविदा|संविदाकर्मी|अनुबंध|आउटसोर्स/u', $text)) {
+            return 'Contractual';
+        }
+
+        if (preg_match('/\b(central government|central govt|ssc|railway|rrb|upsc|ibps|sbi|banking|defence|army|navy|air force|cisf|crpf|bsf|post office|india post)\b/iu', $text)) {
+            return 'Central Govt';
+        }
+
+        // Existing value is used only when it is one of the four valid
+        // categories and no explicit signal was found.
+        if (in_array(trim((string)$existing), self::MAIN_CATEGORIES, true)) {
+            return trim((string)$existing);
+        }
+
+        return 'CGSSB';
+    }
+
+    private function detectDepartment(string $text, ?string $hint = null): string
+    {
+        $haystack = mb_strtolower($text.' '.(string)$hint);
+        foreach (self::DEPARTMENTS as $department => $keywords) {
+            foreach ($keywords as $keyword) {
+                if ($keyword !== '' && str_contains($haystack, mb_strtolower($keyword))) return $department;
+            }
+        }
+        return 'Other Departments';
+    }
+
+    private function collectJsonLdHeadlines($value, array &$out): void
+    {
+        if (!is_array($value)) return;
+        if (!empty($value['headline']) && is_string($value['headline'])) $out[] = $this->cleanTitle($value['headline']);
+        foreach ($value as $child) $this->collectJsonLdHeadlines($child, $out);
+    }
+
+    private function cleanTitle(?string $title): ?string
+    {
+        $title = $this->clean((string)$title);
+        if ($title === '') return null;
+        $title = preg_replace('/^Jobskind(?:\.com)?\s*[:\-|]\s*/iu', '', $title);
+        $title = preg_replace('/\s*[\-|:]\s*Jobskind(?:\.com)?\s*$/iu', '', $title);
+        $title = preg_replace('/\s*[\-|:]\s*(?:Employment News|Latest Jobs|Job Updates)\s*$/iu', '', $title);
+        return trim($title);
+    }
+
+    private function isUsefulTitle(?string $title): bool
+    {
+        if (!$title || mb_strlen($title) < 12) return false;
+        if (preg_match('/^(jobskind(?:\.com)?|jobs?kind\.com|jobs?kind)$/iu', trim($title))) return false;
+        if (preg_match('/^(home|latest jobs|jobs|recruitment|employment news)$/iu', trim($title))) return false;
+        return (bool)preg_match('/(recruit|bharti|भर्ती|vacancy|पद|notification|नोटिफिकेशन|assistant|teacher|officer|staff|constable|admit|result|internship)/iu', $title);
+    }
+
+    private function removeSourceBranding(string $text): string
+    {
+        $text = preg_replace('/[^.!?\n]*(?:jobskind(?:\.com)?|jobs\s*kind(?:\.com)?)[^.!?\n]*[.!?]?/iu', ' ', $text);
+        $text = preg_replace('/©\s*\d{4}[^\n]*/u', ' ', $text);
+        $text = preg_replace('/(?:source|स्रोत)\s*[:\-]?\s*https?:\/\/[^\s]+/iu', ' ', $text);
+        $text = preg_replace('/\s{2,}/u', ' ', $text);
+        return trim($text);
+    }
+
+    private function clean(string $text): string
+    {
+        $text = html_entity_decode(strip_tags($text), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        return trim(preg_replace('/\s+/u', ' ', $text) ?? $text);
+    }
 }
