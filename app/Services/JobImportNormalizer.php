@@ -10,16 +10,16 @@ class JobImportNormalizer
     private const MAIN_CATEGORIES = ['CGSSB', 'CGPSC', 'Central Govt', 'Contractual'];
 
     private const DEPARTMENTS = [
-        'Education' => ['education','teacher','shikshak','school','vyakhyata','lecturer','professor','samagra shiksha','sages'],
+        'Education' => ['education','teacher','shikshak','school','vyakhyata','lecturer','professor','samagra shiksha','sages','iti'],
         'Police' => ['police','constable','sub inspector','si ','home guard','nagar sena'],
         'Revenue' => ['revenue','rajasva','patwari','tehsildar','naib tehsildar'],
         'PHE' => ['phe','public health engineering','water supply','jal sansadhan'],
         'PWD' => ['pwd','public works','sub engineer','civil engineer','works department'],
-        'Health' => ['health','doctor','nurse','nhm','hospital','medical','pharmacist','lab assistant','lab technician','dme','ayurved'],
-        'Women & Child Development' => ['women','child development','anganwadi','wcd','supervisor'],
+        'Health' => ['health','doctor','nurse','nhm','hospital','medical','pharmacist','lab assistant','lab technician','dme','ayurved','cmho'],
+        'Women & Child Development' => ['women','child development','anganwadi','wcd'],
         'Forest' => ['forest','van vibhag','wildlife','ranger','forest guard'],
-        'Agriculture' => ['agriculture','krishi','agricultural','horticulture'],
-        'Panchayat' => ['panchayat','rural development','gram panchayat'],
+        'Agriculture' => ['agriculture','krishi','agricultural','horticulture','animal husbandry','ahd'],
+        'Panchayat' => ['panchayat','rural development','gram panchayat','zila panchayat'],
         'Transport' => ['transport','motor vehicle','rto','parivahan'],
     ];
 
@@ -36,13 +36,14 @@ class JobImportNormalizer
             [$title, $publisher, $pageText] = $this->extractTitleAndPublisher($html);
             $content = $this->removeSourceBranding($import->content ?: $import->summary ?: '');
             $summary = $this->removeSourceBranding($import->summary ?: $content);
-            $combined = mb_strtolower(($title ?: $import->title).' '.$content.' '.$summary.' '.$pageText);
-
-            // Explicit recruitment signals always win. The source default is
-            // intentionally ignored here so a JobsKind default of CGSSB cannot
-            // incorrectly classify CGPSC/Central Govt/Contractual posts.
-            $jobCategory = $this->detectMainCategory($combined, $import->job_category ?: null);
-            $department = $this->detectDepartment($combined, $import->department ?: $import->category);
+            $jobCategory = $this->detectMainCategory(
+                $title ?: $import->title,
+                $import->external_url,
+                $publisher,
+                $content.' '.$summary.' '.$pageText,
+                $import->job_category ?: null
+            );
+            $department = $this->detectDepartment(($title ?: $import->title).' '.$content.' '.$summary.' '.$pageText, $import->department ?: $import->category);
 
             $updates = [
                 'job_category' => $jobCategory,
@@ -71,16 +72,41 @@ class JobImportNormalizer
                     'job_category' => $jobCategory,
                     'department' => $department,
                     'published_by' => $jobCategory,
-                    // The scraper is an internal acquisition mechanism, not
-                    // the public publisher/source shown to users.
                     'source' => 'CGJobs',
-                    // Never expose the source website URL through the public job.
                     'source_url' => null,
                 ]);
             }
         } catch (\Throwable $e) {
             report($e);
         }
+
+        return $import->fresh(['job', 'source']);
+    }
+
+    /**
+     * Reclassify an already-imported item without downloading its source again.
+     * This is used to repair existing pending imports after classifier changes.
+     */
+    public function reclassify(JobImport $import): JobImport
+    {
+        $title = (string) ($import->title ?? '');
+        $content = $this->removeSourceBranding((string) ($import->content ?? ''));
+        $summary = $this->removeSourceBranding((string) ($import->summary ?? ''));
+        $jobCategory = $this->detectMainCategory(
+            $title,
+            (string) ($import->external_url ?? ''),
+            null,
+            $content.' '.$summary,
+            $import->job_category ?: null
+        );
+        $department = $this->detectDepartment($title.' '.$content.' '.$summary, $import->department ?: $import->category);
+
+        $import->update([
+            'job_category' => $jobCategory,
+            'published_by' => $jobCategory,
+            'department' => $department,
+            'category' => $department,
+        ]);
 
         return $import->fresh(['job', 'source']);
     }
@@ -95,8 +121,6 @@ class JobImportNormalizer
         $xpath = new \DOMXPath($dom);
         $titleCandidates = [];
 
-        // H1 is the strongest signal: it is the article's visible recruitment
-        // title. Never let the site's og:title/HTML title override it.
         foreach ($xpath->query('//article//h1 | //main//h1 | //h1') as $node) {
             $titleCandidates[] = $this->cleanTitle($node->textContent);
         }
@@ -127,35 +151,52 @@ class JobImportNormalizer
         return [$title, $publisher, $body];
     }
 
-    private function detectMainCategory(string $text, ?string $existing = null): string
-    {
-        $text = mb_strtolower($text);
+    private function detectMainCategory(
+        string $title,
+        string $url,
+        ?string $publisher,
+        string $body,
+        ?string $existing = null
+    ): string {
+        // The article title and source URL are much more reliable than the
+        // generic JobsKind page template. Classify them first so words such as
+        // "vyapam" appearing in a site-wide menu cannot classify every post as CGSSB.
+        $primary = mb_strtolower($title.' '.(string) $publisher.' '. $url);
 
-        // Order matters: explicit signals are authoritative.
-        if (preg_match('/\b(cgpsc|chhattisgarh public service commission|public service commission)\b/iu', $text)) {
+        if (preg_match('/\b(cgpsc|chhattisgarh public service commission|public service commission)\b/iu', $primary)) {
             return 'CGPSC';
         }
 
-        if (preg_match('/\b(cgssb|staff selection board|vyapam|vyavsayik pariksha|chhattisgarh professional examination|cg vyapam)\b/iu', $text)) {
+        if (preg_match('/\b(cgssb|staff selection board|vyapam|cg vyapam)\b/iu', $primary)
+            || preg_match('/कर्मचारी\s*चयन\s*बोर्ड|व्यावसायिक\s*परीक्षा|व्यवसायिक\s*परीक्षा/iu', $primary)) {
             return 'CGSSB';
         }
 
-        if (preg_match('/\b(contractual|contract|samvida|samvida bharti|anubandh|outsourcing|walk[- ]?in)\b/iu', $text)
-            || preg_match('/संविदा|संविदाकर्मी|अनुबंध|आउटसोर्स/u', $text)) {
-            return 'Contractual';
-        }
-
-        if (preg_match('/\b(central government|central govt|ssc|railway|rrb|upsc|ibps|sbi|banking|defence|army|navy|air force|cisf|crpf|bsf|post office|india post)\b/iu', $text)) {
+        if (preg_match('/\b(ssc|railway|secr|rrb|upsc|ibps|sbi|banking|defence|army|navy|air force|cisf|crpf|bsf|post office|india post|nit|iit|aiims|drdo|isro|central university|central government|central govt)\b/iu', $primary)) {
             return 'Central Govt';
         }
 
-        // Existing value is used only when it is one of the four valid
-        // categories and no explicit signal was found.
-        if (in_array(trim((string)$existing), self::MAIN_CATEGORIES, true)) {
-            return trim((string)$existing);
+        if (preg_match('/\b(contractual|contract|samvida|samvida bharti|anubandh|outsourcing|walk[- ]?in)\b/iu', $primary)
+            || preg_match('/संविदा|संविदाकर्मी|अनुबंध|आउटसोर्स/iu', $primary)) {
+            return 'Contractual';
         }
 
-        return 'CGSSB';
+        // Use the body only after title/URL signals. This avoids source-site
+        // navigation and template text dominating classification.
+        $secondary = mb_strtolower($body);
+
+        if (preg_match('/\b(cgpsc|chhattisgarh public service commission|public service commission)\b/iu', $secondary)) return 'CGPSC';
+        if (preg_match('/\b(cgssb|staff selection board|cg vyapam)\b/iu', $secondary) || preg_match('/कर्मचारी\s*चयन\s*बोर्ड/iu', $secondary)) return 'CGSSB';
+        if (preg_match('/\b(ssc|railway|secr|rrb|upsc|ibps|sbi|banking|defence|army|navy|air force|cisf|crpf|bsf|post office|india post|nit|iit|aiims|drdo|isro|central university|central government|central govt)\b/iu', $secondary)) return 'Central Govt';
+        if (preg_match('/\b(contractual|contract|samvida|samvida bharti|anubandh|outsourcing|walk[- ]?in)\b/iu', $secondary) || preg_match('/संविदा|संविदाकर्मी|अनुबंध|आउटसोर्स/iu', $secondary)) return 'Contractual';
+
+        // Direct department/district recruitments without a board signal are
+        // treated as contractual rather than incorrectly calling them CGSSB.
+        if (in_array(trim((string) $existing), self::MAIN_CATEGORIES, true) && trim((string) $existing) !== 'CGSSB') {
+            return trim((string) $existing);
+        }
+
+        return 'Contractual';
     }
 
     private function detectDepartment(string $text, ?string $hint = null): string
