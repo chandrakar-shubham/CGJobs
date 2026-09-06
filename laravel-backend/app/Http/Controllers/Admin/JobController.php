@@ -54,8 +54,6 @@ class JobController extends Controller
         $validated['is_new'] = $request->has('is_new');
         $validated['published_at'] = date('Y-m-d');
         $validated['relative_time'] = 'हाल ही में';
-
-        // English is the master/source. Existing Hindi columns remain the Hindi presentation layer.
         $validated['title_en'] = $validated['title'];
         $validated['summary_en'] = $validated['summary'];
         $validated['detailed_content_en'] = $validated['detailed_content'] ?? null;
@@ -77,7 +75,7 @@ class JobController extends Controller
                 articleId: (string)$job->id
             );
         }
-        return redirect()->route('admin.jobs.index')->with('success', 'Post published with automatic Hindi translation.');
+        return redirect()->route('admin.jobs.index')->with('success', 'Post published. Hindi translation was generated automatically when available.');
     }
 
     public function edit(Job $job)
@@ -110,7 +108,7 @@ class JobController extends Controller
         $validated['translation_status'] = 'pending';
         $job->update($validated);
         $this->translateJob($job->fresh(), $translator);
-        return redirect()->route('admin.jobs.index')->with('success', 'Post updated and Hindi translation refreshed.');
+        return redirect()->route('admin.jobs.index')->with('success', 'Post updated. Hindi translation was refreshed automatically when available.');
     }
 
     public function destroy(Job $job)
@@ -130,19 +128,21 @@ class JobController extends Controller
                 'eligibility' => $job->eligibility_en,
                 'selection' => $job->selection_process_en,
             ]);
+
+            $ready = !empty($translations['title']);
             $job->title = $translations['title'] ?: $job->title_en;
             $job->summary = $translations['summary'] ?: $job->summary_en;
             $job->detailed_content = $translations['detailed'] ?: $job->detailed_content_en;
             $job->category = $translations['category'] ?: $job->category_en;
             $job->eligibility = $translations['eligibility'] ?: $job->eligibility_en;
             $job->selection_process = $translations['selection'] ?: $job->selection_process_en;
-            $job->translation_status = $translations['title'] ? 'ready' : 'pending';
-            $job->translation_error = $translations['title'] ? null : 'GOOGLE_TRANSLATE_API_KEY is not configured or translation service is unavailable.';
-            $job->translated_at = $translations['title'] ? now() : null;
+            $job->translation_status = $ready ? 'ready' : 'pending';
+            $job->translation_error = $ready ? null : 'Automatic Hindi translation is temporarily unavailable; the English version remains available.';
+            $job->translated_at = $ready ? now() : null;
             $job->save();
         } catch (\Throwable $e) {
             $job->translation_status = 'failed';
-            $job->translation_error = $e->getMessage();
+            $job->translation_error = 'Automatic Hindi translation failed temporarily; the English version remains available.';
             $job->save();
         }
     }
