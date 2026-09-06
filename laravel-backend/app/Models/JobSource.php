@@ -7,12 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 class JobSource extends Model
 {
     protected $fillable = [
-        'name','base_url','fetch_url','source_type','frequency_minutes','publish_mode',
+        'name','base_url','fetch_url','source_type','frequency_minutes','publish_mode','notify_on_publish',
         'default_category','is_active','last_fetched_at','last_success_at','last_error','last_items_fetched','last_items_imported','last_items_skipped',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'notify_on_publish' => 'boolean',
         'last_fetched_at' => 'datetime',
         'last_success_at' => 'datetime',
         'frequency_minutes' => 'integer',
@@ -21,8 +22,5 @@ class JobSource extends Model
         'last_items_skipped' => 'integer',
     ];
 
-    public function imports()
-    {
-        return $this->hasMany(JobImport::class);
-    }
+    public function imports() { return $this->hasMany(JobImport::class); }
 }
