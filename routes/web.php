@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\CacheController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\JobController;
+use App\Http\Controllers\Admin\JobPosterTemplateController;
 use App\Http\Controllers\Admin\JobSourceController;
 use App\Http\Controllers\Admin\NewsSyncController;
 use App\Http\Controllers\Admin\SectionController;
@@ -42,6 +43,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::post('/job-sources/{jobSource}/sync', [JobSourceController::class, 'sync'])->name('job-sources.sync');
     Route::post('/job-imports/{jobImport}/approve', [JobSourceController::class, 'approve'])->name('job-sources.approve');
     Route::post('/job-imports/{jobImport}/reject', [JobSourceController::class, 'reject'])->name('job-sources.reject');
+    Route::post('/job-poster-template', [JobPosterTemplateController::class, 'upload'])->name('job-poster-template.upload');
     Route::resource('categories', CategoryController::class);
     Route::resource('sections', SectionController::class);
     Route::resource('alerts', AlertController::class);
