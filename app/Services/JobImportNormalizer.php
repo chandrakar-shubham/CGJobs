@@ -36,6 +36,7 @@ class JobImportNormalizer
             [$title, $publisher, $pageText] = $this->extractTitleAndPublisher($html);
             $content = $this->removeSourceBranding($import->content ?: $import->summary ?: '');
             $summary = $this->removeSourceBranding($import->summary ?: $content);
+            $media = app(JobImportMediaService::class)->extract($html, $import->external_url);
             $jobCategory = $this->detectMainCategory(
                 $title ?: $import->title,
                 $import->external_url,
@@ -55,6 +56,13 @@ class JobImportNormalizer
             if ($title) $updates['title'] = $title;
             if ($summary) $updates['summary'] = $summary;
             if ($content) $updates['content'] = $content;
+            if (!empty($media['image_url'])) $updates['image_url'] = $media['image_url'];
+            if (!empty($media['image_urls'])) $updates['image_urls'] = $media['image_urls'];
+
+            $payload = is_array($import->raw_payload) ? $import->raw_payload : [];
+            $payload['media'] = $media;
+            $payload['images'] = $media['image_urls'] ?? [];
+            $updates['raw_payload'] = $payload;
 
             $import->update($updates);
 
@@ -74,6 +82,8 @@ class JobImportNormalizer
                     'published_by' => $jobCategory,
                     'source' => 'CGJobs',
                     'source_url' => null,
+                    'image_url' => $updates['image_url'] ?? $job->image_url,
+                    'image_urls' => $updates['image_urls'] ?? $job->image_urls,
                 ]);
             }
         } catch (\Throwable $e) {
@@ -83,10 +93,6 @@ class JobImportNormalizer
         return $import->fresh(['job', 'source']);
     }
 
-    /**
-     * Reclassify an already-imported item without downloading its source again.
-     * This is used to repair existing pending imports after classifier changes.
-     */
     public function reclassify(JobImport $import): JobImport
     {
         $title = (string) ($import->title ?? '');
@@ -136,10 +142,7 @@ class JobImportNormalizer
 
         $title = null;
         foreach ($titleCandidates as $candidate) {
-            if ($this->isUsefulTitle($candidate)) {
-                $title = $candidate;
-                break;
-            }
+            if ($this->isUsefulTitle($candidate)) { $title = $candidate; break; }
         }
 
         $body = $this->clean($dom->textContent);
@@ -151,51 +154,22 @@ class JobImportNormalizer
         return [$title, $publisher, $body];
     }
 
-    private function detectMainCategory(
-        string $title,
-        string $url,
-        ?string $publisher,
-        string $body,
-        ?string $existing = null
-    ): string {
-        // The article title and source URL are much more reliable than the
-        // generic JobsKind page template. Classify them first so words such as
-        // "vyapam" appearing in a site-wide menu cannot classify every post as CGSSB.
+    private function detectMainCategory(string $title, string $url, ?string $publisher, string $body, ?string $existing = null): string
+    {
         $primary = mb_strtolower($title.' '.(string) $publisher.' '. $url);
 
-        if (preg_match('/\b(cgpsc|chhattisgarh public service commission|public service commission)\b/iu', $primary)) {
-            return 'CGPSC';
-        }
+        if (preg_match('/\b(cgpsc|chhattisgarh public service commission|public service commission)\b/iu', $primary)) return 'CGPSC';
+        if (preg_match('/\b(cgssb|staff selection board|vyapam|cg vyapam)\b/iu', $primary) || preg_match('/कर्मचारी\s*चयन\s*बोर्ड|व्यावसायिक\s*परीक्षा|व्यवसायिक\s*परीक्षा/iu', $primary)) return 'CGSSB';
+        if (preg_match('/\b(ssc|railway|secr|rrb|upsc|ibps|sbi|banking|defence|army|navy|air force|cisf|crpf|bsf|post office|india post|nit|iit|aiims|drdo|isro|central university|central government|central govt)\b/iu', $primary)) return 'Central Govt';
+        if (preg_match('/\b(contractual|contract|samvida|samvida bharti|anubandh|outsourcing|walk[- ]?in)\b/iu', $primary) || preg_match('/संविदा|संविदाकर्मी|अनुबंध|आउटसोर्स/iu', $primary)) return 'Contractual';
 
-        if (preg_match('/\b(cgssb|staff selection board|vyapam|cg vyapam)\b/iu', $primary)
-            || preg_match('/कर्मचारी\s*चयन\s*बोर्ड|व्यावसायिक\s*परीक्षा|व्यवसायिक\s*परीक्षा/iu', $primary)) {
-            return 'CGSSB';
-        }
-
-        if (preg_match('/\b(ssc|railway|secr|rrb|upsc|ibps|sbi|banking|defence|army|navy|air force|cisf|crpf|bsf|post office|india post|nit|iit|aiims|drdo|isro|central university|central government|central govt)\b/iu', $primary)) {
-            return 'Central Govt';
-        }
-
-        if (preg_match('/\b(contractual|contract|samvida|samvida bharti|anubandh|outsourcing|walk[- ]?in)\b/iu', $primary)
-            || preg_match('/संविदा|संविदाकर्मी|अनुबंध|आउटसोर्स/iu', $primary)) {
-            return 'Contractual';
-        }
-
-        // Use the body only after title/URL signals. This avoids source-site
-        // navigation and template text dominating classification.
         $secondary = mb_strtolower($body);
-
         if (preg_match('/\b(cgpsc|chhattisgarh public service commission|public service commission)\b/iu', $secondary)) return 'CGPSC';
         if (preg_match('/\b(cgssb|staff selection board|cg vyapam)\b/iu', $secondary) || preg_match('/कर्मचारी\s*चयन\s*बोर्ड/iu', $secondary)) return 'CGSSB';
         if (preg_match('/\b(ssc|railway|secr|rrb|upsc|ibps|sbi|banking|defence|army|navy|air force|cisf|crpf|bsf|post office|india post|nit|iit|aiims|drdo|isro|central university|central government|central govt)\b/iu', $secondary)) return 'Central Govt';
         if (preg_match('/\b(contractual|contract|samvida|samvida bharti|anubandh|outsourcing|walk[- ]?in)\b/iu', $secondary) || preg_match('/संविदा|संविदाकर्मी|अनुबंध|आउटसोर्स/iu', $secondary)) return 'Contractual';
 
-        // Direct department/district recruitments without a board signal are
-        // treated as contractual rather than incorrectly calling them CGSSB.
-        if (in_array(trim((string) $existing), self::MAIN_CATEGORIES, true) && trim((string) $existing) !== 'CGSSB') {
-            return trim((string) $existing);
-        }
-
+        if (in_array(trim((string) $existing), self::MAIN_CATEGORIES, true) && trim((string) $existing) !== 'CGSSB') return trim((string) $existing);
         return 'Contractual';
     }
 
@@ -203,9 +177,7 @@ class JobImportNormalizer
     {
         $haystack = mb_strtolower($text.' '.(string)$hint);
         foreach (self::DEPARTMENTS as $department => $keywords) {
-            foreach ($keywords as $keyword) {
-                if ($keyword !== '' && str_contains($haystack, mb_strtolower($keyword))) return $department;
-            }
+            foreach ($keywords as $keyword) if ($keyword !== '' && str_contains($haystack, mb_strtolower($keyword))) return $department;
         }
         return 'Other Departments';
     }
