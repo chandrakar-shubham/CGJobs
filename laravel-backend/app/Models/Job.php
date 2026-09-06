@@ -12,12 +12,7 @@ class Job extends Model
     public const MAIN_CATEGORIES = ['CGSSB', 'CGPSC', 'Central Govt', 'Contractual'];
 
     protected $fillable = [
-        'custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en',
-        'category','category_en','job_category','department','section','post_type','source','source_url',
-        'image_url','poster_path','published_at','relative_time','relative_time_en','translation_status',
-        'translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility',
-        'eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url',
-        'apply_url','application_start','last_date','exam_date','admit_card_date','result_date',
+        'custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','job_category','department','section','post_type','source','source_url','image_url','poster_path','published_at','relative_time','relative_time_en','translation_status','translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility','eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url','apply_url','application_start','last_date','exam_date','admit_card_date','result_date',
     ];
 
     protected $casts = ['is_breaking' => 'boolean', 'is_new' => 'boolean', 'translated_at' => 'datetime'];
@@ -28,6 +23,7 @@ class Job extends Model
         $language = in_array($language, ['hi', 'en'], true) ? $language : 'hi';
         $english = $language === 'en';
         $fallback = fn ($en, $hi) => $english ? ($en ?: $hi) : ($hi ?: $en);
+        $posterUrl = route('job.poster', $this->custom_id ?: $this->id);
 
         return [
             'id' => $this->custom_id ?: (string) $this->id,
@@ -49,8 +45,9 @@ class Job extends Model
             'source' => $this->source ?: 'cgstate.gov.in',
             'sourceUrl' => $this->source_url ?: 'https://cgstate.gov.in',
             'webUrl' => url('/jobs/'.($this->custom_id ?: $this->id)),
-            'imageUrl' => $this->poster_path || $this->image_url ? url($this->poster_path ?: $this->image_url) : null,
-            'imageSource' => $this->poster_path ? 'CGJobs fixed poster template' : null,
+            'imageUrl' => $posterUrl,
+            'posterUrl' => $posterUrl,
+            'imageSource' => 'CGJobs fixed poster template',
             'publishedAt' => $this->published_at ?: ($this->created_at?->format('Y-m-d') ?: date('Y-m-d')),
             'relativeTime' => $fallback($this->relative_time_en, $this->relative_time ?: 'हाल ही में'),
             'isBreaking' => (bool) $this->is_breaking,
@@ -62,13 +59,7 @@ class Job extends Model
             'selectionProcess' => $fallback($this->selection_process_en, $this->selection_process),
             'officialNotificationUrl' => $this->official_notification_url,
             'applyUrl' => $this->apply_url,
-            'importantDates' => [
-                'applicationStart' => $this->application_start ?: ($english ? 'Open' : 'जारी'),
-                'lastDate' => $this->last_date ?: ($english ? 'Soon' : 'शीघ्र'),
-                'examDate' => $this->exam_date,
-                'admitCardDate' => $this->admit_card_date,
-                'resultDate' => $this->result_date,
-            ],
+            'importantDates' => ['applicationStart'=>$this->application_start ?: ($english ? 'Open' : 'जारी'),'lastDate'=>$this->last_date ?: ($english ? 'Soon' : 'शीघ्र'),'examDate'=>$this->exam_date,'admitCardDate'=>$this->admit_card_date,'resultDate'=>$this->result_date],
         ];
     }
 
@@ -76,8 +67,7 @@ class Job extends Model
     {
         $text = trim((string) $text);
         if ($text === '' || mb_strlen($text) <= 220) return $text ?: null;
-        $cut = mb_substr($text, 0, 220);
-        $pos = mb_strrpos($cut, ' ');
+        $cut = mb_substr($text, 0, 220); $pos = mb_strrpos($cut, ' ');
         return mb_substr($cut, 0, $pos ?: 220).'…';
     }
 }
