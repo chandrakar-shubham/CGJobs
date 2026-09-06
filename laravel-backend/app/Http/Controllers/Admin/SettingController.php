@@ -29,26 +29,24 @@ class SettingController extends Controller
     {
         $validated = $request->validate([
             'ticker_text' => 'nullable|string|max:500',
-            'ticker_enabled' => 'nullable|string',
             'whatsapp_url' => 'nullable|url|max:255',
             'telegram_url' => 'nullable|url|max:255',
             'support_email' => 'nullable|email|max:100',
             'support_phone' => 'nullable|string|max:50',
             'app_version' => 'nullable|string|max:20',
-            'maintenance_mode' => 'nullable|string',
             'maintenance_message' => 'nullable|string|max:300',
         ]);
 
         AppSetting::set('ticker_text', $validated['ticker_text'] ?? '', 'ticker', 'Live Breaking News Marquee');
-        AppSetting::set('ticker_enabled', $request->has('ticker_enabled') ? '1' : '0', 'ticker', 'Enable or disable ticker banner');
+        AppSetting::set('ticker_enabled', $request->boolean('ticker_enabled') ? '1' : '0', 'ticker', 'Enable or disable ticker banner');
         AppSetting::set('whatsapp_url', $validated['whatsapp_url'] ?? '', 'social', 'Official WhatsApp Community');
         AppSetting::set('telegram_url', $validated['telegram_url'] ?? '', 'social', 'Official Telegram Channel');
         AppSetting::set('support_email', $validated['support_email'] ?? '', 'contact', 'Support Email');
         AppSetting::set('support_phone', $validated['support_phone'] ?? '', 'contact', 'Support Phone');
         AppSetting::set('app_version', $validated['app_version'] ?? '1.0.0', 'app', 'Current Minimum App Version');
-        AppSetting::set('maintenance_mode', $request->has('maintenance_mode') ? '1' : '0', 'app', 'Maintenance mode active');
+        AppSetting::set('maintenance_mode', $request->boolean('maintenance_mode') ? '1' : '0', 'app', 'Maintenance mode active');
         AppSetting::set('maintenance_message', $validated['maintenance_message'] ?? '', 'app', 'Maintenance message');
 
-        return redirect()->route('admin.settings.index')->with('success', 'ऐप सेटिंग्स व टिकर सफलतापूर्वक सहेजे गए!');
+        return redirect()->route('admin.settings.index')->with('success', 'App settings and ticker saved successfully.');
     }
 }
