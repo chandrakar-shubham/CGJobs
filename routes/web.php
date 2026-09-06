@@ -15,12 +15,14 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StaticGkController;
 use App\Http\Controllers\Web\HomeController;
 use App\Http\Controllers\Web\JobPosterController;
+use App\Http\Controllers\Web\NotificationController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/jobs', [HomeController::class, 'jobs'])->name('listing.jobs');
 Route::get('/current-affairs', [HomeController::class, 'currentAffairs'])->name('listing.current-affairs');
 Route::get('/gk', [HomeController::class, 'staticGk'])->name('listing.gk');
+Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
 Route::get('/jobs/{id}/poster', [JobPosterController::class, 'show'])->name('job.poster');
 Route::get('/jobs/{id}', [HomeController::class, 'job'])->name('job.show');
 Route::get('/current-affairs/{id}', [HomeController::class, 'job'])->name('current-affairs.show');
