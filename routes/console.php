@@ -8,4 +8,12 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+// Discover due sources and enqueue their work. The actual scraping runs from
+// the database queue so web requests never wait for a full crawl.
 Schedule::command('cgjobs:sync-sources')->everyMinute()->withoutOverlapping(10);
+
+// Hostinger only needs its normal `schedule:run` cron. This worker drains
+// queued source-fetch tasks from the dedicated queue_jobs table.
+Schedule::command('queue:work database --queue=default --stop-when-empty --max-time=240 --timeout=210 --tries=1')
+    ->everyMinute()
+    ->withoutOverlapping(250);
