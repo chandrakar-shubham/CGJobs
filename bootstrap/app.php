@@ -14,7 +14,9 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
             'admin.auth' => \App\Http\Middleware\AdminAuthMiddleware::class,
+            'locale' => \App\Http\Middleware\SetLocale::class,
         ]);
+        $middleware->web(append: [\App\Http\Middleware\SetLocale::class]);
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);
