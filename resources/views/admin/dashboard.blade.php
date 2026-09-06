@@ -33,47 +33,130 @@
         </div>
     </div>
 
+    <!-- Live Breaking Ticker Preview Bar -->
+    <div class="bg-gradient-to-r from-rose-500 via-amber-500 to-rose-600 rounded-2xl p-3.5 text-white shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="flex items-center gap-2.5 overflow-hidden w-full sm:w-auto">
+            <span class="bg-white/20 px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wider whitespace-nowrap flex items-center gap-1.5">
+                <i class="fa-solid fa-bullhorn text-amber-200"></i> LIVE TICKER
+            </span>
+            <span class="text-xs font-medium truncate">
+                {{ $tickerText ?: 'कोई टिकर संदेश सक्रिय नहीं है।' }}
+            </span>
+        </div>
+        <div class="flex items-center gap-2 whitespace-nowrap">
+            <span class="text-[10px] px-2 py-0.5 rounded-full {{ $tickerEnabled ? 'bg-emerald-400/30 text-white border border-emerald-300/40' : 'bg-rose-900/40 text-rose-100' }}">
+                {{ $tickerEnabled ? '● Active in App' : '○ Paused' }}
+            </span>
+            <a href="{{ route('admin.settings.index') }}" class="px-3 py-1 bg-white text-slate-900 hover:bg-slate-100 rounded-lg text-xs font-bold transition shadow-xs">
+                बदलें / Edit
+            </a>
+        </div>
+    </div>
+
     <!-- Stats Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-2xl bg-blue-50 text-brand-600 flex items-center justify-center text-xl">
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div class="w-9 h-9 rounded-xl bg-blue-50 text-brand-600 flex items-center justify-center text-base mb-2">
                 <i class="fa-solid fa-briefcase"></i>
             </div>
             <div>
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">कुल प्रकाशित भर्तियां</p>
-                <h3 class="text-2xl font-bold text-slate-800">{{ $totalJobs }}</h3>
+                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-wider">भर्तियां (Jobs)</p>
+                <h3 class="text-xl font-bold text-slate-800">{{ $totalJobs }}</h3>
             </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center text-xl">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div class="w-9 h-9 rounded-xl bg-cyan-50 text-cyan-600 flex items-center justify-center text-base mb-2">
+                <i class="fa-solid fa-newspaper"></i>
+            </div>
+            <div>
+                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-wider">समाचार (News)</p>
+                <h3 class="text-xl font-bold text-slate-800">{{ $totalNews }}</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-base mb-2">
+                <i class="fa-solid fa-book-open"></i>
+            </div>
+            <div>
+                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Static GK</p>
+                <h3 class="text-xl font-bold text-slate-800">{{ $totalGk }}</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div class="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-base mb-2">
+                <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-wider">सेक्शंस (Sections)</p>
+                <h3 class="text-xl font-bold text-slate-800">{{ $totalSections }}</h3>
+            </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-base mb-2">
                 <i class="fa-solid fa-bell"></i>
             </div>
             <div>
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">सूचनाएं व अलर्ट्स</p>
-                <h3 class="text-2xl font-bold text-slate-800">{{ $totalAlerts }}</h3>
+                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-wider">अलर्ट्स (Alerts)</p>
+                <h3 class="text-xl font-bold text-slate-800">{{ $totalAlerts }}</h3>
             </div>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
-                <i class="fa-solid fa-mobile-screen-button"></i>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+            <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-base mb-2">
+                <i class="fa-solid fa-mobile-screen"></i>
             </div>
             <div>
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">रजिस्टर्ड मोबाइल फोन</p>
-                <h3 class="text-2xl font-bold text-slate-800">{{ $totalDevices }}</h3>
+                <p class="text-[11px] font-medium text-slate-500 uppercase tracking-wider">यूज़र्स (FCM)</p>
+                <h3 class="text-xl font-bold text-slate-800">{{ $totalDevices }}</h3>
             </div>
         </div>
+    </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center space-x-4">
-            <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-xl">
-                <i class="fa-solid fa-fire"></i>
+    <!-- Quick Management Action Tiles -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <a href="{{ route('admin.jobs.create', ['section' => 'jobs']) }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-brand-300 hover:shadow-md transition flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-briefcase"></i>
             </div>
             <div>
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">ब्रेकिंग / हॉट भर्तियां</p>
-                <h3 class="text-2xl font-bold text-slate-800">{{ $breakingJobs }}</h3>
+                <div class="text-xs font-bold text-slate-800">+ नई भर्ती पोस्ट करें</div>
+                <div class="text-[10px] text-slate-400">Add Job Vacancy</div>
             </div>
-        </div>
+        </a>
+
+        <a href="{{ route('admin.jobs.create', ['section' => 'news']) }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-blue-300 hover:shadow-md transition flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-newspaper"></i>
+            </div>
+            <div>
+                <div class="text-xs font-bold text-slate-800">+ समाचार / समसामयिकी</div>
+                <div class="text-[10px] text-slate-400">Current Affairs</div>
+            </div>
+        </a>
+
+        <a href="{{ route('admin.static-gk.create') }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-indigo-300 hover:shadow-md transition flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-book-open"></i>
+            </div>
+            <div>
+                <div class="text-xs font-bold text-slate-800">+ Static GK कार्ड</div>
+                <div class="text-[10px] text-slate-400">Study Notes</div>
+            </div>
+        </a>
+
+        <a href="{{ route('admin.settings.index') }}" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-sm hover:border-amber-300 hover:shadow-md transition flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-sliders"></i>
+            </div>
+            <div>
+                <div class="text-xs font-bold text-slate-800">लाइव टिकर व सेटिंग्स</div>
+                <div class="text-[10px] text-slate-400">App Ticker & Links</div>
+            </div>
+        </a>
     </div>
 
     <!-- Android App Integration Connection Guide Box -->

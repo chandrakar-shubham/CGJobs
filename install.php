@@ -118,10 +118,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     CREATE TABLE IF NOT EXISTS `categories` (
                         `id` INT AUTO_INCREMENT PRIMARY KEY,
+                        `section_id` VARCHAR(50) DEFAULT 'jobs',
                         `name` VARCHAR(100) NOT NULL,
                         `slug` VARCHAR(100) UNIQUE NOT NULL,
                         `hindi_name` VARCHAR(100) NULL,
                         `color` VARCHAR(50) DEFAULT '#1565C0',
+                        `display_order` INT DEFAULT 0,
                         `is_active` TINYINT(1) DEFAULT 1,
                         `created_at` TIMESTAMP NULL,
                         `updated_at` TIMESTAMP NULL
@@ -137,8 +139,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         `created_at` TIMESTAMP NULL,
                         `updated_at` TIMESTAMP NULL
                     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                    CREATE TABLE IF NOT EXISTS `static_gks` (
+                        `id` INT AUTO_INCREMENT PRIMARY KEY,
+                        `custom_id` VARCHAR(191) UNIQUE NOT NULL,
+                        `title` VARCHAR(255) NOT NULL,
+                        `hindi_title` VARCHAR(255) NULL,
+                        `category` VARCHAR(100) NOT NULL,
+                        `category_hindi` VARCHAR(100) NULL,
+                        `question` TEXT NULL,
+                        `answer` TEXT NULL,
+                        `key_points` JSON NULL,
+                        `detailed_notes` LONGTEXT NULL,
+                        `year_exam_reference` VARCHAR(255) NULL,
+                        `is_verified` TINYINT(1) DEFAULT 1,
+                        `display_order` INT DEFAULT 0,
+                        `created_at` TIMESTAMP NULL,
+                        `updated_at` TIMESTAMP NULL
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                    CREATE TABLE IF NOT EXISTS `app_sections` (
+                        `id` INT AUTO_INCREMENT PRIMARY KEY,
+                        `section_key` VARCHAR(50) UNIQUE NOT NULL,
+                        `name` VARCHAR(100) NOT NULL,
+                        `hindi_name` VARCHAR(100) NULL,
+                        `description` VARCHAR(255) NULL,
+                        `icon` VARCHAR(50) DEFAULT 'folder',
+                        `is_active` TINYINT(1) DEFAULT 1,
+                        `display_order` INT DEFAULT 0,
+                        `created_at` TIMESTAMP NULL,
+                        `updated_at` TIMESTAMP NULL
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+                    CREATE TABLE IF NOT EXISTS `app_settings` (
+                        `id` INT AUTO_INCREMENT PRIMARY KEY,
+                        `key` VARCHAR(100) UNIQUE NOT NULL,
+                        `value` LONGTEXT NULL,
+                        `description` VARCHAR(255) NULL,
+                        `created_at` TIMESTAMP NULL,
+                        `updated_at` TIMESTAMP NULL
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
                 ");
-                $log[] = "✅ Database tables created successfully (jobs, alerts, categories, device_tokens).";
+                $log[] = "✅ Database tables created successfully (jobs, alerts, categories, device_tokens, static_gks, app_sections, app_settings).";
+
+                // Seed Default Sections
+                $sections = [
+                    ['jobs', 'Jobs & Vacancies', 'सरकारी नौकरियां', 'छत्तीसगढ़ व केंद्रीय सरकारी नौकरी सूचनाएं', 'briefcase', 1, 1],
+                    ['news', 'Current Affairs & News', 'समसामयिकी व समाचार', 'दैनिक करंट अफेयर्स, योजनाएं व समसामयिक घटनाएं', 'newspaper', 1, 2],
+                    ['static_gk', 'Static GK & Study Notes', 'सामान्य ज्ञान (GK)', 'छत्तीसगढ़ इतिहास, भूगोल, संस्कृति व अध्ययन सामग्री', 'book-open', 1, 3],
+                ];
+                $secStmt = $pdo->prepare("INSERT IGNORE INTO `app_sections` (`section_key`, `name`, `hindi_name`, `description`, `icon`, `is_active`, `display_order`, `created_at`, `updated_at`) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())");
+                foreach ($sections as $sec) {
+                    $secStmt->execute($sec);
+                }
+                $log[] = "✅ Seeded app navigation sections.";
+
+                // Seed Default Settings (Live Ticker)
+                $settings = [
+                    ['ticker_text', 'CGPSC राज्य सेवा परीक्षा 2026 प्रारंभिक परीक्षा की तिथि जारी | व्यापम शिक्षक पात्रता TET प्रवेश पत्र डाउनलोड करें', 'App Marquee Ticker'],
+                    ['ticker_enabled', '1', 'Ticker Switch'],
+                    ['app_name', 'CG Jobs & Current Affairs', 'App Name'],
+                    ['app_version', '1.4.0', 'Current Version'],
+                    ['contact_email', 'support@cgjobsportal.in', 'Support Email'],
+                ];
+                $setStmt = $pdo->prepare("INSERT IGNORE INTO `app_settings` (`key`, `value`, `description`, `created_at`, `updated_at`) VALUES (?, ?, ?, NOW(), NOW())");
+                foreach ($settings as $setting) {
+                    $setStmt->execute($setting);
+                }
+                $log[] = "✅ Seeded live ticker & app settings.";
 
                 // Seed Default Categories
                 $categories = [

@@ -17,6 +17,10 @@ class JobApiController extends Controller
     {
         $query = Job::query();
 
+        if ($request->filled('section')) {
+            $query->where('section', $request->section);
+        }
+
         if ($request->filled('category') && $request->category !== 'सभी' && $request->category !== 'All') {
             $query->where('category', $request->category);
         }
@@ -37,6 +41,38 @@ class JobApiController extends Controller
             'success' => true,
             'count' => $jobs->count(),
             'news' => $jobs->map(fn($job) => $job->toApiArray())->values(),
+        ]);
+    }
+
+    /**
+     * Dedicated /api/jobs endpoint
+     */
+    public function jobs(Request $request): JsonResponse
+    {
+        $query = Job::query()->where(function ($q) {
+            $q->where('section', 'jobs')->orWhereNull('section');
+        });
+
+        if ($request->filled('category') && $request->category !== 'सभी' && $request->category !== 'All') {
+            $query->where('category', $request->category);
+        }
+
+        if ($request->filled('query')) {
+            $searchTerm = '%' . $request->query('query') . '%';
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', $searchTerm)
+                  ->orWhere('summary', 'like', $searchTerm)
+                  ->orWhere('vacancies', 'like', $searchTerm);
+            });
+        }
+
+        $limit = (int) $request->get('limit', 100);
+        $jobs = $query->orderBy('id', 'desc')->take($limit)->get();
+
+        return response()->json([
+            'success' => true,
+            'count' => $jobs->count(),
+            'jobs' => $jobs->map(fn($job) => $job->toApiArray())->values(),
         ]);
     }
 
@@ -63,9 +99,15 @@ class JobApiController extends Controller
     /**
      * Get recruitment categories
      */
-    public function categories(): JsonResponse
+    public function categories(Request $request): JsonResponse
     {
-        $categories = Category::orderBy('display_order', 'asc')->get();
+        $query = Category::where('is_active', true)->orderBy('display_order', 'asc');
+
+        if ($request->filled('section')) {
+            $query->where('section_id', $request->section);
+        }
+
+        $categories = $query->get();
 
         // If categories table is empty, return default CG categories
         if ($categories->isEmpty()) {

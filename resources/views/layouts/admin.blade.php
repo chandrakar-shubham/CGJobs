@@ -61,11 +61,20 @@
                     <span class="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
                     API Active: /api/health
                 </a>
-                <div class="border-l border-white/20 pl-4 flex items-center space-x-2">
-                    <div class="w-8 h-8 rounded-full bg-saffron-500 flex items-center justify-center text-white font-bold text-sm shadow">
-                        A
+                <div class="border-l border-white/20 pl-4 flex items-center space-x-3">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-8 h-8 rounded-full bg-saffron-500 flex items-center justify-center text-white font-bold text-sm shadow">
+                            A
+                        </div>
+                        <span class="text-sm font-medium hidden md:inline">{{ session('admin_user', 'Admin') }}</span>
                     </div>
-                    <span class="text-sm font-medium hidden md:inline">प्रशासक (Admin)</span>
+                    <form action="{{ route('admin.logout') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/90 hover:bg-rose-600 text-white transition shadow-sm" title="लॉगआउट करें">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                            <span>लॉगआउट (Logout)</span>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -80,15 +89,26 @@
                     <span>डैशबोर्ड (Dashboard)</span>
                 </a>
 
-                <div class="pt-3 pb-1 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">भर्ती प्रबंधन (Jobs)</div>
+                <div class="pt-3 pb-1 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">भर्ती व समाचार (Content)</div>
                 
-                <a href="{{ route('admin.jobs.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.jobs.index') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
-                    <i class="fa-solid fa-list-check w-5 text-center text-brand-600"></i>
-                    <span>सभी भर्तियां (All Jobs)</span>
+                <a href="{{ route('admin.jobs.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.jobs.index') && !request('section') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
+                    <i class="fa-solid fa-briefcase w-5 text-center text-brand-600"></i>
+                    <span>सरकारी भर्तियां (Jobs)</span>
+                </a>
+                <a href="{{ route('admin.jobs.index', ['section' => 'news']) }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request('section') == 'news' ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
+                    <i class="fa-solid fa-newspaper w-5 text-center text-blue-600"></i>
+                    <span>समाचार व समसामयिकी</span>
                 </a>
                 <a href="{{ route('admin.jobs.create') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.jobs.create') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
                     <i class="fa-solid fa-circle-plus w-5 text-center text-emerald-600"></i>
-                    <span>नई भर्ती पोस्ट करें (Add Job)</span>
+                    <span>नई पोस्ट जोड़ें (Add Post)</span>
+                </a>
+
+                <div class="pt-3 pb-1 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">सामान्य ज्ञान व अध्ययन (Study)</div>
+
+                <a href="{{ route('admin.static-gk.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.static-gk.*') ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
+                    <i class="fa-solid fa-book-open w-5 text-center text-indigo-600"></i>
+                    <span>Static GK प्रबंधन</span>
                 </a>
 
                 <div class="pt-3 pb-1 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">अलर्ट्स व सूचना (Alerts)</div>
@@ -99,19 +119,35 @@
                 </a>
                 <a href="{{ route('admin.alerts.create') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.alerts.create') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
                     <i class="fa-solid fa-paper-plane w-5 text-center text-saffron-600"></i>
-                    <span>पुश नोटिफिकेशन भेजें (FCM)</span>
+                    <span>पुश नोटिफिकेशन (FCM)</span>
                 </a>
 
-                <div class="pt-3 pb-1 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">सिस्टम व सेटिंग्स</div>
+                <div class="pt-3 pb-1 px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider">सिस्टम व ऐप प्रबंधन</div>
 
-                <a href="{{ route('admin.categories.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.categories.index') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
-                    <i class="fa-solid fa-tags w-5 text-center text-indigo-600"></i>
+                <a href="{{ route('admin.sections.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.sections.*') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
+                    <i class="fa-solid fa-layer-group w-5 text-center text-purple-600"></i>
+                    <span>ऐप सेक्शंस (Sections)</span>
+                </a>
+                <a href="{{ route('admin.categories.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.categories.*') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
+                    <i class="fa-solid fa-tags w-5 text-center text-teal-600"></i>
                     <span>श्रेणियां (Categories)</span>
                 </a>
-                <a href="{{ route('admin.sync.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.sync.index') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
-                    <i class="fa-solid fa-cloud-arrow-down w-5 text-center text-teal-600"></i>
-                    <span>ऑटो न्यूज़ सिंक (NewsAPI)</span>
+                <a href="{{ route('admin.settings.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.settings.*') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
+                    <i class="fa-solid fa-sliders w-5 text-center text-amber-500"></i>
+                    <span>एप सेटिंग्स व लाइव टिकर</span>
                 </a>
+                <a href="{{ route('admin.sync.index') }}" class="flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition {{ request()->routeIs('admin.sync.index') ? 'bg-brand-50 text-brand-700 font-semibold' : 'text-slate-600 hover:bg-slate-50' }}">
+                    <i class="fa-solid fa-cloud-arrow-down w-5 text-center text-cyan-600"></i>
+                    <span>ऑटो न्यूज़ सिंक (API)</span>
+                </a>
+
+                <form action="{{ route('admin.logout') }}" method="POST" class="pt-2">
+                    @csrf
+                    <button type="submit" class="w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-rose-600 hover:bg-rose-50 transition text-left">
+                        <i class="fa-solid fa-arrow-right-from-bracket w-5 text-center text-rose-500"></i>
+                        <span>लॉगआउट (Logout)</span>
+                    </button>
+                </form>
 
                 <div class="pt-4 mt-2 border-t border-slate-100 px-3">
                     <div class="bg-blue-50/70 rounded-xl p-3 border border-blue-100">
