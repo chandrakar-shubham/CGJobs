@@ -19,6 +19,21 @@ class HomeController extends Controller
         return view('web.home', compact('latest', 'jobs', 'currentAffairs', 'gk'));
     }
 
+    public function jobs(): View
+    {
+        return $this->listing('jobs');
+    }
+
+    public function currentAffairs(): View
+    {
+        return $this->listing('current-affairs');
+    }
+
+    public function staticGk(): View
+    {
+        return $this->listing('gk');
+    }
+
     public function listing(string $type): View
     {
         $map = [
