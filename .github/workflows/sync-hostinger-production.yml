@@ -7,6 +7,7 @@ on:
     paths:
       - 'laravel-backend/**'
       - '.github/workflows/sync-hostinger-production.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
