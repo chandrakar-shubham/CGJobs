@@ -8,11 +8,15 @@ class JobImport extends Model
 {
     protected $fillable = [
         'job_source_id','external_url','external_key','title','summary','content','category','job_category','department','published_by',
-        'image_url','published_at','raw_payload','status','job_id','error_message','fetched_at','processed_at',
+        'image_url','image_urls','published_at','raw_payload','status','job_id','error_message','fetched_at','processed_at',
     ];
 
     protected $casts = [
-        'raw_payload' => 'array', 'published_at' => 'datetime', 'fetched_at' => 'datetime', 'processed_at' => 'datetime',
+        'image_urls' => 'array',
+        'raw_payload' => 'array',
+        'published_at' => 'datetime',
+        'fetched_at' => 'datetime',
+        'processed_at' => 'datetime',
     ];
 
     public function source() { return $this->belongsTo(JobSource::class, 'job_source_id'); }
