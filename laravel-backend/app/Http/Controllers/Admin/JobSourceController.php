@@ -12,38 +12,81 @@ class JobSourceController extends Controller
 {
     public function index()
     {
-        return view('admin.job-sources.index', ['sources'=>JobSource::latest()->get(),'pending'=>JobImport::where('status','pending')->with('source')->latest()->paginate(20)]);
+        $sources = JobSource::latest()->get();
+        $pending = JobImport::where('status', 'pending')
+            ->with('source')
+            ->latest()
+            ->paginate(20);
+
+        return view('admin.job-sources.index', compact('sources', 'pending'));
     }
 
     public function store(Request $request)
     {
-        $data=$request->validate([
-            'name'=>'required|string|max:120','base_url'=>'required|url|max:500','fetch_url'=>'required|url|max:1000',
-            'source_type'=>'required|in:html,rss,blogger,wordpress,json_api,rest_api','frequency_minutes'=>'required|integer|min:15|max:43200',
-            'publish_mode'=>'required|in:approval,auto','default_category'=>'nullable|string|max:120','is_active'=>'nullable|boolean'
+        $data = $request->validate([
+            'name' => 'required|string|max:120',
+            'base_url' => 'required|url|max:500',
+            'fetch_url' => 'required|url|max:1000',
+            'source_type' => 'required|in:html,rss,blogger,wordpress,json_api,rest_api',
+            'frequency_minutes' => 'required|integer|min:15|max:43200',
+            'publish_mode' => 'required|in:approval,auto',
+            'default_category' => 'nullable|string|max:120',
         ]);
-        JobSource::create($data+['is_active'=>$request->boolean('is_active')]);
-        return back()->with('success','Job source added successfully.');
+
+        $data['is_active'] = $request->boolean('is_active');
+        JobSource::create($data);
+
+        return back()->with('success', 'Job source added successfully.');
     }
 
     public function update(Request $request, JobSource $jobSource)
     {
-        $data=$request->validate(['name'=>'required|string|max:120','base_url'=>'required|url|max:500','fetch_url'=>'required|url|max:1000','source_type'=>'required|in:html,rss,blogger,wordpress,json_api,rest_api','frequency_minutes'=>'required|integer|min:15|max:43200','publish_mode'=>'required|in:approval,auto','default_category'=>'nullable|string|max:120']);
-        $jobSource->update($data+['is_active'=>$request->boolean('is_active')]);
-        return back()->with('success','Job source updated.');
+        $data = $request->validate([
+            'name' => 'required|string|max:120',
+            'base_url' => 'required|url|max:500',
+            'fetch_url' => 'required|url|max:1000',
+            'source_type' => 'required|in:html,rss,blogger,wordpress,json_api,rest_api',
+            'frequency_minutes' => 'required|integer|min:15|max:43200',
+            'publish_mode' => 'required|in:approval,auto',
+            'default_category' => 'nullable|string|max:120',
+        ]);
+
+        $data['is_active'] = $request->boolean('is_active');
+        $jobSource->update($data);
+
+        return back()->with('success', 'Job source updated.');
     }
 
-    public function destroy(JobSource $jobSource) { $jobSource->delete(); return back()->with('success','Job source removed.'); }
+    public function destroy(JobSource $jobSource)
+    {
+        $jobSource->delete();
+        return back()->with('success', 'Job source removed.');
+    }
 
     public function sync(JobSource $jobSource, JobSourceService $service)
     {
-        try { $r=$service->sync($jobSource); return back()->with('success',"Sync complete: {$r['fetched']} fetched, {$r['imported']} imported, {$r['skipped']} skipped."); }
-        catch (\Throwable $e) { return back()->withErrors(['sync'=>'Sync failed: '.$e->getMessage()]); }
+        try {
+            $result = $service->sync($jobSource);
+            return back()->with('success', "Sync complete: {$result['fetched']} fetched, {$result['imported']} imported, {$result['skipped']} skipped.");
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->withErrors(['sync' => 'Sync failed. Check Laravel logs for details.']);
+        }
     }
 
     public function approve(JobImport $jobImport, JobSourceService $service)
-    { $service->publish($jobImport); return back()->with('success','Imported job approved and published.'); }
+    {
+        $service->publish($jobImport);
+        return back()->with('success', 'Imported job approved and published.');
+    }
 
     public function reject(JobImport $jobImport)
-    { $jobImport->update(['status'=>'rejected','processed_at'=>now()]); return back()->with('success','Imported job rejected.'); }
+    {
+        $jobImport->update([
+            'status' => 'rejected',
+            'processed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Imported job rejected.');
+    }
 }
