@@ -1,0 +1,44 @@
+name: Update Laravel Composer Lock
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  lock:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: laravel-backend
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP 8.3
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: mbstring, bcmath, ctype, curl, dom, fileinfo, intl, openssl, pdo, pdo_mysql, tokenizer, xml
+          coverage: none
+
+      - name: Install Composer dependencies metadata
+        run: composer update --no-dev --prefer-dist --no-interaction --no-progress --with-all-dependencies
+
+      - name: Commit composer.lock
+        working-directory: .
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet -- laravel-backend/composer.lock; then
+            echo "composer.lock is already current."
+            exit 0
+          fi
+          git add laravel-backend/composer.lock
+          git commit -m "Lock Laravel dependencies for PHP 8.3"
+          git push origin main
