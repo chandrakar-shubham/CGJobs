@@ -14,6 +14,8 @@ data class JobUpdate(
     val summary: String,
     val detailedContent: String,
     val category: String,
+    val jobCategory: String = "CGSSB",
+    val department: String = "Other Departments",
     val source: String,
     val sourceUrl: String,
     val imageUrl: String? = null,
