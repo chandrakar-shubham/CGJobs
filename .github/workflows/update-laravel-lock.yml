@@ -25,8 +25,11 @@ jobs:
           extensions: mbstring, bcmath, ctype, curl, dom, fileinfo, intl, openssl, pdo, pdo_mysql, tokenizer, xml
           coverage: none
 
-      - name: Install Composer dependencies metadata
-        run: composer update --no-dev --prefer-dist --no-interaction --no-progress --with-all-dependencies
+      - name: Resolve PHP 8.3 compatible dependencies
+        run: composer update --no-dev --prefer-dist --no-interaction --no-progress --with-all-dependencies --no-scripts
+
+      - name: Verify composer.lock exists
+        run: test -s composer.lock
 
       - name: Commit composer.lock
         working-directory: .
@@ -35,7 +38,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --quiet -- laravel-backend/composer.lock; then
+          if [ -z "$(git status --porcelain -- laravel-backend/composer.lock)" ]; then
             echo "composer.lock is already current."
             exit 0
           fi
