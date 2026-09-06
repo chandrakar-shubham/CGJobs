@@ -6,6 +6,9 @@ on:
 permissions:
   contents: write
 
+env:
+  COMPOSER_HOME: ${{ runner.temp }}/composer-home
+
 jobs:
   lock:
     runs-on: ubuntu-latest
@@ -25,8 +28,18 @@ jobs:
           extensions: mbstring, bcmath, ctype, curl, dom, fileinfo, intl, openssl, pdo, pdo_mysql, tokenizer, xml
           coverage: none
 
+      - name: Verify PHP and Composer platform
+        run: |
+          php -v
+          composer --version
+          composer config platform.php
+          composer show --platform | grep -E '^php[[:space:]]'
+
       - name: Resolve PHP 8.3 compatible dependencies
         run: composer update --no-dev --prefer-dist --no-interaction --no-progress --with-all-dependencies --no-scripts
+
+      - name: Verify lock against real PHP 8.3 platform
+        run: composer check-platform-reqs --lock --no-dev
 
       - name: Verify composer.lock exists
         run: test -s composer.lock
