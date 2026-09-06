@@ -11,7 +11,7 @@ return new class extends Migration {
             [
                 'name' => 'JobsKind',
                 'base_url' => 'https://www.jobskind.com/',
-                'source_type' => 'blogger',
+                'source_type' => 'html',
                 'frequency_minutes' => 30,
                 'publish_mode' => 'approval',
                 'default_category' => 'CG Vyapam',
