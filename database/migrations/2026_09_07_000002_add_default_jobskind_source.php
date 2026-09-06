@@ -6,7 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 return new class extends Migration {
     public function up(): void
     {
-        JobSource::firstOrCreate(
+        JobSource::updateOrCreate(
             ['fetch_url' => 'https://www.jobskind.com/'],
             [
                 'name' => 'JobsKind',
@@ -14,7 +14,7 @@ return new class extends Migration {
                 'source_type' => 'html',
                 'frequency_minutes' => 30,
                 'publish_mode' => 'approval',
-                'default_category' => 'CG Vyapam',
+                'default_category' => 'CGSSB',
                 'is_active' => true,
             ]
         );
