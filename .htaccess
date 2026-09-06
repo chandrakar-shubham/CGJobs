@@ -1,0 +1,16 @@
+# CGJobs Laravel Root .htaccess for Shared Hosting / Hostinger
+# If you place the entire laravel-backend inside public_html, this file automatically
+# redirects all traffic securely to public/index.php without exposing sensitive files.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Prevent direct access to .env, storage, and sensitive files
+    RewriteRule ^\.env - [F,L,NC]
+    RewriteRule ^composer\.(json|lock) - [F,L,NC]
+    RewriteRule ^database/.*\.sqlite - [F,L,NC]
+
+    # Redirect all requests to the public/ folder
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
