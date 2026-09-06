@@ -14,9 +14,9 @@ use Illuminate\Support\Facades\Route;
 
 // Public website
 Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/jobs', fn () => app(HomeController::class)->listing('jobs'))->name('listing.jobs');
-Route::get('/current-affairs', fn () => app(HomeController::class)->listing('current-affairs'))->name('listing.current-affairs');
-Route::get('/gk', fn () => app(HomeController::class)->listing('gk'))->name('listing.gk');
+Route::get('/jobs', [HomeController::class, 'jobs'])->name('listing.jobs');
+Route::get('/current-affairs', [HomeController::class, 'currentAffairs'])->name('listing.current-affairs');
+Route::get('/gk', [HomeController::class, 'staticGk'])->name('listing.gk');
 Route::get('/jobs/{id}', [HomeController::class, 'job'])->name('job.show');
 Route::get('/current-affairs/{id}', [HomeController::class, 'job'])->name('current-affairs.show');
 Route::get('/gk/{id}', [HomeController::class, 'gk'])->name('gk.show');
