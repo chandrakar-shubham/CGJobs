@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  cgjobs-laravel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cgjobs_laravel_admin
+    ports:
+      - "8000:80"
+    environment:
+      APP_NAME: "CGJobs Admin"
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost:8000"
+      DB_CONNECTION: sqlite
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./database:/var/www/html/database
+    restart: unless-stopped

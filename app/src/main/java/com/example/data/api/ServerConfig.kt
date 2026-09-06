@@ -19,6 +19,7 @@ object ServerConfig {
 
     // Default emulator loopback to the running backend
     const val DEFAULT_EMULATOR_URL = "http://10.0.2.2:5000/"
+    const val DEFAULT_LARAVEL_URL = "http://10.0.2.2:8000/"
 
     private var appContext: Context? = null
     private var cachedUrl: String? = null

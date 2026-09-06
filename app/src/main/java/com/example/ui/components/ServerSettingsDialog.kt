@@ -170,15 +170,41 @@ fun ServerSettingsDialog(
                         }
                     }
 
-                    // Reset to Emulator default
-                    TextButton(
-                        onClick = {
-                            serverUrl = ServerConfig.DEFAULT_EMULATOR_URL
-                            pingResult = null
-                        }
+                    // Preset selection
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Default", fontSize = 12.sp)
+                        TextButton(
+                            onClick = {
+                                serverUrl = ServerConfig.DEFAULT_LARAVEL_URL
+                                pingResult = null
+                            }
+                        ) {
+                            Text("Laravel", fontSize = 12.sp)
+                        }
+                        TextButton(
+                            onClick = {
+                                serverUrl = ServerConfig.DEFAULT_EMULATOR_URL
+                                pingResult = null
+                            }
+                        ) {
+                            Text("Node.js", fontSize = 12.sp)
+                        }
                     }
+                }
+
+                // Quick Localhost presets guide
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Quick Presets: Laravel (8000) | Node (5000)",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
 
                 // Ping Result Banner
