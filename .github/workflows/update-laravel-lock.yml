@@ -1,13 +1,11 @@
 name: Update Laravel Composer Lock
 
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
     paths:
-      - '.github/workflows/update-laravel-lock.yml'
       - 'laravel-backend/composer.json'
+      - '.github/workflows/update-laravel-lock.yml'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -48,19 +46,26 @@ jobs:
       - name: Resolve PHP 8.3 compatible dependencies
         run: composer update --no-dev --prefer-dist --no-interaction --no-progress --with-all-dependencies --no-scripts
 
+      - name: Verify production install on PHP 8.3
+        run: composer install --dry-run --no-dev --prefer-dist --no-interaction --no-progress --no-scripts
+
       - name: Verify lock against real PHP 8.3 platform
         run: composer check-platform-reqs --lock --no-dev
 
-      - name: Verify no PHP 8.4-only Symfony packages are locked
+      - name: Verify no PHP 8.4-only Symfony packages in production lock
         shell: bash
         run: |
           set -euo pipefail
-          if grep -q '"version": "v8\.' composer.lock; then
-            echo 'ERROR: Symfony 8 package detected in composer.lock; Hostinger uses PHP 8.3.'
-            grep -B2 -A2 '"version": "v8\.' composer.lock || true
-            exit 1
-          fi
-          echo 'Verified: no Symfony 8 packages are present in composer.lock.'
+          php -r '
+          $lock = json_decode(file_get_contents("composer.lock"), true, 512, JSON_THROW_ON_ERROR);
+          foreach ($lock["packages"] ?? [] as $package) {
+              if (str_starts_with($package["name"] ?? "", "symfony/") && str_starts_with($package["version"] ?? "", "v8.")) {
+                  fwrite(STDERR, "ERROR: Production lock contains Symfony 8 package: {$package["name"]} {$package["version"]}\n");
+                  exit(1);
+              }
+          }
+          echo "Verified: production packages contain no Symfony 8 releases.\n";
+          '
 
       - name: Verify composer.lock exists
         run: test -s composer.lock
