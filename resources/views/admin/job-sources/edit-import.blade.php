@@ -26,12 +26,16 @@
 
         <div class="flex flex-wrap gap-3 pt-2">
             <button class="px-6 py-3 bg-slate-900 text-white rounded-xl font-bold">Save Changes</button>
-            @if($import->status==='pending')
-                <button type="submit" formaction="{{ route('admin.job-sources.approve',$import) }}" formmethod="POST" class="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold" onclick="return confirm('Publish this job now?')">Save & Publish</button>
-            @endif
             <a href="{{ $import->external_url }}" target="_blank" rel="noopener" class="px-6 py-3 border rounded-xl font-bold">Open Original ↗</a>
             @if($import->job)<a href="{{ route('job.show',$import->job->custom_id ?: $import->job->id) }}" target="_blank" class="px-6 py-3 border rounded-xl font-bold">View CGJobs Webpage ↗</a>@endif
         </div>
     </form>
+
+    @if($import->status==='pending')
+        <div class="bg-emerald-50 border border-emerald-200 rounded-2xl p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div><b>Ready to publish?</b><div class="text-sm text-emerald-800 mt-1">Save your edits first, then approve it from the Jobs API page.</div></div>
+            <form method="POST" action="{{ route('admin.job-sources.approve',$import) }}" onsubmit="return confirm('Approve and publish this job?')">@csrf<button class="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold">Approve & Publish</button></form>
+        </div>
+    @endif
 </div>
 @endsection
