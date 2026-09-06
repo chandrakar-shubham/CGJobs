@@ -16,5 +16,5 @@ return [
     ],
 
     'batching' => ['database' => env('DB_CONNECTION', 'mysql'), 'table' => 'job_batches'],
-    'failed' => ['driver' => 'database-uuids', 'connection' => env('DB_CONNECTION', 'mysql'), 'table' => 'failed_jobs'],
+    'failed' => ['driver' => 'database-uuids', 'database' => env('DB_CONNECTION', 'mysql'), 'table' => 'failed_jobs'],
 ];
