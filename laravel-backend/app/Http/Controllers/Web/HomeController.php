@@ -13,12 +13,9 @@ class HomeController extends Controller
     public function index(): View
     {
         $latest = Job::query()->latest('id')->take(12)->get();
-        $jobs = Job::query()->where(function ($q) {
-            $q->where('section', 'jobs')->orWhereNull('section');
-        })->latest('id')->take(6)->get();
+        $jobs = Job::query()->where(function ($q) { $q->where('section', 'jobs')->orWhereNull('section'); })->latest('id')->take(6)->get();
         $currentAffairs = Job::query()->whereIn('section', ['current-affairs', 'current_affairs', 'news'])->latest('id')->take(6)->get();
         $gk = StaticGk::query()->latest('id')->take(6)->get();
-
         return view('web.home', compact('latest', 'jobs', 'currentAffairs', 'gk'));
     }
 
@@ -29,12 +26,8 @@ class HomeController extends Controller
             'current-affairs' => ['title' => 'Current Affairs & News', 'query' => fn () => Job::query()->whereIn('section', ['current-affairs', 'current_affairs', 'news'])],
             'gk' => ['title' => 'Static GK', 'query' => fn () => null],
         ];
-
         abort_unless(isset($map[$type]), 404);
-        $items = $type === 'gk'
-            ? StaticGk::query()->latest('id')->paginate(18)
-            : $map[$type]['query']()->latest('id')->paginate(18);
-
+        $items = $type === 'gk' ? StaticGk::query()->latest('id')->paginate(18) : $map[$type]['query']()->latest('id')->paginate(18);
         return view('web.listing', ['type' => $type, 'title' => $map[$type]['title'], 'items' => $items]);
     }
 
@@ -61,14 +54,13 @@ class HomeController extends Controller
             ['loc' => $base.'/current-affairs', 'changefreq' => 'daily', 'priority' => '0.9'],
             ['loc' => $base.'/gk', 'changefreq' => 'weekly', 'priority' => '0.8'],
         ];
-        foreach (Job::query()->select(['id','custom_id','updated_at'])->latest('id')->get() as $item) {
+        foreach (Job::query()->select(['id','custom_id','section','updated_at'])->latest('id')->get() as $item) {
             $type = $this->jobType($item);
             $urls[] = ['loc' => $base.'/'.($type === 'current-affairs' ? 'current-affairs' : 'jobs').'/'.($item->custom_id ?: $item->id), 'lastmod' => optional($item->updated_at)->toAtomString(), 'priority' => '0.7'];
         }
         foreach (StaticGk::query()->select(['id','custom_id','updated_at'])->latest('id')->get() as $item) {
             $urls[] = ['loc' => $base.'/gk/'.($item->custom_id ?: $item->id), 'lastmod' => optional($item->updated_at)->toAtomString(), 'priority' => '0.6'];
         }
-
         return response()->view('web.sitemap', compact('urls'))->header('Content-Type', 'application/xml; charset=UTF-8');
     }
 
