@@ -39,6 +39,8 @@ jobs:
             git commit -m "Exclude first-install installer from production branch"
           fi
 
+          # Production branch is always a Laravel-only mirror of main.
+          # Force-updating it is intentional; Hostinger deploys from this branch.
           git push --force origin "$SPLIT_BRANCH:hostinger-production"
           git checkout main
           git branch -D "$SPLIT_BRANCH"
