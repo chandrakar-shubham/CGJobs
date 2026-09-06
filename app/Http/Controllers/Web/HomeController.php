@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Job;
 use App\Models\StaticGk;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 
@@ -19,31 +20,83 @@ class HomeController extends Controller
         return view('web.home', compact('latest', 'jobs', 'currentAffairs', 'gk'));
     }
 
-    public function jobs(): View
+    public function jobs(Request $request): View
     {
-        return $this->listing('jobs');
+        return $this->listing('jobs', $request);
     }
 
-    public function currentAffairs(): View
+    public function currentAffairs(Request $request): View
     {
-        return $this->listing('current-affairs');
+        return $this->listing('current-affairs', $request);
     }
 
-    public function staticGk(): View
+    public function staticGk(Request $request): View
     {
-        return $this->listing('gk');
+        return $this->listing('gk', $request);
     }
 
-    public function listing(string $type): View
+    public function listing(string $type, Request $request): View
     {
         $map = [
-            'jobs' => ['title' => 'Latest Government Jobs', 'query' => fn () => Job::query()->where(function ($q) { $q->where('section', 'jobs')->orWhereNull('section'); })],
-            'current-affairs' => ['title' => 'Current Affairs & News', 'query' => fn () => Job::query()->whereIn('section', ['current-affairs', 'current_affairs', 'news'])],
-            'gk' => ['title' => 'Static GK', 'query' => fn () => null],
+            'jobs' => ['title' => 'Latest Government Jobs'],
+            'current-affairs' => ['title' => 'Current Affairs & News'],
+            'gk' => ['title' => 'Static GK'],
         ];
         abort_unless(isset($map[$type]), 404);
-        $items = $type === 'gk' ? StaticGk::query()->latest('id')->paginate(18) : $map[$type]['query']()->latest('id')->paginate(18);
-        return view('web.listing', ['type' => $type, 'title' => $map[$type]['title'], 'items' => $items]);
+
+        $search = trim((string) $request->query('q', ''));
+        $category = trim((string) $request->query('category', ''));
+        $sort = (string) $request->query('sort', 'latest');
+
+        if ($type === 'gk') {
+            $query = StaticGk::query();
+            $searchColumns = ['title', 'hindi_title', 'question', 'answer'];
+        } else {
+            $query = Job::query();
+            if ($type === 'jobs') {
+                $query->where(function ($q) {
+                    $q->where('section', 'jobs')->orWhereNull('section');
+                });
+            } else {
+                $query->whereIn('section', ['current-affairs', 'current_affairs', 'news']);
+            }
+            $searchColumns = ['title', 'summary', 'detailed_content', 'category'];
+        }
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($searchColumns, $search) {
+                foreach ($searchColumns as $column) {
+                    $q->orWhere($column, 'like', '%'.$search.'%');
+                }
+            });
+        }
+
+        if ($category !== '') {
+            $query->where('category', $category);
+        }
+
+        if ($sort === 'oldest') {
+            $query->oldest('id');
+        } elseif ($sort === 'closing' && $type === 'jobs') {
+            $query->orderByRaw('CASE WHEN last_date IS NULL OR last_date = "" THEN 1 ELSE 0 END ASC')
+                ->orderBy('last_date', 'asc')
+                ->orderByDesc('id');
+        } else {
+            $query->latest('id');
+        }
+
+        $categories = (clone $query)->reorder()->whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category');
+        $items = $query->paginate(18)->withQueryString();
+
+        return view('web.listing', [
+            'type' => $type,
+            'title' => $map[$type]['title'],
+            'items' => $items,
+            'categories' => $categories,
+            'search' => $search,
+            'selectedCategory' => $category,
+            'sort' => $sort,
+        ]);
     }
 
     public function job(string $id): View
