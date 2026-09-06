@@ -67,10 +67,8 @@ class JobSourceController extends Controller
             'publish_mode' => 'required|in:approval,auto',
             'default_category' => 'required|in:CGSSB,CGPSC,Central Govt,Contractual',
         ]);
-
         $data['is_active'] = $request->boolean('is_active');
         JobSource::create($data);
-
         return back()->with('success', 'Job source added successfully.');
     }
 
@@ -85,10 +83,8 @@ class JobSourceController extends Controller
             'publish_mode' => 'required|in:approval,auto',
             'default_category' => 'required|in:CGSSB,CGPSC,Central Govt,Contractual',
         ]);
-
         $data['is_active'] = $request->boolean('is_active');
         $jobSource->update($data);
-
         return back()->with('success', 'Job source updated.');
     }
 
@@ -108,6 +104,18 @@ class JobSourceController extends Controller
         } catch (\Throwable $e) {
             report($e);
             return back()->withErrors(['sync' => 'Sync failed: '.$e->getMessage()]);
+        }
+    }
+
+    public function refreshPending(JobSource $jobSource, JobSourceService $service)
+    {
+        $removed = JobImport::where('job_source_id', $jobSource->id)->where('status', 'pending')->delete();
+        try {
+            $result = $service->sync($jobSource, null, null, true);
+            return back()->with('success', "Re-fetched source after replacing {$removed} old pending imports: {$result['fetched']} fetched, {$result['imported']} imported, {$result['skipped']} skipped.");
+        } catch (\Throwable $e) {
+            report($e);
+            return back()->withErrors(['sync' => 'Refresh failed: '.$e->getMessage()]);
         }
     }
 
@@ -145,21 +153,13 @@ class JobSourceController extends Controller
         $payload['edited_at'] = now()->toIso8601String();
 
         $jobImport->update([
-            'title' => $data['title'],
-            'summary' => $data['summary'] ?? null,
-            'content' => $data['content'] ?? null,
-            'category' => $data['department'],
-            'job_category' => $data['job_category'],
-            'department' => $data['department'],
-            'external_url' => $data['external_url'],
-            'image_url' => $data['image_url'] ?? null,
-            'published_at' => $data['published_at'] ?? null,
-            'raw_payload' => $payload,
+            'title' => $data['title'], 'summary' => $data['summary'] ?? null, 'content' => $data['content'] ?? null,
+            'category' => $data['department'], 'job_category' => $data['job_category'], 'department' => $data['department'],
+            'external_url' => $data['external_url'], 'image_url' => $data['image_url'] ?? null,
+            'published_at' => $data['published_at'] ?? null, 'raw_payload' => $payload,
         ]);
 
-        if ($jobImport->status === 'published' && $jobImport->job) {
-            $this->syncPublishedJob($jobImport->fresh('job'));
-        }
+        if ($jobImport->status === 'published' && $jobImport->job) $this->syncPublishedJob($jobImport->fresh('job'));
 
         return redirect()->route('admin.job-sources.index', $request->only(['q','source_id','job_category','from','to']))
             ->with('success', 'Imported job data updated successfully.');
@@ -175,9 +175,7 @@ class JobSourceController extends Controller
     {
         $filters = $this->filters($request);
         $query = JobImport::where('status', 'pending')
-            ->when($filters['q'], fn ($q) => $q->where(function ($w) use ($filters) {
-                $w->where('title', 'like', '%'.$filters['q'].'%')->orWhere('external_url', 'like', '%'.$filters['q'].'%');
-            }))
+            ->when($filters['q'], fn ($q) => $q->where(function ($w) use ($filters) { $w->where('title', 'like', '%'.$filters['q'].'%')->orWhere('external_url', 'like', '%'.$filters['q'].'%'); }))
             ->when($filters['source_id'], fn ($q) => $q->where('job_source_id', $filters['source_id']))
             ->when($filters['job_category'], fn ($q) => $q->where('job_category', $filters['job_category']))
             ->when($filters['from'], fn ($q) => $q->whereDate('published_at', '>=', $filters['from']))
@@ -185,12 +183,8 @@ class JobSourceController extends Controller
 
         $count = 0;
         $query->chunkById(100, function ($imports) use ($service, &$count) {
-            foreach ($imports as $import) {
-                $service->publish($import);
-                $count++;
-            }
+            foreach ($imports as $import) { $service->publish($import); $count++; }
         });
-
         return back()->with('success', "{$count} imported jobs approved and published.");
     }
 
@@ -202,13 +196,7 @@ class JobSourceController extends Controller
 
     private function filters(Request $request): array
     {
-        return [
-            'q' => trim((string) $request->query('q', '')),
-            'source_id' => $request->query('source_id'),
-            'job_category' => $request->query('job_category'),
-            'from' => $request->query('from'),
-            'to' => $request->query('to'),
-        ];
+        return ['q'=>trim((string)$request->query('q','')),'source_id'=>$request->query('source_id'),'job_category'=>$request->query('job_category'),'from'=>$request->query('from'),'to'=>$request->query('to')];
     }
 
     private function syncPublishedJob(JobImport $import): void
@@ -216,21 +204,13 @@ class JobSourceController extends Controller
         $job = $import->job;
         $facts = is_array($import->raw_payload['facts'] ?? null) ? $import->raw_payload['facts'] : [];
         $job->update([
-            'title' => $import->title,
-            'title_en' => $import->title,
-            'summary' => $import->summary,
-            'summary_en' => $import->summary,
-            'detailed_content' => $import->content ?: $import->summary,
-            'detailed_content_en' => $import->content ?: $import->summary,
-            'category' => $import->department,
-            'category_en' => $import->department,
-            'job_category' => $import->job_category,
-            'department' => $import->department,
-            'source_url' => $import->external_url,
-            'image_url' => $import->image_url,
-            'published_at' => optional($import->published_at)->format('Y-m-d') ?: $job->published_at,
-            'apply_url' => $facts['apply_url'] ?? $job->apply_url,
-            'official_notification_url' => $facts['notification_url'] ?? $job->official_notification_url,
+            'title'=>$import->title,'title_en'=>$import->title,'summary'=>$import->summary,'summary_en'=>$import->summary,
+            'detailed_content'=>$import->content ?: $import->summary,'detailed_content_en'=>$import->content ?: $import->summary,
+            'category'=>$import->department,'category_en'=>$import->department,'job_category'=>$import->job_category,'department'=>$import->department,
+            'source_url'=>$import->external_url,'image_url'=>$import->image_url,
+            'published_at'=>optional($import->published_at)->format('Y-m-d') ?: $job->published_at,
+            'apply_url'=>array_key_exists('apply_url',$facts) ? $facts['apply_url'] : $job->apply_url,
+            'official_notification_url'=>array_key_exists('notification_url',$facts) ? $facts['notification_url'] : $job->official_notification_url,
         ]);
     }
 }
