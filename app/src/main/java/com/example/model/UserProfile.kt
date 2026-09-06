@@ -7,6 +7,6 @@ data class UserProfile(
     val notificationsEnabled: Boolean = true,
     val examAlertsEnabled: Boolean = true,
     val resultAlertsEnabled: Boolean = true,
-    val language: String = "हिन्दी",
+    val language: String = "Hindi",
     val isDarkMode: Boolean = false
 )
