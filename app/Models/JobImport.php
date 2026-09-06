@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 class JobImport extends Model
 {
     protected $fillable = [
-        'job_source_id','external_url','external_key','title','summary','content','category','image_url','published_at','raw_payload','status','job_id','error_message','fetched_at','processed_at',
+        'job_source_id','external_url','external_key','title','summary','content','category','job_category','department',
+        'image_url','published_at','raw_payload','status','job_id','error_message','fetched_at','processed_at',
     ];
 
     protected $casts = [
