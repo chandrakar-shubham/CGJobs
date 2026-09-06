@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\JobController;
 use App\Http\Controllers\Admin\JobPosterTemplateController;
 use App\Http\Controllers\Admin\JobSourceController;
+use App\Http\Controllers\Admin\QueuedJobSourceController;
 use App\Http\Controllers\Admin\NewsSyncController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SettingController;
@@ -41,8 +42,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::post('/job-sources', [JobSourceController::class, 'store'])->name('job-sources.store');
     Route::put('/job-sources/{jobSource}', [JobSourceController::class, 'update'])->name('job-sources.update');
     Route::delete('/job-sources/{jobSource}', [JobSourceController::class, 'destroy'])->name('job-sources.destroy');
-    Route::post('/job-sources/{jobSource}/sync', [JobSourceController::class, 'sync'])->name('job-sources.sync');
-    Route::post('/job-sources/{jobSource}/refresh-pending', [JobSourceController::class, 'refreshPending'])->name('job-sources.refresh-pending');
+    Route::post('/job-sources/{jobSource}/sync', [QueuedJobSourceController::class, 'sync'])->name('job-sources.sync');
+    Route::post('/job-sources/{jobSource}/refresh-pending', [QueuedJobSourceController::class, 'refreshPending'])->name('job-sources.refresh-pending');
 
     Route::get('/job-imports/{jobImport}/edit', [JobSourceController::class, 'editImport'])->name('job-imports.edit');
     Route::put('/job-imports/{jobImport}', [JobSourceController::class, 'updateImport'])->name('job-imports.update');
