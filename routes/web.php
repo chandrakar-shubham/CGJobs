@@ -41,6 +41,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::get('/job-sources', [JobSourceController::class, 'index'])->name('job-sources.index');
     Route::post('/job-sources', [JobSourceController::class, 'store'])->name('job-sources.store');
     Route::put('/job-sources/{jobSource}', [JobSourceController::class, 'update'])->name('job-sources.update');
+    Route::post('/job-sources/{jobSource}/toggle-notify', [JobSourceController::class, 'toggleNotify'])->name('job-sources.toggle-notify');
     Route::delete('/job-sources/{jobSource}', [JobSourceController::class, 'destroy'])->name('job-sources.destroy');
     Route::post('/job-sources/{jobSource}/sync', [QueuedJobSourceController::class, 'sync'])->name('job-sources.sync');
     Route::post('/job-sources/{jobSource}/refresh-pending', [QueuedJobSourceController::class, 'refreshPending'])->name('job-sources.refresh-pending');
