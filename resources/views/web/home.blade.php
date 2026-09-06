@@ -1,0 +1,29 @@
+@extends('web.layout')
+@section('title','CGJobs — छत्तीसगढ़ सरकारी नौकरी, Current Affairs & GK')
+@section('content')
+<section class="bg-slate-950 text-white">
+  <div class="container mx-auto px-4 py-16 md:py-24 grid lg:grid-cols-[1.25fr_.75fr] gap-10 items-center">
+    <div><div class="inline-flex rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-bold text-slate-300">CG • JOBS • EXAMS • KNOWLEDGE</div>
+      <h1 class="text-4xl md:text-6xl font-black tracking-tight mt-5 leading-[1.05]">सरकारी नौकरी की तैयारी,<br><span class="text-slate-400">अब एक ही जगह।</span></h1>
+      <p class="mt-5 text-slate-300 max-w-2xl text-base md:text-lg">भर्ती अपडेट, महत्वपूर्ण तारीखें, करंट अफेयर्स और परीक्षा उपयोगी GK — साफ़, तेज़ और मोबाइल पर शानदार अनुभव के साथ।</p>
+      <div class="flex flex-wrap gap-3 mt-8"><a href="{{ route('listing','jobs') }}" class="bg-white text-slate-950 px-5 py-3 rounded-xl font-bold">Latest Jobs →</a><a href="{{ route('listing','current-affairs') }}" class="border border-white/20 px-5 py-3 rounded-xl font-bold">Current Affairs</a></div>
+    </div>
+    <div class="rounded-3xl bg-white/10 border border-white/10 p-5 shadow-2xl"><div class="text-xs uppercase tracking-widest text-slate-400 font-bold">आज क्या नया है?</div>
+      <div class="mt-4 space-y-3">@forelse($latest->take(4) as $item)<a href="{{ route('job.show',$item->custom_id ?: $item->id) }}" class="block rounded-2xl bg-white/10 hover:bg-white/15 p-4"><div class="text-xs text-slate-400">{{ $item->category ?: 'CGJobs' }}</div><div class="font-bold mt-1 line-clamp-2">{{ $item->title }}</div></a>@empty<div class="py-8 text-slate-400 text-sm">नई updates जल्द यहाँ दिखेंगी।</div>@endforelse</div>
+    </div>
+  </div>
+</section>
+<section class="container mx-auto px-4 py-12">
+  <div class="flex items-end justify-between mb-6"><div><div class="text-xs font-black uppercase tracking-widest text-slate-400">Fresh from CGJobs</div><h2 class="text-2xl md:text-3xl font-black mt-1">Latest Updates</h2></div><a class="text-sm font-bold" href="{{ route('listing','jobs') }}">View all →</a></div>
+  <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+    @forelse($latest->take(6) as $item)
+    <article class="bg-white border border-slate-200 rounded-2xl p-5 hover:-translate-y-0.5 hover:shadow-xl transition"><div class="flex items-center gap-2 text-xs text-slate-500"><span class="rounded-full bg-slate-100 px-2.5 py-1 font-bold">{{ $item->category ?: 'Update' }}</span><span>{{ $item->relative_time ?: 'हाल ही में' }}</span></div><h3 class="font-extrabold text-lg mt-4 line-clamp-2">{{ $item->title }}</h3><p class="text-sm text-slate-500 mt-2 line-clamp-2">{{ $item->summary }}</p><a class="inline-block mt-5 text-sm font-black" href="{{ route('job.show',$item->custom_id ?: $item->id) }}">Read update →</a></article>
+    @empty <div class="md:col-span-3 bg-white border rounded-2xl p-10 text-center text-slate-500">अभी कोई published update नहीं है।</div> @endforelse
+  </div>
+</section>
+<section class="bg-white border-y"><div class="container mx-auto px-4 py-12 grid lg:grid-cols-2 gap-12">
+  <div><div class="flex justify-between items-end mb-5"><div><div class="text-xs font-black uppercase tracking-widest text-slate-400">Recruitment</div><h2 class="text-2xl font-black">सरकारी नौकरियां</h2></div><a class="font-bold text-sm" href="{{ route('listing','jobs') }}">All jobs →</a></div><div class="space-y-3">@forelse($jobs->take(5) as $item)<a href="{{ route('job.show',$item->custom_id ?: $item->id) }}" class="flex gap-4 p-4 border rounded-2xl hover:border-slate-400"><div class="h-10 w-10 shrink-0 rounded-xl bg-slate-100 grid place-items-center">💼</div><div><div class="font-bold line-clamp-2">{{ $item->title }}</div><div class="text-xs text-slate-500 mt-1">{{ $item->vacancies ? $item->vacancies.' vacancies' : 'Recruitment update' }}</div></div></a>@empty<p class="text-sm text-slate-500">Jobs यहाँ दिखाई देंगी।</p>@endforelse</div></div>
+  <div><div class="flex justify-between items-end mb-5"><div><div class="text-xs font-black uppercase tracking-widest text-slate-400">Stay informed</div><h2 class="text-2xl font-black">Current Affairs</h2></div><a class="font-bold text-sm" href="{{ route('listing','current-affairs') }}">All news →</a></div><div class="space-y-3">@forelse($currentAffairs->take(5) as $item)<a href="{{ route('job.show',$item->custom_id ?: $item->id) }}" class="block p-4 border rounded-2xl hover:border-slate-400"><div class="text-xs text-slate-400">{{ $item->relative_time ?: 'हाल ही में' }}</div><div class="font-bold mt-1 line-clamp-2">{{ $item->title }}</div></a>@empty<p class="text-sm text-slate-500">Current Affairs यहाँ दिखाई देंगे।</p>@endforelse</div></div>
+</div></section>
+<section class="container mx-auto px-4 py-12"><div class="flex justify-between items-end mb-5"><div><div class="text-xs font-black uppercase tracking-widest text-slate-400">Exam Ready</div><h2 class="text-2xl font-black">Static GK</h2></div><a class="font-bold text-sm" href="{{ route('listing','gk') }}">Explore GK →</a></div><div class="grid md:grid-cols-3 gap-4">@forelse($gk->take(3) as $item)<a href="{{ route('gk.show',$item->custom_id ?: $item->id) }}" class="bg-white border rounded-2xl p-5 hover:shadow-lg"><div class="text-xs font-bold text-slate-400">{{ $item->category ?: 'GK' }}</div><h3 class="font-extrabold mt-2">{{ $item->hindi_title ?: $item->title }}</h3><p class="text-sm text-slate-500 mt-2 line-clamp-2">{{ $item->answer ?: $item->detailed_notes }}</p></a>@empty<div class="md:col-span-3 bg-white border rounded-2xl p-8 text-sm text-slate-500">GK content जल्द जोड़ा जाएगा।</div>@endforelse</div></section>
+@endsection
