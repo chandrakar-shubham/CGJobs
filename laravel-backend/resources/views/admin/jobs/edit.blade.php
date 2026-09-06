@@ -1,173 +1,19 @@
 @extends('layouts.admin')
-
-@section('title', 'अधिसूचना संपादित करें (Edit Job/News)')
-
+@section('title','नौकरी संपादित करें')
 @section('content')
-<div class="max-w-4xl mx-auto space-y-6">
-
-    <div class="flex items-center justify-between">
-        <div>
-            <h2 class="text-xl font-bold text-slate-900">अधिसूचना संपादित करें</h2>
-            <p class="text-xs text-slate-500 mt-0.5">ID: {{ $job->custom_id ?: $job->id }}</p>
-        </div>
-        <a href="{{ route('admin.jobs.index') }}" class="px-3 py-2 bg-white border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-50 transition">
-            <i class="fa-solid fa-arrow-left mr-1"></i> वापस जाएं
-        </a>
-    </div>
-
-    <form method="POST" action="{{ route('admin.jobs.update', $job) }}" class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-6">
-        @csrf
-        @method('PUT')
-
-        <!-- Section & Post Type Selection -->
-        <div class="bg-slate-50/80 p-4 rounded-2xl border border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    सेक्शन (Section) <span class="text-rose-500">*</span>
-                </label>
-                <select name="section" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    <option value="jobs" {{ old('section', $job->section ?: 'jobs') == 'jobs' ? 'selected' : '' }}>
-                        💼 सरकारी भर्तियां (Jobs & Vacancies)
-                    </option>
-                    <option value="news" {{ old('section', $job->section) == 'news' ? 'selected' : '' }}>
-                        📰 समसामयिकी व समाचार (Current Affairs / News)
-                    </option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    पोस्ट का प्रकार (Post Type) <span class="text-rose-500">*</span>
-                </label>
-                <select name="post_type" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    <option value="job" {{ old('post_type', $job->post_type) == 'job' ? 'selected' : '' }}>नई भर्ती (Job Notification)</option>
-                    <option value="news" {{ old('post_type', $job->post_type) == 'news' ? 'selected' : '' }}>दैनिक समाचार (News Article)</option>
-                    <option value="admit_card" {{ old('post_type', $job->post_type) == 'admit_card' ? 'selected' : '' }}>प्रवेश पत्र (Admit Card)</option>
-                    <option value="result" {{ old('post_type', $job->post_type) == 'result' ? 'selected' : '' }}>परीक्षा परिणाम (Result)</option>
-                    <option value="syllabus" {{ old('post_type', $job->post_type) == 'syllabus' ? 'selected' : '' }}>पाठ्यक्रम (Syllabus & Pattern)</option>
-                    <option value="answer_key" {{ old('post_type', $job->post_type) == 'answer_key' ? 'selected' : '' }}>उत्तर कुंजी (Answer Key)</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Title & Category -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-            <div class="md:col-span-2">
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    भर्ती शीर्षक (Job Title) <span class="text-rose-500">*</span>
-                </label>
-                <input type="text" name="title" value="{{ old('title', $job->title) }}" required class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                    विभाग / श्रेणी (Category) <span class="text-rose-500">*</span>
-                </label>
-                <select name="category" required class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
-                    @foreach($categories as $cat)
-                        <option value="{{ $cat->name }}" {{ old('category', $job->category) == $cat->name ? 'selected' : '' }}>
-                            {{ $cat->hindi_name ?: $cat->name }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-
-        <!-- Vacancies, Salary, Eligibility, Age Limit -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">कुल रिक्तियां (Vacancies)</label>
-                <input type="text" name="vacancies" value="{{ old('vacancies', $job->vacancies) }}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">वेतनमान (Salary)</label>
-                <input type="text" name="salary" value="{{ old('salary', $job->salary) }}" placeholder="उदा: ₹19,500 - ₹62,000/-" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">शैक्षणिक योग्यता (Eligibility)</label>
-                <input type="text" name="eligibility" value="{{ old('eligibility', $job->eligibility) }}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">आयु सीमा (Age Limit)</label>
-                <input type="text" name="age_limit" value="{{ old('age_limit', $job->age_limit) }}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            </div>
-        </div>
-
-        <!-- Summary -->
-        <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                संक्षिप्त विवरण (Summary) <span class="text-rose-500">*</span>
-            </label>
-            <textarea name="summary" rows="3" required class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">{{ old('summary', $job->summary) }}</textarea>
-        </div>
-
-        <!-- Detailed Content -->
-        <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">विस्तृत विवरण</label>
-            <textarea name="detailed_content" rows="4" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">{{ old('detailed_content', $job->detailed_content) }}</textarea>
-        </div>
-
-        <!-- Important Dates Section -->
-        <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200/80 space-y-3">
-            <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-                <i class="fa-regular fa-calendar-days text-brand-600"></i> महत्वपूर्ण तिथियां (Important Dates)
-            </h3>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">आवेदन शुरू</label>
-                    <input type="text" name="application_start" value="{{ old('application_start', $job->application_start) }}" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">अंतिम तिथि</label>
-                    <input type="text" name="last_date" value="{{ old('last_date', $job->last_date) }}" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-[11px] font-semibold text-slate-600 mb-1">परीक्षा तिथि</label>
-                    <input type="text" name="exam_date" value="{{ old('exam_date', $job->exam_date) }}" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg bg-white focus:outline-none">
-                </div>
-            </div>
-        </div>
-
-        <!-- Links -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">आधिकारिक विज्ञापन PDF लिंक</label>
-                <input type="url" name="official_notification_url" value="{{ old('official_notification_url', $job->official_notification_url) }}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            </div>
-
-            <div>
-                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">ऑनलाइन आवेदन लिंक</label>
-                <input type="url" name="apply_url" value="{{ old('apply_url', $job->apply_url) }}" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:outline-none">
-            </div>
-        </div>
-
-        <!-- Options -->
-        <div class="pt-2 border-t border-slate-100 flex flex-wrap gap-6 items-center">
-            <label class="inline-flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" name="is_breaking" value="1" {{ old('is_breaking', $job->is_breaking) ? 'checked' : '' }} class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
-                <span class="text-xs font-semibold text-slate-700">ब्रेकिंग / HOT Badge</span>
-            </label>
-
-            <label class="inline-flex items-center space-x-2 cursor-pointer">
-                <input type="checkbox" name="is_new" value="1" {{ old('is_new', $job->is_new) ? 'checked' : '' }} class="w-4 h-4 text-brand-600 rounded border-slate-300 focus:ring-brand-500">
-                <span class="text-xs font-semibold text-slate-700">New Badge</span>
-            </label>
-        </div>
-
-        <!-- Submit Button -->
-        <div class="pt-4 flex items-center justify-end space-x-3">
-            <a href="{{ route('admin.jobs.index') }}" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-sm rounded-xl transition">
-                रद्द करें
-            </a>
-            <button type="submit" class="px-6 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold text-sm rounded-xl shadow-md transition transform active:scale-95">
-                <i class="fa-solid fa-check mr-2"></i> बदलाव सहेजें (Update)
-            </button>
-        </div>
-
-    </form>
-
+<div class="max-w-5xl mx-auto space-y-6">
+  <div class="flex items-center justify-between"><div><h2 class="text-xl font-bold text-slate-900">नौकरी संपादित करें</h2><p class="text-xs text-slate-500">ID: {{ $job->custom_id ?: $job->id }}</p></div><a href="{{ route('admin.jobs.index') }}" class="px-3 py-2 border rounded-xl text-sm">← वापस</a></div>
+  <form method="POST" action="{{ route('admin.jobs.update',$job) }}" class="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">@csrf @method('PUT')
+    <div class="grid md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-2xl"><div><label class="label">Main Job Category *</label><select name="job_category" required class="input">@foreach($jobCategories as $c)<option value="{{ $c }}" @selected(old('job_category',$job->job_category)===$c)>{{ $c }}</option>@endforeach</select></div><div><label class="label">Concerned Department *</label><select name="department" required class="input">@foreach($departments as $d)<option value="{{ $d }}" @selected(old('department',$job->department)===$d)>{{ $d }}</option>@endforeach</select></div><div><label class="label">Post Type</label><select name="post_type" class="input">@foreach(['job'=>'Job Notification','admit_card'=>'Admit Card','result'=>'Result','syllabus'=>'Syllabus','answer_key'=>'Answer Key'] as $v=>$label)<option value="{{ $v }}" @selected(old('post_type',$job->post_type)===$v)>{{ $label }}</option>@endforeach</select><input type="hidden" name="section" value="jobs"></div></div>
+    <div class="grid md:grid-cols-3 gap-5"><div class="md:col-span-2"><label class="label">Job Name *</label><input name="title" value="{{ old('title',$job->title_en ?: $job->title) }}" required class="input"></div><div><label class="label">Released By</label><input name="source" value="{{ old('source',$job->source) }}" class="input"></div></div>
+    <div class="grid md:grid-cols-4 gap-4"><div><label class="label">Total Posts</label><input name="vacancies" value="{{ old('vacancies',$job->vacancies) }}" class="input"></div><div><label class="label">Apply From</label><input name="application_start" value="{{ old('application_start',$job->application_start) }}" class="input"></div><div><label class="label">Last Date</label><input name="last_date" value="{{ old('last_date',$job->last_date) }}" class="input"></div><div><label class="label">Exam Date</label><input name="exam_date" value="{{ old('exam_date',$job->exam_date) }}" class="input"></div></div>
+    <div class="grid md:grid-cols-3 gap-4"><div><label class="label">Eligibility</label><input name="eligibility" value="{{ old('eligibility',$job->eligibility_en ?: $job->eligibility) }}" class="input"></div><div><label class="label">Age Limit</label><input name="age_limit" value="{{ old('age_limit',$job->age_limit) }}" class="input"></div><div><label class="label">Salary</label><input name="salary" value="{{ old('salary',$job->salary) }}" class="input"></div></div>
+    <div><label class="label">Short Summary *</label><textarea name="summary" rows="3" required class="input">{{ old('summary',$job->summary_en ?: $job->summary) }}</textarea></div>
+    <div><label class="label">Detailed Information</label><textarea name="detailed_content" rows="7" class="input">{{ old('detailed_content',$job->detailed_content_en ?: $job->detailed_content) }}</textarea></div>
+    <div class="grid md:grid-cols-2 gap-5"><div><label class="label">Official Notification URL</label><input type="url" name="official_notification_url" value="{{ old('official_notification_url',$job->official_notification_url) }}" class="input"></div><div><label class="label">Apply Online URL</label><input type="url" name="apply_url" value="{{ old('apply_url',$job->apply_url) }}" class="input"></div></div>
+    <div class="flex flex-wrap gap-6 border-t pt-4"><label class="check"><input type="checkbox" name="is_breaking" value="1" @checked(old('is_breaking',$job->is_breaking))> HOT / Breaking</label><label class="check"><input type="checkbox" name="is_new" value="1" @checked(old('is_new',$job->is_new))> New</label></div>
+    <div class="flex justify-end"><button class="px-6 py-3 rounded-xl bg-brand-600 text-white font-bold">Save Changes</button></div>
+  </form>
 </div>
+<style>.label{display:block;font-size:11px;font-weight:800;color:#475569;margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em}.input{width:100%;border:1px solid #dbe2ea;border-radius:12px;padding:11px 13px;background:#fff;font-size:14px;outline:none}.check{font-size:13px;font-weight:700;color:#475569;display:flex;gap:8px;align-items:center}</style>
 @endsection
