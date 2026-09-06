@@ -13,4 +13,8 @@ return [
     'newsdata' => [
         'key' => env('NEWSDATA_KEY'),
     ],
+
+    'google_translate' => [
+        'key' => env('GOOGLE_TRANSLATE_API_KEY'),
+    ],
 ];
