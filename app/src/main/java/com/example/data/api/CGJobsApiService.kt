@@ -15,49 +15,42 @@ import retrofit2.http.Path
 import retrofit2.http.Query
 
 interface CGJobsApiService {
-
-    @GET("api/health")
-    suspend fun checkHealth(): HealthResponse
+    @GET("api/health") suspend fun checkHealth(): HealthResponse
 
     @GET("api/news")
     suspend fun getNews(
         @Query("category") category: String? = null,
         @Query("query") query: String? = null,
         @Query("section") section: String? = null,
-        @Query("limit") limit: Int? = 100
+        @Query("limit") limit: Int? = 100,
+        @Query("lang") language: String? = "hi"
     ): NewsApiResponse
 
     @GET("api/jobs")
     suspend fun getJobs(
         @Query("category") category: String? = null,
         @Query("query") query: String? = null,
-        @Query("limit") limit: Int? = 100
+        @Query("limit") limit: Int? = 100,
+        @Query("lang") language: String? = "hi"
     ): NewsApiResponse
 
     @GET("api/news/{id}")
-    suspend fun getNewsDetail(
-        @Path("id") id: String
-    ): SingleNewsResponse
+    suspend fun getNewsDetail(@Path("id") id: String, @Query("lang") language: String? = "hi"): SingleNewsResponse
 
-    @GET("api/sections")
-    suspend fun getSections(): SectionsApiResponse
+    @GET("api/sections") suspend fun getSections(): SectionsApiResponse
 
     @GET("api/categories")
-    suspend fun getCategories(
-        @Query("section") section: String? = null
-    ): CategoriesApiResponse
+    suspend fun getCategories(@Query("section") section: String? = null, @Query("lang") language: String? = "hi"): CategoriesApiResponse
 
     @GET("api/static-gk")
     suspend fun getStaticGk(
         @Query("category") category: String? = null,
-        @Query("query") query: String? = null
+        @Query("query") query: String? = null,
+        @Query("lang") language: String? = "hi"
     ): StaticGkApiResponse
 
-    @GET("api/alerts")
-    suspend fun getAlerts(): AlertsApiResponse
+    @GET("api/alerts") suspend fun getAlerts(): AlertsApiResponse
 
     @POST("api/alerts/register-token")
-    suspend fun registerDeviceToken(
-        @Body request: RegisterTokenRequest
-    ): Map<String, Any>
+    suspend fun registerDeviceToken(@Body request: RegisterTokenRequest): Map<String, Any>
 }
