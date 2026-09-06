@@ -5,6 +5,7 @@ namespace App\Jobs;
 use App\Models\JobImport;
 use App\Models\JobSource;
 use App\Services\JobImportNormalizer;
+use App\Services\JobPublishNotificationService;
 use App\Services\JobSourceService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
@@ -28,7 +29,7 @@ class ProcessJobSourceSync implements ShouldQueue
         public bool $deep = true,
     ) {}
 
-    public function handle(JobSourceService $service, JobImportNormalizer $normalizer): void
+    public function handle(JobSourceService $service, JobImportNormalizer $normalizer, JobPublishNotificationService $notifier): void
     {
         $source = JobSource::find($this->sourceId);
         if (!$source) return;
@@ -40,15 +41,17 @@ class ProcessJobSourceSync implements ShouldQueue
         try {
             $result = $service->sync($source, $from, $to, $this->deep);
 
-            // Normalize every newly created import, including auto-published
-            // imports. This guarantees that image URLs and classification are
-            // captured even when the source is configured for auto publish.
             JobImport::where('job_source_id', $source->id)
                 ->where('id', '>', $beforeId)
                 ->whereIn('status', ['pending', 'published'])
                 ->orderBy('id')
-                ->chunkById(20, function ($imports) use ($normalizer) {
-                    foreach ($imports as $import) $normalizer->normalize($import);
+                ->chunkById(20, function ($imports) use ($normalizer, $notifier) {
+                    foreach ($imports as $import) {
+                        $import = $normalizer->normalize($import);
+                        if ($import->status === 'published' && $import->job) {
+                            $notifier->notify($import, $import->job);
+                        }
+                    }
                 });
 
             Log::info('Background job source sync completed', [
