@@ -3,44 +3,35 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <title>@yield('title', 'CGJobs — छत्तीसगढ़ सरकारी नौकरी, करंट अफेयर्स और GK')</title>
-    <meta name="description" content="छत्तीसगढ़ सरकारी नौकरी, भर्ती, करंट अफेयर्स और परीक्षा उपयोगी GK — एक ही जगह।">
-    <meta name="theme-color" content="#111827">
+    <meta name="theme-color" content="#0b1220">
+    <meta name="robots" content="index,follow">
+    <title>@yield('title', 'CGJobs — छत्तीसगढ़ सरकारी नौकरी, Current Affairs & GK')</title>
+    <meta name="description" content="छत्तीसगढ़ सरकारी नौकरी, भर्ती अपडेट, Current Affairs और परीक्षा उपयोगी GK — CGJobs पर।">
     <link rel="canonical" href="{{ url()->current() }}">
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f8fafc;color:#0f172a}
-        .container{max-width:1180px}
-        .glass{background:rgba(255,255,255,.82);backdrop-filter:blur(14px)}
-        .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+      :root{--ink:#0b1220;--muted:#64748b;--line:#e5e7eb;--paper:#f6f7fb;--card:#fff;--brand:#111827;--accent:#f59e0b}
+      *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+      a{color:inherit;text-decoration:none}.container{width:min(1180px,calc(100% - 32px));margin:auto}.site-header{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.9);backdrop-filter:blur(16px);border-bottom:1px solid rgba(229,231,235,.9)}
+      .nav{height:70px;display:flex;align-items:center;gap:22px}.brand{display:flex;align-items:center;gap:11px;margin-right:auto}.brand-mark{width:42px;height:42px;border-radius:13px;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:900;letter-spacing:-.05em}.brand-name{font-weight:900;font-size:19px;letter-spacing:-.03em}.brand-sub{font-size:10px;color:var(--muted);margin-top:-2px}.nav-links{display:flex;gap:4px;font-size:14px;font-weight:750}.nav-links a{padding:10px 12px;border-radius:10px}.nav-links a:hover{background:#f1f5f9}.app-btn{background:var(--ink);color:#fff;padding:11px 15px;border-radius:12px;font-size:13px;font-weight:800}.mobile-nav{display:none}
+      .hero{background:linear-gradient(135deg,#0b1220 0%,#172033 60%,#263247 100%);color:#fff}.hero-inner{padding:70px 0 62px;display:grid;grid-template-columns:1.25fr .75fr;gap:42px;align-items:center}.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.16em;font-weight:900;color:#94a3b8}.hero h1{font-size:clamp(38px,5vw,66px);line-height:1.02;letter-spacing:-.055em;margin:15px 0 18px;max-width:780px}.hero p{font-size:17px;line-height:1.75;color:#cbd5e1;max-width:680px;margin:0}.hero-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 17px;border-radius:12px;font-size:14px;font-weight:850}.btn-light{background:#fff;color:#0b1220}.btn-dark{border:1px solid rgba(255,255,255,.18);color:#fff;background:rgba(255,255,255,.06)}.hero-panel{border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.06);border-radius:24px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.22)}.hero-panel-head{font-size:11px;text-transform:uppercase;letter-spacing:.13em;color:#94a3b8;font-weight:900;margin-bottom:12px}.hero-item{display:block;padding:14px;border-radius:15px;background:rgba(255,255,255,.06);margin-top:8px}.hero-item:hover{background:rgba(255,255,255,.1)}.hero-item .meta{color:#94a3b8;font-size:11px}.hero-item strong{display:block;margin-top:5px;font-size:14px;line-height:1.45}
+      .section{padding:50px 0}.section-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:20px}.kicker{font-size:10px;text-transform:uppercase;letter-spacing:.16em;color:#94a3b8;font-weight:900}.section-title{font-size:28px;line-height:1.15;letter-spacing:-.04em;margin:5px 0 0;font-weight:900}.section-link{font-size:13px;font-weight:850;color:#475569}.grid{display:grid;gap:16px}.grid-3{grid-template-columns:repeat(3,1fr)}.grid-2{grid-template-columns:repeat(2,1fr)}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;transition:.2s ease;box-shadow:0 1px 1px rgba(15,23,42,.02)}.card:hover{transform:translateY(-2px);box-shadow:0 14px 35px rgba(15,23,42,.08);border-color:#cbd5e1}.meta-row{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:11px}.pill{background:#f1f5f9;border-radius:999px;padding:5px 9px;font-weight:800;color:#334155}.pill-new{background:#dcfce7;color:#166534}.pill-breaking{background:#fee2e2;color:#991b1b}.card h3{font-size:18px;line-height:1.35;letter-spacing:-.025em;margin:13px 0 7px;font-weight:850}.card p{font-size:13px;line-height:1.65;color:#64748b;margin:0}.read{display:inline-block;margin-top:15px;font-size:12px;font-weight:900}.split{background:#fff;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.job-row{display:flex;gap:13px;align-items:flex-start;padding:15px;border:1px solid var(--line);border-radius:15px;background:#fff}.job-row:hover{border-color:#94a3b8}.job-icon{width:42px;height:42px;flex:none;border-radius:12px;background:#f1f5f9;display:grid;place-items:center}.job-row strong{display:block;font-size:14px;line-height:1.4}.job-row small{display:block;color:#64748b;font-size:11px;margin-top:4px}
+      .page-head{padding:54px 0 26px}.page-head h1{font-size:clamp(32px,5vw,52px);line-height:1.05;letter-spacing:-.05em;margin:7px 0 0}.page-head p{color:#64748b;max-width:720px;line-height:1.7}.pager{margin-top:26px}.pager nav{display:flex;gap:6px;flex-wrap:wrap}.pager a,.pager span{padding:8px 11px;border:1px solid var(--line);background:#fff;border-radius:9px;font-size:12px}
+      .article-wrap{padding:48px 0}.article-layout{display:grid;grid-template-columns:minmax(0,820px) 280px;gap:26px;align-items:start}.article{background:#fff;border:1px solid var(--line);border-radius:24px;padding:clamp(22px,4vw,42px)}.article h1{font-size:clamp(32px,5vw,54px);line-height:1.05;letter-spacing:-.05em;margin:14px 0}.article-lead{font-size:18px;line-height:1.75;color:#475569}.date{font-size:12px;color:#94a3b8}.facts{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:26px}.fact{background:#f8fafc;border:1px solid #eef2f7;border-radius:14px;padding:14px}.fact label{display:block;color:#94a3b8;font-size:10px;font-weight:850;text-transform:uppercase;letter-spacing:.08em}.fact strong{display:block;margin-top:5px;font-size:13px;line-height:1.45}.content{border-top:1px solid var(--line);margin-top:30px;padding-top:26px}.content h2{font-size:21px;margin:25px 0 10px}.content p,.content li{font-size:15px;line-height:1.85;color:#475569}.content ul{padding-left:20px}.article-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:28px}.btn-primary{background:var(--ink);color:#fff}.btn-outline{border:1px solid #cbd5e1;background:#fff}.side{position:sticky;top:92px}.side-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.side-card h3{margin:0 0 12px;font-size:14px}.side-link{display:block;padding:11px 0;border-top:1px solid #f1f5f9;font-size:12px;font-weight:750;line-height:1.45}.gk-answer{font-size:18px;font-weight:850;background:#f8fafc;border-radius:14px;padding:16px;margin-top:12px}.footer{margin-top:45px;background:#fff;border-top:1px solid var(--line)}.footer-inner{padding:42px 0;display:grid;grid-template-columns:1.4fr .7fr .9fr;gap:35px}.footer h3{font-size:14px;margin:0 0 12px}.footer p,.footer a{font-size:12px;color:#64748b;line-height:1.7}.footer-links{display:grid;gap:5px}.copyright{border-top:1px solid var(--line);padding:15px 0;text-align:center;color:#94a3b8;font-size:10px}
+      @media(max-width:900px){.hero-inner{grid-template-columns:1fr}.grid-3{grid-template-columns:repeat(2,1fr)}.article-layout{grid-template-columns:1fr}.side{display:none}.footer-inner{grid-template-columns:1fr 1fr}}
+      @media(max-width:680px){.container{width:min(100% - 24px,1180px)}.nav{height:62px}.nav-links{display:none}.app-btn{padding:9px 11px;font-size:11px}.brand-mark{width:38px;height:38px}.brand-name{font-size:17px}.mobile-nav{display:flex;gap:5px;overflow:auto;border-top:1px solid var(--line);padding:7px 0}.mobile-nav a{white-space:nowrap;padding:7px 10px;background:#f8fafc;border-radius:8px;font-size:11px;font-weight:800}.hero-inner{padding:45px 0 40px}.hero h1{font-size:42px}.hero p{font-size:15px}.hero-panel{display:none}.section{padding:38px 0}.section-title{font-size:24px}.grid-3,.grid-2{grid-template-columns:1fr}.facts{grid-template-columns:1fr 1fr}.article-wrap{padding:28px 0}.article{border-radius:18px}.footer-inner{grid-template-columns:1fr;padding:32px 0}.page-head{padding:38px 0 20px}}
     </style>
     @stack('head')
 </head>
 <body>
-<header class="sticky top-0 z-40 border-b border-slate-200/80 glass">
-  <div class="container mx-auto px-4">
-    <div class="h-16 flex items-center justify-between gap-4">
-      <a href="{{ route('home') }}" class="flex items-center gap-3">
-        <div class="h-10 w-10 rounded-xl bg-slate-950 text-white grid place-items-center font-black">CG</div>
-        <div><div class="font-black tracking-tight text-lg">CGJobs</div><div class="text-[10px] text-slate-500 -mt-1">Jobs • Exams • Knowledge</div></div>
-      </a>
-      <nav class="hidden md:flex items-center gap-1 text-sm font-semibold">
-        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ route('listing','jobs') }}">सरकारी नौकरियां</a>
-        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ route('listing','current-affairs') }}">करंट अफेयर्स</a>
-        <a class="px-3 py-2 rounded-lg hover:bg-slate-100" href="{{ route('listing','gk') }}">Static GK</a>
-      </nav>
-      <a href="https://play.google.com/store" class="hidden sm:inline-flex bg-slate-950 text-white px-4 py-2.5 rounded-xl text-sm font-bold">📱 App में पढ़ें</a>
-    </div>
+<header class="site-header">
+  <div class="container nav">
+    <a href="{{ route('home') }}" class="brand"><span class="brand-mark">CG</span><span><span class="brand-name">CGJobs</span><span class="brand-sub">Jobs • Exams • Knowledge</span></span></a>
+    <nav class="nav-links"><a href="{{ route('listing.jobs') }}">सरकारी नौकरियां</a><a href="{{ route('listing.current-affairs') }}">Current Affairs</a><a href="{{ route('listing.gk') }}">Static GK</a></nav>
+    <a class="app-btn" href="https://play.google.com/store">📱 App</a>
   </div>
+  <div class="container mobile-nav"><a href="{{ route('listing.jobs') }}">Jobs</a><a href="{{ route('listing.current-affairs') }}">Current Affairs</a><a href="{{ route('listing.gk') }}">GK</a><a href="{{ route('admin.login') }}">Admin</a></div>
 </header>
 <main>@yield('content')</main>
-<footer class="mt-16 border-t bg-white">
-  <div class="container mx-auto px-4 py-10 grid md:grid-cols-3 gap-8">
-    <div><div class="font-black text-xl">CGJobs</div><p class="text-sm text-slate-500 mt-2">छत्तीसगढ़ की सरकारी नौकरी, परीक्षा और ज्ञान की तेज़, भरोसेमंद जानकारी।</p></div>
-    <div><div class="font-bold mb-3">Explore</div><div class="space-y-2 text-sm text-slate-600"><a class="block hover:text-slate-950" href="{{ route('listing','jobs') }}">Jobs</a><a class="block hover:text-slate-950" href="{{ route('listing','current-affairs') }}">Current Affairs</a><a class="block hover:text-slate-950" href="{{ route('listing','gk') }}">GK</a></div></div>
-    <div><div class="font-bold mb-3">CGJobs Android App</div><p class="text-sm text-slate-500">हर अपडेट को ऐप में भी तुरंत पढ़ें और सेव करें।</p><a class="inline-block mt-3 text-sm font-bold underline" href="https://play.google.com/store">Get the App →</a></div>
-  </div>
-  <div class="border-t py-4 text-center text-xs text-slate-400">© {{ date('Y') }} CGJobs. Built for aspirants.</div>
-</footer>
+<footer class="footer"><div class="container footer-inner"><div><div class="brand"><span class="brand-mark">CG</span><span><span class="brand-name">CGJobs</span><span class="brand-sub">Jobs • Exams • Knowledge</span></span></div><p>छत्तीसगढ़ की सरकारी नौकरी, परीक्षा और ज्ञान की महत्वपूर्ण जानकारी — सरल, तेज़ और aspirant-focused अनुभव के साथ।</p></div><div><h3>Explore</h3><div class="footer-links"><a href="{{ route('listing.jobs') }}">Government Jobs</a><a href="{{ route('listing.current-affairs') }}">Current Affairs</a><a href="{{ route('listing.gk') }}">Static GK</a></div></div><div><h3>Android App</h3><p>उसी content को CGJobs Android app में पढ़ें, save करें और notifications पाएँ।</p><a class="read" href="https://play.google.com/store">Get the app →</a></div></div><div class="copyright">© {{ date('Y') }} CGJobs. Built for aspirants.</div></footer>
 </body>
 </html>
