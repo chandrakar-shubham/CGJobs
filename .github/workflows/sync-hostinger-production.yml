@@ -27,9 +27,17 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git fetch origin hostinger-production || true
           SPLIT_BRANCH="sync-hostinger-${GITHUB_RUN_ID}"
           git subtree split --prefix=laravel-backend -b "$SPLIT_BRANCH"
+          git checkout "$SPLIT_BRANCH"
+
+          # install.php is for first-time setup only. Normal production
+          # deployments must never publish it again.
+          if [ -f install.php ]; then
+            git rm install.php
+            git commit -m "Exclude first-install installer from production branch"
+          fi
 
           git push --force origin "$SPLIT_BRANCH:hostinger-production"
-          git push origin --delete "$SPLIT_BRANCH" || true
+          git checkout main
+          git branch -D "$SPLIT_BRANCH"
