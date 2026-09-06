@@ -48,17 +48,27 @@ class HomeController extends Controller
         $category = trim((string) $request->query('category', ''));
         $sort = (string) $request->query('sort', 'latest');
 
+        // Build the section-scoped base query first. Category options must come
+        // from this section only, never from the other content sections.
         if ($type === 'gk') {
             $query = StaticGk::query();
+            $categoryQuery = StaticGk::query();
             $searchColumns = ['title', 'hindi_title', 'question', 'answer'];
         } else {
             $query = Job::query();
+            $categoryQuery = Job::query();
             if ($type === 'jobs') {
-                $query->where(function ($q) {
+                $sectionFilter = function ($q) {
                     $q->where('section', 'jobs')->orWhereNull('section');
-                });
+                };
+                $query->where($sectionFilter);
+                $categoryQuery->where($sectionFilter);
             } else {
-                $query->whereIn('section', ['current-affairs', 'current_affairs', 'news']);
+                $sectionFilter = function ($q) {
+                    $q->whereIn('section', ['current-affairs', 'current_affairs', 'news']);
+                };
+                $query->where($sectionFilter);
+                $categoryQuery->where($sectionFilter);
             }
             $searchColumns = ['title', 'summary', 'detailed_content', 'category'];
         }
@@ -85,7 +95,17 @@ class HomeController extends Controller
             $query->latest('id');
         }
 
-        $categories = (clone $query)->reorder()->whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category');
+        // Deliberately derive categories from the section-scoped query without
+        // search/sort/category filters, so the dropdown always lists every
+        // category available for the current section.
+        $categories = $categoryQuery
+            ->whereNotNull('category')
+            ->where('category', '!=', '')
+            ->select('category')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
+
         $items = $query->paginate(18)->withQueryString();
 
         return view('web.listing', [
