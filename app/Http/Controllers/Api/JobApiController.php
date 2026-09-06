@@ -10,125 +10,64 @@ use Illuminate\Http\Request;
 
 class JobApiController extends Controller
 {
-    /**
-     * Get news and recruitment updates list
-     */
     public function index(Request $request): JsonResponse
     {
         $query = Job::query();
-
-        if ($request->filled('section')) {
-            $query->where('section', $request->section);
+        if ($request->filled('section')) $query->where('section', $request->section);
+        if ($request->filled('category') && !in_array($request->category, ['सभी','All'], true)) {
+            $cat = $request->category;
+            $query->where(fn($q) => $q->where('category', $cat)->orWhere('category_en', $cat));
         }
-
-        if ($request->filled('category') && $request->category !== 'सभी' && $request->category !== 'All') {
-            $query->where('category', $request->category);
-        }
-
-        if ($request->filled('query')) {
-            $searchTerm = '%' . $request->query('query') . '%';
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('title', 'like', $searchTerm)
-                  ->orWhere('summary', 'like', $searchTerm)
-                  ->orWhere('vacancies', 'like', $searchTerm);
-            });
-        }
-
-        $limit = (int) $request->get('limit', 100);
-        $jobs = $query->orderBy('id', 'desc')->take($limit)->get();
-
-        return response()->json([
-            'success' => true,
-            'count' => $jobs->count(),
-            'news' => $jobs->map(fn($job) => $job->toApiArray())->values(),
-        ]);
+        $this->applySearch($query, $request);
+        $limit = min(max((int)$request->get('limit', 100), 1), 200);
+        $jobs = $query->orderByDesc('id')->take($limit)->get();
+        return response()->json(['success'=>true,'count'=>$jobs->count(),'news'=>$jobs->map(fn($job)=>$job->toApiArray($this->language($request)))->values()]);
     }
 
-    /**
-     * Dedicated /api/jobs endpoint
-     */
     public function jobs(Request $request): JsonResponse
     {
-        $query = Job::query()->where(function ($q) {
-            $q->where('section', 'jobs')->orWhereNull('section');
-        });
-
-        if ($request->filled('category') && $request->category !== 'सभी' && $request->category !== 'All') {
-            $query->where('category', $request->category);
+        $query = Job::query()->where(fn($q) => $q->where('section','jobs')->orWhereNull('section'));
+        if ($request->filled('category') && !in_array($request->category, ['सभी','All'], true)) {
+            $cat = $request->category; $query->where(fn($q)=>$q->where('category',$cat)->orWhere('category_en',$cat));
         }
-
-        if ($request->filled('query')) {
-            $searchTerm = '%' . $request->query('query') . '%';
-            $query->where(function ($q) use ($searchTerm) {
-                $q->where('title', 'like', $searchTerm)
-                  ->orWhere('summary', 'like', $searchTerm)
-                  ->orWhere('vacancies', 'like', $searchTerm);
-            });
-        }
-
-        $limit = (int) $request->get('limit', 100);
-        $jobs = $query->orderBy('id', 'desc')->take($limit)->get();
-
-        return response()->json([
-            'success' => true,
-            'count' => $jobs->count(),
-            'jobs' => $jobs->map(fn($job) => $job->toApiArray())->values(),
-        ]);
+        $this->applySearch($query, $request);
+        $limit = min(max((int)$request->get('limit',100),1),200);
+        $jobs = $query->orderByDesc('id')->take($limit)->get();
+        return response()->json(['success'=>true,'count'=>$jobs->count(),'jobs'=>$jobs->map(fn($job)=>$job->toApiArray($this->language($request)))->values()]);
     }
 
-    /**
-     * Get single news item details
-     */
-    public function show(string $id): JsonResponse
+    public function show(Request $request, string $id): JsonResponse
     {
-        $job = Job::where('custom_id', $id)->orWhere('id', $id)->first();
-
-        if (!$job) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Job notification not found',
-            ], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'item' => $job->toApiArray(),
-        ]);
+        $job = Job::where('custom_id',$id)->orWhere('id',$id)->first();
+        if (!$job) return response()->json(['success'=>false,'message'=>'Job notification not found'],404);
+        return response()->json(['success'=>true,'item'=>$job->toApiArray($this->language($request))]);
     }
 
-    /**
-     * Get recruitment categories
-     */
     public function categories(Request $request): JsonResponse
     {
-        $query = Category::where('is_active', true)->orderBy('display_order', 'asc');
-
-        if ($request->filled('section')) {
-            $query->where('section_id', $request->section);
-        }
-
+        $query = Category::where('is_active',true)->orderBy('display_order');
+        if ($request->filled('section')) $query->where('section_id',$request->section);
         $categories = $query->get();
+        if ($categories->isEmpty()) return response()->json(['success'=>true,'categories'=>[]]);
+        $lang = $this->language($request);
+        return response()->json(['success'=>true,'categories'=>$categories->map(function($cat) use ($lang){
+            $data=$cat->toApiArray();
+            if ($lang==='en') { $data['name']=$data['name'] ?: ($cat->hindi_name ?: 'Category'); $data['hindiName']=$cat->hindi_name ?: $cat->name; }
+            else { $data['name']=$cat->hindi_name ?: $cat->name; $data['hindiName']=$cat->hindi_name ?: $cat->name; }
+            return $data;
+        })->values()]);
+    }
 
-        // If categories table is empty, return default CG categories
-        if ($categories->isEmpty()) {
-            $defaultCategories = [
-                ['id' => 'all', 'name' => 'All', 'hindiName' => 'सभी'],
-                ['id' => 'cgpsc', 'name' => 'CGPSC', 'hindiName' => 'छत्तीसगढ़ लोक सेवा'],
-                ['id' => 'vyapam', 'name' => 'CG Vyapam', 'hindiName' => 'व्यापम'],
-                ['id' => 'police', 'name' => 'CG Police', 'hindiName' => 'पुलिस भर्ती'],
-                ['id' => 'education', 'name' => 'CG Education', 'hindiName' => 'शिक्षक भर्ती'],
-                ['id' => 'health', 'name' => 'CG Health', 'hindiName' => 'स्वास्थ्य विभाग'],
-            ];
-
-            return response()->json([
-                'success' => true,
-                'categories' => $defaultCategories,
-            ]);
+    private function applySearch($query, Request $request): void
+    {
+        if ($request->filled('query')) {
+            $s='%'.$request->query('query').'%';
+            $query->where(fn($q)=>$q->where('title','like',$s)->orWhere('title_en','like',$s)->orWhere('summary','like',$s)->orWhere('summary_en','like',$s)->orWhere('vacancies','like',$s));
         }
+    }
 
-        return response()->json([
-            'success' => true,
-            'categories' => $categories->map(fn($cat) => $cat->toApiArray())->values(),
-        ]);
+    private function language(Request $request): string
+    {
+        return in_array($request->query('lang','hi'),['hi','en'],true) ? $request->query('lang','hi') : 'hi';
     }
 }
