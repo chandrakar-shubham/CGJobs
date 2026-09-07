@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CacheController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\JobAdvancedController;
 use App\Http\Controllers\Admin\JobManagementController;
 use App\Http\Controllers\Admin\JobPosterTemplateController;
 use App\Http\Controllers\Admin\JobSourceController;
@@ -31,11 +32,9 @@ Route::get('/current-affairs/{id}', [HomeController::class, 'job'])->name('curre
 Route::get('/gk/{id}', [HomeController::class, 'gk'])->name('gk.show');
 Route::get('/sitemap.xml', [HomeController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [HomeController::class, 'robots'])->name('robots');
-
 Route::get('/admin/login', [AuthController::class, 'showLogin'])->name('admin.login');
 Route::post('/admin/login', [AuthController::class, 'login'])->name('admin.login.submit');
 Route::match(['get', 'post'], '/admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
-
 Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index']);
@@ -44,9 +43,23 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::post('/jobs/bulk-action', [JobManagementController::class, 'bulkAction'])->name('jobs.bulk-action');
     Route::post('/jobs/{job}/publish', [JobManagementController::class, 'publish'])->name('jobs.publish');
     Route::post('/jobs/{job}/republish', [JobManagementController::class, 'republish'])->name('jobs.republish');
+    Route::get('/jobs/republished', [JobAdvancedController::class, 'republished'])->name('jobs.republished');
+    Route::get('/jobs/categories', [JobAdvancedController::class, 'categories'])->name('jobs.categories');
+    Route::get('/jobs/notifications', [JobAdvancedController::class, 'notifications'])->name('jobs.notifications');
+    Route::get('/jobs/analytics', [JobAdvancedController::class, 'analytics'])->name('jobs.analytics');
+    Route::get('/jobs/quality-checker', [JobAdvancedController::class, 'quality'])->name('jobs.quality');
+    Route::get('/jobs/duplicate-detection', [JobAdvancedController::class, 'duplicates'])->name('jobs.duplicates');
+    Route::get('/jobs/import-sync', [JobAdvancedController::class, 'importSync'])->name('jobs.import-sync');
+    Route::get('/jobs/{job}/versions', [JobAdvancedController::class, 'versions'])->name('jobs.versions');
+    Route::get('/jobs/{job}/timeline', [JobAdvancedController::class, 'timeline'])->name('jobs.timeline');
+    Route::get('/jobs/{job}/documents', [JobAdvancedController::class, 'documents'])->name('jobs.documents');
+    Route::post('/jobs/{job}/documents', [JobAdvancedController::class, 'storeDocument'])->name('jobs.documents.store');
+    Route::get('/jobs/{job}/seo', [JobAdvancedController::class, 'seo'])->name('jobs.seo');
+    Route::put('/jobs/{job}/seo', [JobAdvancedController::class, 'updateSeo'])->name('jobs.seo.update');
+    Route::get('/jobs/{job}/notifications', [JobAdvancedController::class, 'notificationHistory'])->name('jobs.notification-history');
+    Route::delete('/job-documents/{document}', [JobAdvancedController::class, 'destroyDocument'])->name('jobs.documents.destroy');
     Route::resource('jobs', JobManagementController::class);
     Route::resource('static-gk', StaticGkController::class);
-
     Route::get('/job-sources', [JobSourceController::class, 'index'])->name('job-sources.index');
     Route::post('/job-sources', [JobSourceController::class, 'store'])->name('job-sources.store');
     Route::put('/job-sources/{jobSource}', [JobSourceController::class, 'update'])->name('job-sources.update');
