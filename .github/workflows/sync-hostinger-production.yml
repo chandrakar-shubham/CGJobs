@@ -39,6 +39,13 @@ jobs:
             git commit -m "Exclude first-install installer from production branch"
           fi
 
+          # This marker exists only on the Hostinger production branch.
+          # composer.json uses it to run deploy-hostinger.php after Hostinger
+          # runs Composer, while local development remains unaffected.
+          printf '%s\n' 'CGJobs Hostinger production deployment marker' > .hostinger-production
+          git add .hostinger-production
+          git commit -m "Mark Hostinger production deployment" 
+
           # Production branch is always a Laravel-only mirror of main.
           # Force-updating it is intentional; Hostinger deploys from this branch.
           git push --force origin "$SPLIT_BRANCH:hostinger-production"
