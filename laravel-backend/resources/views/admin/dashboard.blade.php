@@ -6,20 +6,20 @@
 <div class="space-y-8">
 
     <!-- Welcome Banner -->
-    <section class="bg-gradient-to-r from-brand-700 via-brand-600 to-indigo-700 rounded-3xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
+    <section class="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6 shadow-md relative overflow-hidden">
         <div class="relative z-10 max-w-2xl">
-            <span class="inline-flex items-center px-3 py-1 bg-white/15 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider text-saffron-300 mb-3">
+            <span class="inline-flex items-center px-3 py-1 bg-blue-100 rounded-full text-xs font-semibold uppercase tracking-wider text-blue-600 mb-3">
                 <i class="fa-solid fa-bolt mr-1" aria-hidden="true"></i> Live Control Center
             </span>
-            <h2 class="text-2xl sm:text-3xl font-bold tracking-tight mb-2 text-white">स्वागत है, CGJobs एडमिन पैनल में</h2>
-            <p class="text-white text-sm leading-relaxed">
+            <h2 class="text-2xl sm:text-3xl font-bold tracking-tight mb-2 text-gray-900">स्वागत है, CGJobs एडमिन पैनल में</h2>
+            <p class="text-gray-600 text-sm leading-relaxed">
                 यहाँ से आप छत्तीसगढ़ के सरकारी विभागों (व्यापम, CGPSC, पुलिस, शिक्षक) की नई भर्तियों, प्रवेश पत्र, रिजल्ट व ब्रेकिंग न्यूज़ को तुरंत प्रकाशित और मोबाइल यूज़र्स तक पहुंचा सकते हैं।
             </p>
             <div class="mt-6 flex flex-wrap gap-3">
-                <a href="{{ route('admin.jobs.create') }}" class="inline-flex items-center px-4 py-2.5 bg-blue-700 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-blue-700 text-white font-bold text-sm rounded-xl shadow-md transition">
+                <a href="{{ route('admin.jobs.create') }}" class="inline-flex items-center px-4 py-2.5 bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-white font-bold text-sm rounded-xl shadow-md transition">
                     <i class="fa-solid fa-plus mr-2" aria-hidden="true"></i> नई भर्ती पोस्ट करें
                 </a>
-                <a href="{{ route('admin.alerts.create') }}" class="inline-flex items-center px-4 py-2.5 bg-indigo-700 hover:bg-indigo-800 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-indigo-700 text-white font-bold text-sm rounded-xl shadow-md transition">
+                <a href="{{ route('admin.alerts.create') }}" class="inline-flex items-center px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 text-white font-bold text-sm rounded-xl shadow-md transition">
                     <i class="fa-solid fa-paper-plane mr-2" aria-hidden="true"></i> पुश अलर्ट भेजें
                 </a>
             </div>
