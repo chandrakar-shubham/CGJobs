@@ -72,7 +72,7 @@ class JobController extends Controller
     public function republish(Job $job,FirebaseNotificationService $fcmService)
     {
         abort_unless($job->section==='jobs'||is_null($job->section),404);
-        $job->update(['published_at'=>date('Y-m-d'),'relative_time'=>'हाल ही में','relative_time_en'=>'Recently','is_new'=>true,'closing_reminder_sent_at'=>null]);
+        $job->update(['published_at'=>date('Y-m-d'),'relative_time'=>'हाल ही में','relative_time_en'=>'Recently','is_new'=>true]);
         $articleId=(string)($job->custom_id?:$job->id);$title='फिर से प्रकाशित: '.trim((string)($job->title?:$job->title_en));$message=trim((string)($job->summary?:$job->summary_en));
         $alert=Alert::create(['category'=>$job->job_category?:'CGSSB','title'=>$title,'short_description'=>$message?:'इस भर्ती की जानकारी फिर से प्रकाशित की गई है।','time'=>'हाल ही में','type'=>'RECRUITMENT_REPUBLISH','article_id'=>$articleId,'action_url'=>route('job.show',$articleId),'is_broadcasted'=>false]);
         $result=$fcmService->broadcast(title:$title,message:$alert->short_description,category:$alert->category,actionUrl:$alert->action_url,articleId:$articleId);$success=($result['success']??false)===true;
