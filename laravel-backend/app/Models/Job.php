@@ -8,89 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class Job extends Model
 {
     use HasFactory;
-
-    public const MAIN_CATEGORIES = ['CGSSB', 'CGPSC', 'Central Govt', 'Contractual'];
-    public const WORKFLOW_STATUSES = ['draft', 'scheduled', 'published', 'archived'];
-
-    protected $fillable = [
-        'custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','job_category','department','published_by','section','post_type','source','source_url','image_url','image_urls','poster_path','published_at','relative_time','relative_time_en','translation_status','translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility','eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url','apply_url','application_start','last_date','exam_date','admit_card_date','result_date','closing_reminder_sent_at','workflow_status','scheduled_at','views_count','apply_clicks','notification_count','last_notification_at',
-    ];
-
-    protected $casts = [
-        'image_urls' => 'array',
-        'is_breaking' => 'boolean',
-        'is_new' => 'boolean',
-        'translated_at' => 'datetime',
-        'closing_reminder_sent_at' => 'datetime',
-        'scheduled_at' => 'datetime',
-        'last_notification_at' => 'datetime',
-    ];
-
-    public function scopePublic($query)
-    {
-        return $query->where(function ($q) {
-            $q->whereNull('workflow_status')->orWhere('workflow_status', 'published');
-        });
-    }
-
-    public function isPublished(): bool
-    {
-        return ($this->workflow_status ?: 'published') === 'published';
-    }
-
-    public function toApiArray(?string $language = null): array
-    {
-        $language = $language ?: request()->query('lang', 'hi');
-        $language = in_array($language, ['hi', 'en'], true) ? $language : 'hi';
-        $english = $language === 'en';
-        $fallback = fn ($en, $hi) => $english ? ($en ?: $hi) : ($hi ?: $en);
-        $posterUrl = route('job.poster', $this->custom_id ?: $this->id);
-
-        return [
-            'id' => $this->custom_id ?: (string) $this->id,
-            'language' => $language,
-            'title' => $fallback($this->title_en, $this->title),
-            'titleHindi' => $this->title,
-            'titleEnglish' => $this->title_en ?: $this->title,
-            'summary' => $fallback($this->summary_en, $this->summary),
-            'shortSummary' => $this->makeApiShortSummary($fallback($this->summary_en, $this->summary)),
-            'detailedContent' => $fallback($this->detailed_content_en, $this->detailed_content ?: $this->summary),
-            'category' => $fallback($this->category_en, $this->category),
-            'categoryHindi' => $this->category,
-            'categoryEnglish' => $this->category_en ?: $this->category,
-            'jobCategory' => $this->job_category ?: 'CGSSB',
-            'department' => $this->department ?: ($this->category ?: 'Other Departments'),
-            'mainJobCategories' => self::MAIN_CATEGORIES,
-            'section' => $this->section ?: 'jobs',
-            'postType' => $this->post_type ?: 'job',
-            'source' => $this->published_by ?: $this->job_category ?: 'CGJobs',
-            'sourceUrl' => null,
-            'webUrl' => url('/jobs/'.($this->custom_id ?: $this->id)),
-            'imageUrl' => $posterUrl,
-            'posterUrl' => $posterUrl,
-            'sourceImageUrl' => $this->image_url,
-            'bodyImageUrls' => array_values($this->image_urls ?: []),
-            'imageSource' => 'CGJobs fixed poster template',
-            'publishedAt' => $this->published_at ?: ($this->created_at?->format('Y-m-d') ?: date('Y-m-d')),
-            'relativeTime' => $fallback($this->relative_time_en, $this->relative_time ?: 'हाल ही में'),
-            'isBreaking' => (bool) $this->is_breaking,
-            'isNew' => (bool) $this->is_new,
-            'vacancies' => $this->vacancies,
-            'salary' => $this->salary,
-            'eligibility' => $fallback($this->eligibility_en, $this->eligibility),
-            'ageLimit' => $this->age_limit,
-            'selectionProcess' => $fallback($this->selection_process_en, $this->selection_process),
-            'officialNotificationUrl' => $this->official_notification_url,
-            'applyUrl' => $this->apply_url,
-            'importantDates' => ['applicationStart'=>$this->application_start ?: ($english ? 'Open' : 'जारी'),'lastDate'=>$this->last_date ?: ($english ? 'Soon' : 'शीघ्र'),'examDate'=>$this->exam_date,'admitCardDate'=>$this->admit_card_date,'resultDate'=>$this->result_date],
-        ];
-    }
-
-    private function makeApiShortSummary(?string $text): ?string
-    {
-        $text = trim((string) $text);
-        if ($text === '' || mb_strlen($text) <= 220) return $text ?: null;
-        $cut = mb_substr($text, 0, 220); $pos = mb_strrpos($cut, ' ');
-        return mb_substr($cut, 0, $pos ?: 220).'…';
-    }
+    public const MAIN_CATEGORIES=['CGSSB','CGPSC','Central Govt','Contractual'];
+    public const WORKFLOW_STATUSES=['draft','scheduled','published','archived'];
+    protected $fillable=['custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','job_category','department','published_by','section','post_type','source','source_url','image_url','image_urls','poster_path','published_at','relative_time','relative_time_en','translation_status','translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility','eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url','apply_url','application_start','last_date','exam_date','admit_card_date','result_date','closing_reminder_sent_at','workflow_status','scheduled_at','views_count','apply_clicks','notification_count','last_notification_at'];
+    protected $casts=['image_urls'=>'array','is_breaking'=>'boolean','is_new'=>'boolean','translated_at'=>'datetime','closing_reminder_sent_at'=>'datetime','scheduled_at'=>'datetime','last_notification_at'=>'datetime'];
+    public function scopePublic($query){return $query->where(fn($q)=>$q->whereNull('workflow_status')->orWhere('workflow_status','published'));}
+    public function isPublished():bool{return($this->workflow_status?:'published')==='published';}
+    public function toApiArray(?string $language=null):array{$language=$language?:request()->query('lang','hi');$language=in_array($language,['hi','en'],true)?$language:'hi';$english=$language==='en';$fallback=fn($en,$hi)=>$english?($en?:$hi):($hi?:$en);$posterUrl=route('job.poster',$this->custom_id?:$this->id);$applyUrl=$this->apply_url?route('job.apply',$this->custom_id?:$this->id):null;return['id'=>$this->custom_id?:stringval($this->id),'language'=>$language,'title'=>$fallback($this->title_en,$this->title),'titleHindi'=>$this->title,'titleEnglish'=>$this->title_en?:$this->title,'summary'=>$fallback($this->summary_en,$this->summary),'shortSummary'=>$this->makeApiShortSummary($fallback($this->summary_en,$this->summary)),'detailedContent'=>$fallback($this->detailed_content_en,$this->detailed_content?:$this->summary),'category'=>$fallback($this->category_en,$this->category),'categoryHindi'=>$this->category,'categoryEnglish'=>$this->category_en?:$this->category,'jobCategory'=>$this->job_category?:'CGSSB','department'=>$this->department?:($this->category?:'Other Departments'),'mainJobCategories'=>self::MAIN_CATEGORIES,'section'=>$this->section?:'jobs','postType'=>$this->post_type?:'job','source'=>$this->published_by?:$this->job_category?:'CGJobs','sourceUrl'=>null,'webUrl'=>url('/jobs/'.($this->custom_id?:$this->id)),'imageUrl'=>$posterUrl,'posterUrl'=>$posterUrl,'sourceImageUrl'=>$this->image_url,'bodyImageUrls'=>array_values($this->image_urls?:[]),'imageSource'=>'CGJobs fixed poster template','publishedAt'=>$this->published_at?:($this->created_at?->format('Y-m-d')?:date('Y-m-d')),'relativeTime'=>$fallback($this->relative_time_en,$this->relative_time?:'हाल ही में'),'isBreaking'=>(bool)$this->is_breaking,'isNew'=>(bool)$this->is_new,'vacancies'=>$this->vacancies,'salary'=>$this->salary,'eligibility'=>$fallback($this->eligibility_en,$this->eligibility),'ageLimit'=>$this->age_limit,'selectionProcess'=>$fallback($this->selection_process_en,$this->selection_process),'officialNotificationUrl'=>$this->official_notification_url,'applyUrl'=>$applyUrl,'originalApplyUrl'=>$this->apply_url,'importantDates'=>['applicationStart'=>$this->application_start?:($english?'Open':'जारी'),'lastDate'=>$this->last_date?:($english?'Soon':'शीघ्र'),'examDate'=>$this->exam_date,'admitCardDate'=>$this->admit_card_date,'resultDate'=>$this->result_date]];}
+    private function makeApiShortSummary(?string $text):?string{$text=trim((string)$text);if($text===''||mb_strlen($text)<=220)return$text?:null;$cut=mb_substr($text,0,220);$pos=mb_strrpos($cut,' ');return mb_substr($cut,0,$pos?:220).'…';}
 }
