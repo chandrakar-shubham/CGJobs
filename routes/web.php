@@ -37,6 +37,7 @@ Route::match(['get', 'post'], '/admin/logout', [AuthController::class, 'logout']
 Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::post('/jobs/{job}/republish', [JobController::class, 'republish'])->name('jobs.republish');
     Route::resource('jobs', JobController::class);
     Route::resource('static-gk', StaticGkController::class);
 
