@@ -1,0 +1,5 @@
+@extends('layouts.admin')
+@section('title','Job Templates')
+@section('content')
+<div class="space-y-6"><div><h2 class="text-xl font-black text-slate-900">Job Templates</h2><p class="text-xs text-slate-500 mt-1">Start a new recruitment with the correct category and department preselected.</p></div><div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">@foreach($templates as $t)<a href="{{ route('admin.jobs.create',['template'=>$t['key'],'job_category'=>$t['category'],'department'=>$t['department']]) }}" class="bg-white border rounded-2xl p-5 hover:border-brand-300 hover:shadow-md transition"><div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-4"><i class="fa-solid fa-file-lines"></i></div><h3 class="font-black text-slate-900">{{ $t['name'] }}</h3><p class="text-[11px] text-slate-500 mt-2">{{ $t['category'] }} → {{ $t['department'] }}</p><div class="mt-4 text-xs font-bold text-brand-600">Use Template →</div></a>@endforeach</div></div>
+@endsection
