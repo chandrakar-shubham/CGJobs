@@ -22,7 +22,7 @@ final class JobFormSchema
     public static function all(): array
     {
         return [
-            'title','job_category','department','post_type','vacancies','location','source',
+            'title','job_category','department','post_type','vacancies','source',
             'application_start','last_date','exam_date','admit_card_date','result_date',
             'age_limit','salary','eligibility','selection_process','summary','detailed_content',
             'image_url','source_url','official_notification_url','apply_url',
@@ -45,10 +45,9 @@ final class JobFormSchema
     {
         return [
             'title' => 'Job Title', 'job_category' => 'Main Category', 'department' => 'Department',
-            'post_type' => 'Post Type', 'vacancies' => 'Total Posts', 'location' => 'Job Location',
-            'source' => 'Organization / Source', 'application_start' => 'Application Start Date',
-            'last_date' => 'Application End Date', 'exam_date' => 'Exam Date',
-            'admit_card_date' => 'Admit Card Date', 'result_date' => 'Result Date',
+            'post_type' => 'Post Type', 'vacancies' => 'Total Posts', 'source' => 'Organization / Source',
+            'application_start' => 'Application Start Date', 'last_date' => 'Application End Date',
+            'exam_date' => 'Exam Date', 'admit_card_date' => 'Admit Card Date', 'result_date' => 'Result Date',
             'age_limit' => 'Age Limit', 'salary' => 'Salary / Pay', 'eligibility' => 'Eligibility',
             'selection_process' => 'Selection Process', 'summary' => 'Short Summary',
             'detailed_content' => 'Full Article / Description', 'image_url' => 'Main Image URL',
