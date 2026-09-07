@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded',function(){
  all('input,textarea,select').forEach(e=>e.addEventListener('input',run));
  image?.addEventListener('input',function(){const u=this.value.trim();if(!preview)return;if(!u){preview.innerHTML='<span>Main image preview</span>';return}preview.innerHTML='<img alt="Main image preview">';const im=preview.querySelector('img');im.src=u;im.onerror=()=>preview.innerHTML='<span>Image could not be loaded</span>'});
  const workflow=q('#cjWorkflow'),schedule=q('#cjSchedule'),state=q('#cjPublishState');
- all('[data-workflow]').forEach(btn=>btn.addEventListener('click',function(){const v=this.dataset.workflow;if(workflow)workflow.value=v;if(schedule)schedule.classList.toggle('hidden',v!=='scheduled');if(state)state.textContent=v==='draft'?'Draft will be saved':(v==='scheduled'?'Ready to schedule':'Ready to publish');if(v==='scheduled')schedule?.querySelector('input')?.focus();if(v==='draft')this.closest('form')?.submit()}));
+ all('[data-workflow]').forEach(btn=>btn.addEventListener('click',function(e){const v=this.dataset.workflow;if(v==='scheduled'&&workflow?.value==='scheduled'){syncEditors();this.closest('form')?.submit();return}if(workflow)workflow.value=v;if(schedule)schedule.classList.toggle('hidden',v!=='scheduled');if(state)state.textContent=v==='draft'?'Draft will be saved':(v==='scheduled'?'Ready to schedule':'Ready to publish');if(v==='scheduled')schedule?.querySelector('input')?.focus();if(v==='draft')this.closest('form')?.submit()}));
  workflow?.addEventListener('change',function(){if(schedule)schedule.classList.toggle('hidden',this.value!=='scheduled')});
  syncEditors();run();
 });
