@@ -92,7 +92,7 @@ class CanonicalJobImportController extends Controller
         $payload['edited_at'] = now()->toIso8601String();
 
         $jobImport->update([
-            'title'=>$data['title'], 'summary'=>$data['summary'], 'content'=>$data['detailed_content'],
+            'title'=>$data['title'], 'summary'=>$this->sanitizeRichText($data['summary']), 'content'=>$this->sanitizeRichText($data['detailed_content']),
             'category'=>$data['department'], 'job_category'=>$data['job_category'], 'department'=>$data['department'],
             'published_by'=>$data['job_category'], 'external_url'=>$data['external_url'],
             'image_url'=>$data['image_url'] ?? null, 'raw_payload'=>$payload,
@@ -121,5 +121,13 @@ class CanonicalJobImportController extends Controller
             'selection_process'=>$admin['selection_process'], 'apply_url'=>$admin['apply_url'],
             'official_notification_url'=>$admin['notification_url'], 'is_breaking'=>(bool)$admin['is_breaking'], 'is_new'=>(bool)$admin['is_new'],
         ]);
+    }
+
+    private function sanitizeRichText(string $html): string
+    {
+        $html = strip_tags($html, '<p><br><strong><b><em><i><u><h2><h3><h4><ul><ol><li><a><blockquote>');
+        $html = preg_replace('/\s+on[a-z]+\s*=\s*(["\']).*?\1/i','',$html) ?? $html;
+        $html = preg_replace('/(href|src)\s*=\s*(["\'])\s*(?:javascript|data):.*?\2/i','$1="#"',$html) ?? $html;
+        return trim($html);
     }
 }
