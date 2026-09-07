@@ -1,0 +1,31 @@
+name: Sync WordPress Production
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'wordpress-site/**'
+      - '.github/workflows/sync-wordpress-production.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build WordPress content subtree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin wordpress-production:refs/remotes/origin/wordpress-production || true
+          git subtree split --prefix=wordpress-site/wp-content -b wordpress-production
+          git push origin wordpress-production --force
