@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AlertApiController;
 use App\Http\Controllers\Api\HealthApiController;
 use App\Http\Controllers\Api\JobApiController;
+use App\Http\Controllers\Api\NewsApiController;
 use App\Http\Controllers\Api\SectionApiController;
 use App\Http\Controllers\Api\SettingApiController;
 use App\Http\Controllers\Api\StaticGkApiController;
@@ -30,8 +31,13 @@ $registerApiRoutes = static function (): void {
     Route::post('/alerts/register-token', [AlertApiController::class, 'registerToken']);
 };
 
-// Existing mobile clients continue using these endpoints.
 Route::group([], $registerApiRoutes);
-
-// Stable versioned contract for WordPress and future clients.
 Route::prefix('v1')->group($registerApiRoutes);
+
+// Isolated current-affairs API. Existing Jobs-backed /news routes above are unchanged.
+Route::get('/current-affairs', [NewsApiController::class, 'index']);
+Route::get('/current-affairs/{id}', [NewsApiController::class, 'show']);
+Route::prefix('v1')->group(static function (): void {
+    Route::get('/current-affairs', [NewsApiController::class, 'index']);
+    Route::get('/current-affairs/{id}', [NewsApiController::class, 'show']);
+});
