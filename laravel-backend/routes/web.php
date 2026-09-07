@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StaticGkController;
 use App\Http\Controllers\Web\HomeController;
+use App\Http\Controllers\Web\JobApplyRedirectController;
 use App\Http\Controllers\Web\JobPosterController;
 use App\Http\Controllers\Web\NotificationController;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +25,7 @@ Route::get('/current-affairs', [HomeController::class, 'currentAffairs'])->name(
 Route::get('/gk', [HomeController::class, 'staticGk'])->name('listing.gk');
 Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
 Route::get('/jobs/{id}/poster', [JobPosterController::class, 'show'])->name('job.poster');
+Route::get('/jobs/{id}/apply', JobApplyRedirectController::class)->name('job.apply');
 Route::get('/jobs/{id}', [HomeController::class, 'job'])->name('job.show');
 Route::get('/current-affairs/{id}', [HomeController::class, 'job'])->name('current-affairs.show');
 Route::get('/gk/{id}', [HomeController::class, 'gk'])->name('gk.show');
@@ -37,7 +39,6 @@ Route::match(['get', 'post'], '/admin/logout', [AuthController::class, 'logout']
 Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index']);
-
     Route::get('/jobs/dashboard', [JobManagementController::class, 'dashboard'])->name('jobs.dashboard');
     Route::get('/jobs/templates', [JobManagementController::class, 'templates'])->name('jobs.templates');
     Route::post('/jobs/bulk-action', [JobManagementController::class, 'bulkAction'])->name('jobs.bulk-action');
@@ -53,21 +54,17 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::delete('/job-sources/{jobSource}', [JobSourceController::class, 'destroy'])->name('job-sources.destroy');
     Route::post('/job-sources/{jobSource}/sync', [QueuedJobSourceController::class, 'sync'])->name('job-sources.sync');
     Route::post('/job-sources/{jobSource}/refresh-pending', [QueuedJobSourceController::class, 'refreshPending'])->name('job-sources.refresh-pending');
-
     Route::get('/job-imports/{jobImport}/edit', [JobSourceController::class, 'editImport'])->name('job-imports.edit');
     Route::put('/job-imports/{jobImport}', [JobSourceController::class, 'updateImport'])->name('job-imports.update');
     Route::post('/job-imports/approve-all', [JobSourceController::class, 'approveAll'])->name('job-imports.approve-all');
     Route::post('/job-imports/{jobImport}/approve', [JobSourceController::class, 'approve'])->name('job-sources.approve');
     Route::post('/job-imports/{jobImport}/reject', [JobSourceController::class, 'reject'])->name('job-sources.reject');
-
     Route::post('/job-poster-template', [JobPosterTemplateController::class, 'upload'])->name('job-poster-template.upload');
     Route::resource('categories', CategoryController::class);
     Route::resource('sections', SectionController::class);
     Route::resource('alerts', AlertController::class);
-
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
-
     Route::get('/news-sync', [NewsSyncController::class, 'index'])->name('sync.index');
     Route::post('/news-sync', [NewsSyncController::class, 'sync'])->name('sync.run');
     Route::post('/news-sync/run', [NewsSyncController::class, 'sync'])->name('news-sync');
