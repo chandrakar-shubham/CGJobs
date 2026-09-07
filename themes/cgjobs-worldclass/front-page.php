@@ -1,0 +1,15 @@
+<?php get_header(); ?>
+<main>
+<section class="hero"><div class="wrap hero-grid"><div><span class="eyebrow">CGJOBS • GOVERNMENT JOBS & EXAMS</span><h1>Find the right government opportunity, faster.</h1><p>One clean place for CGSSB, CGPSC, Central Government and Contractual openings—kept fresh by the CGJobs backend.</p><form class="search-box" action="<?php echo esc_url(home_url('/jobs/')); ?>" method="get"><input name="job_search" type="search" placeholder="Search jobs, departments, posts…" aria-label="Search jobs"><button class="btn" type="submit">Search Jobs</button></form></div><aside class="hero-card"><small>Built for speed</small><strong>API-first</strong><p>WordPress is the fast public layer. Laravel remains the trusted source of job data, automation and notifications.</p><a class="btn" href="<?php echo esc_url(home_url('/jobs/')); ?>">Browse latest jobs</a></aside></div></section>
+
+<section class="section"><div class="wrap"><div class="section-head"><div><h2>Explore by category</h2><p>Start with the four core job families.</p></div></div><div class="grid-4">
+<?php foreach (['CGSSB'=>'Chhattisgarh Staff Selection Board','CGPSC'=>'Chhattisgarh Public Service Commission','Central Govt'=>'Government of India opportunities','Contractual'=>'Contract & project-based openings'] as $name=>$desc): ?><a class="cat-card" href="<?php echo esc_url(add_query_arg('job_category',$name,home_url('/jobs/'))); ?>"><b><?php echo esc_html($name); ?></b><small><?php echo esc_html($desc); ?></small></a><?php endforeach; ?>
+</div></div></section>
+
+<section class="section"><div class="wrap"><div class="section-head"><div><h2>Latest government jobs</h2><p>Live data from the CGJobs API.</p></div><a class="btn" href="<?php echo esc_url(home_url('/jobs/')); ?>">View all</a></div><div class="api-slot"><?php echo do_shortcode('[cgjobs_jobs limit="12"]'); ?></div></div></section>
+
+<section class="section"><div class="wrap"><div class="section-head"><div><h2>More exam resources</h2><p>Build your preparation ecosystem around every opportunity.</p></div></div><div class="utility-grid"><a class="info-card" href="<?php echo esc_url(home_url('/exams/')); ?>"><h3>Exams</h3><p>Exam-focused information and preparation paths.</p></a><a class="info-card" href="<?php echo esc_url(home_url('/current-affairs/')); ?>"><h3>Current Affairs</h3><p>Daily and exam-oriented current affairs.</p></a><a class="info-card" href="<?php echo esc_url(home_url('/static-gk/')); ?>"><h3>Static GK</h3><p>Evergreen general knowledge for competitive exams.</p></a><a class="info-card" href="<?php echo esc_url(home_url('/admit-cards/')); ?>"><h3>Admit Cards & Results</h3><p>Keep important exam updates easy to find.</p></a></div></div></section>
+
+<section class="section"><div class="wrap"><div class="hero-card"><div class="section-head"><div><h2>Never miss an important update</h2><p>Connect notifications and the CGJobs Android app as the ecosystem grows.</p></div><a class="btn" href="<?php echo esc_url(home_url('/notifications/')); ?>">Get updates</a></div></div></div></section>
+</main>
+<?php get_footer(); ?>
