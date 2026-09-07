@@ -18,9 +18,9 @@ class HomeController extends Controller
     public function index(Request $request): View
     {
         $lang=$this->language($request);
-        $latest=$this->localizeJobs(Job::latest('id')->take(12)->get(),$lang);
-        $jobs=$this->localizeJobs(Job::where(fn($q)=>$q->where('section','jobs')->orWhereNull('section'))->latest('id')->take(6)->get(),$lang);
-        $currentAffairs=$this->localizeJobs(Job::whereIn('section',['current-affairs','current_affairs','news'])->latest('id')->take(6)->get(),$lang);
+        $latest=$this->localizeJobs(Job::public()->latest('id')->take(12)->get(),$lang);
+        $jobs=$this->localizeJobs(Job::public()->where(fn($q)=>$q->where('section','jobs')->orWhereNull('section'))->latest('id')->take(6)->get(),$lang);
+        $currentAffairs=$this->localizeJobs(Job::public()->whereIn('section',['current-affairs','current_affairs','news'])->latest('id')->take(6)->get(),$lang);
         $gk=$this->localizeGk(StaticGk::latest('id')->take(6)->get(),$lang);
         return view('web.home',compact('latest','jobs','currentAffairs','gk','lang'));
     }
@@ -36,7 +36,7 @@ class HomeController extends Controller
         abort_unless(isset($map[$type]),404);
         $search=trim((string)$request->query('q','')); $category=trim((string)$request->query('category','')); $jobCategory=trim((string)$request->query('job_category','')); $department=trim((string)$request->query('department','')); $sort=(string)$request->query('sort','latest');
         if($type==='gk'){$query=StaticGk::query();$searchColumns=['title','title_en','hindi_title','question','question_en','answer','answer_en','category','category_en'];}
-        else{$query=Job::query();$type==='jobs'?$query->where(fn($q)=>$q->where('section','jobs')->orWhereNull('section')):$query->whereIn('section',$map[$type]['section_keys']);$searchColumns=['title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','job_category','department'];}
+        else{$query=Job::query()->public();$type==='jobs'?$query->where(fn($q)=>$q->where('section','jobs')->orWhereNull('section')):$query->whereIn('section',$map[$type]['section_keys']);$searchColumns=['title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','job_category','department'];}
         if($search!=='')$query->where(function($q)use($searchColumns,$search){foreach($searchColumns as $c)$q->orWhere($c,'like','%'.$search.'%');});
         if($type==='jobs'){
             if(in_array($jobCategory,self::JOB_CATEGORIES,true))$query->where('job_category',$jobCategory);
@@ -54,7 +54,10 @@ class HomeController extends Controller
 
     public function job(Request $request,string $id): View
     {
-        $lang=$this->language($request);$item=Job::where('custom_id',$id)->orWhere('id',$id)->firstOrFail();$related=Job::where('id','!=',$item->id)->where(fn($q)=>$q->where('job_category',$item->job_category)->orWhere('department',$item->department))->latest('id')->take(4)->get();$this->localizeJobs(collect([$item]),$lang);$related=$this->localizeJobs($related,$lang);return view('web.detail',['item'=>$item,'type'=>$this->jobType($item),'related'=>$related,'lang'=>$lang]);
+        $lang=$this->language($request);$item=Job::query()->public()->where(fn($q)=>$q->where('custom_id',$id)->orWhere('id',$id))->firstOrFail();
+        if($item->section && !in_array($item->section,['jobs','current-affairs','current_affairs','news'],true)) abort(404);
+        $item->increment('views_count');
+        $related=Job::query()->public()->where('id','!=',$item->id)->where(fn($q)=>$q->where('job_category',$item->job_category)->orWhere('department',$item->department))->latest('id')->take(4)->get();$this->localizeJobs(collect([$item]),$lang);$related=$this->localizeJobs($related,$lang);return view('web.detail',['item'=>$item,'type'=>$this->jobType($item),'related'=>$related,'lang'=>$lang]);
     }
 
     public function gk(Request $request,string $id): View
@@ -65,7 +68,7 @@ class HomeController extends Controller
     public function sitemap(): Response
     {
         $base=rtrim(config('app.url'),'/');$urls=[['loc'=>$base.'/','changefreq'=>'daily','priority'=>'1.0'],['loc'=>$base.'/jobs','changefreq'=>'daily','priority'=>'0.9'],['loc'=>$base.'/current-affairs','changefreq'=>'daily','priority'=>'0.9'],['loc'=>$base.'/gk','changefreq'=>'weekly','priority'=>'0.8']];
-        foreach(Job::select(['id','custom_id','section','updated_at'])->latest('id')->get() as $item){$type=$this->jobType($item);$urls[]=['loc'=>$base.'/'.($type==='current-affairs'?'current-affairs':'jobs').'/'.($item->custom_id?:$item->id),'lastmod'=>optional($item->updated_at)->toAtomString(),'priority'=>'0.7'];}
+        foreach(Job::query()->public()->select(['id','custom_id','section','updated_at'])->latest('id')->get() as $item){$type=$this->jobType($item);$urls[]=['loc'=>$base.'/'.($type==='current-affairs'?'current-affairs':'jobs').'/'.($item->custom_id?:$item->id),'lastmod'=>optional($item->updated_at)->toAtomString(),'priority'=>'0.7'];}
         foreach(StaticGk::select(['id','custom_id','updated_at'])->latest('id')->get() as $item)$urls[]=['loc'=>$base.'/gk/'.($item->custom_id?:$item->id),'lastmod'=>optional($item->updated_at)->toAtomString(),'priority'=>'0.6'];
         return response()->view('web.sitemap',compact('urls'))->header('Content-Type','application/xml; charset=UTF-8');
     }
