@@ -5,7 +5,7 @@ use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CacheController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\JobController;
+use App\Http\Controllers\Admin\JobManagementController;
 use App\Http\Controllers\Admin\JobPosterTemplateController;
 use App\Http\Controllers\Admin\JobSourceController;
 use App\Http\Controllers\Admin\QueuedJobSourceController;
@@ -37,8 +37,13 @@ Route::match(['get', 'post'], '/admin/logout', [AuthController::class, 'logout']
 Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index']);
-    Route::post('/jobs/{job}/republish', [JobController::class, 'republish'])->name('jobs.republish');
-    Route::resource('jobs', JobController::class);
+
+    Route::get('/jobs/dashboard', [JobManagementController::class, 'dashboard'])->name('jobs.dashboard');
+    Route::get('/jobs/templates', [JobManagementController::class, 'templates'])->name('jobs.templates');
+    Route::post('/jobs/bulk-action', [JobManagementController::class, 'bulkAction'])->name('jobs.bulk-action');
+    Route::post('/jobs/{job}/publish', [JobManagementController::class, 'publish'])->name('jobs.publish');
+    Route::post('/jobs/{job}/republish', [JobManagementController::class, 'republish'])->name('jobs.republish');
+    Route::resource('jobs', JobManagementController::class);
     Route::resource('static-gk', StaticGkController::class);
 
     Route::get('/job-sources', [JobSourceController::class, 'index'])->name('job-sources.index');
