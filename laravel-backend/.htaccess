@@ -1,16 +1,35 @@
-# CGJobs Laravel Root .htaccess for Shared Hosting / Hostinger
-# If you place the entire laravel-backend inside public_html, this file automatically
-# redirects all traffic securely to public/index.php without exposing sensitive files.
+# CGJobs Laravel root .htaccess for Hostinger when the Laravel project root is
+# deployed directly to public_html.
+#
+# IMPORTANT:
+# - public_html is the active Laravel project root.
+# - /public is an internal implementation directory and must NOT be exposed
+#   in normal browser URLs.
+# - Existing static files inside public/ are served internally.
+# - Dynamic requests are handled by public/index.php.
 
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
-    # Prevent direct access to .env, storage, and sensitive files
-    RewriteRule ^\.env - [F,L,NC]
-    RewriteRule ^composer\.(json|lock) - [F,L,NC]
-    RewriteRule ^database/.*\.sqlite - [F,L,NC]
+    # Never expose sensitive files.
+    RewriteRule ^\.env(?:\.|$) - [F,L,NC]
+    RewriteRule ^composer\.(?:json|lock)$ - [F,L,NC]
+    RewriteRule ^database/.*\.sqlite(?:3)?$ - [F,L,NC]
 
-    # Redirect all requests to the public/ folder
-    RewriteCond %{REQUEST_URI} !^/public/
-    RewriteRule ^(.*)$ public/$1 [L]
+    # Do not allow the internal public directory to become part of the
+    # canonical browser URL. A direct /public/... request is redirected to
+    # the corresponding clean URL.
+    RewriteCond %{THE_REQUEST} \s/+public(?:/([^\s?]*))?[\s?] [NC]
+    RewriteRule ^public(?:/(.*))?$ /$1 [R=301,L,NE]
+
+    # Serve an existing file from Laravel's public/ directory internally.
+    # We intentionally do NOT map directories (such as public/admin) because
+    # /admin is a Laravel route and must reach the front controller.
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+    RewriteRule ^(.+)$ public/$1 [END]
+
+    # All application routes go through Laravel's front controller.
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ public/index.php [END]
 </IfModule>
