@@ -12,7 +12,7 @@ class JobApiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Job::query();
+        $query = Job::query()->public();
         if ($request->filled('section')) $query->where('section', $request->section);
         if ($request->filled('category') && !in_array($request->category, ['सभी','All'], true)) {
             $cat = $request->category;
@@ -26,10 +26,12 @@ class JobApiController extends Controller
 
     public function jobs(Request $request): JsonResponse
     {
-        $query = Job::query()->where(fn($q) => $q->where('section','jobs')->orWhereNull('section'));
+        $query = Job::query()->public()->where(fn($q) => $q->where('section','jobs')->orWhereNull('section'));
         if ($request->filled('category') && !in_array($request->category, ['सभी','All'], true)) {
             $cat = $request->category; $query->where(fn($q)=>$q->where('category',$cat)->orWhere('category_en',$cat));
         }
+        if ($request->filled('job_category')) $query->where('job_category', $request->job_category);
+        if ($request->filled('department')) $query->where('department', $request->department);
         $this->applySearch($query, $request);
         $limit = min(max((int)$request->get('limit',100),1),200);
         $jobs = $query->orderByDesc('id')->take($limit)->get();
@@ -38,7 +40,7 @@ class JobApiController extends Controller
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $job = Job::where('custom_id',$id)->orWhere('id',$id)->first();
+        $job = Job::query()->public()->where(fn($q)=>$q->where('custom_id',$id)->orWhere('id',$id))->first();
         if (!$job) return response()->json(['success'=>false,'message'=>'Job notification not found'],404);
         return response()->json(['success'=>true,'item'=>$job->toApiArray($this->language($request))]);
     }
@@ -62,7 +64,7 @@ class JobApiController extends Controller
     {
         if ($request->filled('query')) {
             $s='%'.$request->query('query').'%';
-            $query->where(fn($q)=>$q->where('title','like',$s)->orWhere('title_en','like',$s)->orWhere('summary','like',$s)->orWhere('summary_en','like',$s)->orWhere('vacancies','like',$s));
+            $query->where(fn($q)=>$q->where('title','like',$s)->orWhere('title_en','like',$s)->orWhere('summary','like',$s)->orWhere('summary_en','like',$s)->orWhere('vacancies','like',$s)->orWhere('job_category','like',$s)->orWhere('department','like',$s));
         }
     }
 
