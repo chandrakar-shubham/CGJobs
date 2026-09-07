@@ -27,9 +27,9 @@ class JobController extends Controller
         if($request->filled('published_to'))$query->whereDate('published_at','<=',$request->published_to);
         if($request->filled('deadline')){
             $deadline=$request->deadline;
-            if($deadline==='expired')$query->whereNotNull('last_date')->where('last_date','!=','')->whereRaw('STR_TO_DATE(last_date, \'%d/%m/%Y\') < CURDATE()');
-            elseif($deadline==='closing')$query->whereNotNull('last_date')->whereRaw('STR_TO_DATE(last_date, \'%d/%m/%Y\') BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 2 DAY)');
-            elseif($deadline==='open')$query->where(function($q){$q->whereNull('last_date')->orWhere('last_date','')->orWhereRaw('STR_TO_DATE(last_date, \'%d/%m/%Y\') > DATE_ADD(CURDATE(), INTERVAL 2 DAY)');});
+            if($deadline==='expired')$query->whereNotNull('last_date')->where('last_date','!=','')->whereRaw("COALESCE(STR_TO_DATE(last_date, '%d/%m/%Y'), STR_TO_DATE(last_date, '%d-%m-%Y'), STR_TO_DATE(last_date, '%Y-%m-%d'), STR_TO_DATE(last_date, '%d %b %Y'), STR_TO_DATE(last_date, '%d %M %Y')) < CURDATE()");
+            elseif($deadline==='closing')$query->whereNotNull('last_date')->whereRaw("COALESCE(STR_TO_DATE(last_date, '%d/%m/%Y'), STR_TO_DATE(last_date, '%d-%m-%Y'), STR_TO_DATE(last_date, '%Y-%m-%d'), STR_TO_DATE(last_date, '%d %b %Y'), STR_TO_DATE(last_date, '%d %M %Y')) BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 2 DAY)");
+            elseif($deadline==='open')$query->where(function($q){$q->whereNull('last_date')->orWhere('last_date','')->orWhereRaw("COALESCE(STR_TO_DATE(last_date, '%d/%m/%Y'), STR_TO_DATE(last_date, '%d-%m-%Y'), STR_TO_DATE(last_date, '%Y-%m-%d'), STR_TO_DATE(last_date, '%d %b %Y'), STR_TO_DATE(last_date, '%d %M %Y')) > DATE_ADD(CURDATE(), INTERVAL 2 DAY)");});
         }
         $sort=$request->get('sort','latest');
         if($sort==='oldest')$query->orderBy('id');
@@ -37,7 +37,7 @@ class JobController extends Controller
         else $query->orderByDesc('id');
         $jobs=$query->paginate(15)->withQueryString();
         $categories=Category::orderBy('name')->get();
-        $sources=(clone $query)->reorder()->whereNotNull('source')->where('source','!=','')->distinct()->pluck('source')->sort()->values();
+        $sources=Job::query()->where(function($q){$q->where('section','jobs')->orWhereNull('section');})->whereNotNull('source')->where('source','!=','')->distinct()->orderBy('source')->pluck('source');
         return view('admin.jobs.index',compact('jobs','categories','sources'))->with('jobCategories',self::JOB_CATEGORIES)->with('departments',self::DEPARTMENTS);
     }
 
@@ -76,7 +76,7 @@ class JobController extends Controller
         $alert=Alert::create(['category'=>$job->job_category?:'CGSSB','title'=>$title,'short_description'=>$message?:'इस भर्ती की जानकारी फिर से प्रकाशित की गई है।','time'=>'हाल ही में','type'=>'RECRUITMENT_REPUBLISH','article_id'=>$articleId,'action_url'=>route('job.show',$articleId),'is_broadcasted'=>false]);
         $result=$fcmService->broadcast(title:$title,message:$alert->short_description,category:$alert->category,actionUrl:$alert->action_url,articleId:$articleId);
         if(($result['success']??false)===true)$alert->update(['is_broadcasted'=>true]);
-        return back()->with('success','Job republished and push notification sent.');
+        return back()->with($result['success']??false?'success':'info',($result['success']??false)?'Job republished and push notification sent.':'Job republished, but push notification could not be confirmed.');
     }
 
     public function destroy(Job $job){$job->delete();return redirect()->route('admin.jobs.index',['section'=>'jobs'])->with('success','भर्ती हटा दी गई (Job deleted)');}
