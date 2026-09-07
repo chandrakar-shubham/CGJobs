@@ -12,6 +12,9 @@ Artisan::command('inspire', function () {
 // the database queue so web requests never wait for a full crawl.
 Schedule::command('cgjobs:sync-sources')->everyMinute()->withoutOverlapping(10);
 
+// Publish jobs whose scheduled time has arrived.
+Schedule::command('cgjobs:publish-scheduled-jobs')->everyMinute()->withoutOverlapping(10);
+
 // Send deadline reminders once per day. The command itself is idempotent and
 // only notifies jobs whose closing date is today or within the next two days.
 Schedule::command('cgjobs:send-deadline-reminders')->dailyAt('08:00')->withoutOverlapping(10);
