@@ -12,7 +12,7 @@ class Job extends Model
     public const MAIN_CATEGORIES = ['CGSSB', 'CGPSC', 'Central Govt', 'Contractual'];
 
     protected $fillable = [
-        'custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','job_category','department','published_by','section','post_type','source','source_url','image_url','image_urls','poster_path','published_at','relative_time','relative_time_en','translation_status','translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility','eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url','apply_url','application_start','last_date','exam_date','admit_card_date','result_date',
+        'custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','job_category','department','published_by','section','post_type','source','source_url','image_url','image_urls','poster_path','published_at','relative_time','relative_time_en','translation_status','translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility','eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url','apply_url','application_start','last_date','exam_date','admit_card_date','result_date','closing_reminder_sent_at',
     ];
 
     protected $casts = [
@@ -20,6 +20,7 @@ class Job extends Model
         'is_breaking' => 'boolean',
         'is_new' => 'boolean',
         'translated_at' => 'datetime',
+        'closing_reminder_sent_at' => 'datetime',
     ];
 
     public function toApiArray(?string $language = null): array
