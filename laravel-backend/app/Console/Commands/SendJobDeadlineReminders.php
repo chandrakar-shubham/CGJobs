@@ -7,7 +7,6 @@ use App\Models\Job;
 use App\Services\FirebaseNotificationService;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Illuminate\Support\Str;
 
 class SendJobDeadlineReminders extends Command
 {
@@ -34,15 +33,18 @@ class SendJobDeadlineReminders extends Command
                         continue;
                     }
 
+                    // Include the actual closing date in the alert identity so
+                    // an extended deadline can receive a fresh reminder.
                     $articleId = (string) ($job->custom_id ?: $job->id);
+                    $reminderArticleId = $articleId.':deadline:'.$closingDate->format('Y-m-d');
                     $alert = Alert::firstOrCreate(
                         [
-                            'article_id' => $articleId,
+                            'article_id' => $reminderArticleId,
                             'type' => 'DEADLINE_REMINDER',
-                            'title' => 'अंतिम तिथि निकट: '.trim((string) ($job->title ?: $job->title_en)),
                         ],
                         [
                             'category' => $job->job_category ?: 'CGSSB',
+                            'title' => 'अंतिम तिथि निकट: '.trim((string) ($job->title ?: $job->title_en)),
                             'short_description' => 'आवेदन की अंतिम तिथि '.$closingDate->format('d/m/Y').' है। समय रहते आवेदन करें।',
                             'time' => 'हाल ही में',
                             'action_url' => route('job.show', $articleId),
