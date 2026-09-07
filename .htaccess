@@ -22,6 +22,11 @@
     RewriteCond %{THE_REQUEST} \s/+public(?:/([^\s?]*))?[\s?] [NC]
     RewriteRule ^public(?:/(.*))?$ /$1 [R=301,L,NE]
 
+    # The Laravel project root itself is a real directory in Apache's
+    # document root, so the generic !-d front-controller rule below would
+    # otherwise skip it and can result in a directory-listing 403.
+    RewriteRule ^$ public/index.php [END]
+
     # Serve an existing file from Laravel's public/ directory internally.
     # We intentionally do NOT map directories (such as public/admin) because
     # /admin is a Laravel route and must reach the front controller.
