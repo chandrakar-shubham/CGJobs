@@ -28,12 +28,16 @@ class DashboardController extends Controller
         $tickerEnabled = AppSetting::get('ticker_enabled', '1') === '1';
 
         // The dashboard's published-jobs panel must never mix news records or
-        // source names into the job taxonomy.
+        // source names into the job taxonomy. Keep the existing view intact,
+        // but feed it the canonical Main Category → Department value.
         $recentJobs = Job::query()
             ->where(function ($q) { $q->where('section', 'jobs')->orWhereNull('section'); })
             ->orderByDesc('id')
             ->take(5)
-            ->get();
+            ->get()
+            ->each(function ($job) {
+                $job->category = ($job->job_category ?: 'CGSSB').' → '.($job->department ?: 'Other Departments');
+            });
         $recentAlerts = Alert::orderBy('id', 'desc')->take(5)->get();
 
         $categoryStats = Job::query()
