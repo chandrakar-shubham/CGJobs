@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\JobAdvancedController;
 use App\Http\Controllers\Admin\JobManagementController;
 use App\Http\Controllers\Admin\JobPosterTemplateController;
 use App\Http\Controllers\Admin\JobSourceController;
+use App\Http\Controllers\Admin\CanonicalJobImportController;
 use App\Http\Controllers\Admin\QueuedJobSourceController;
 use App\Http\Controllers\Admin\NewsSyncController;
 use App\Http\Controllers\Admin\SectionController;
@@ -67,8 +68,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::delete('/job-sources/{jobSource}', [JobSourceController::class, 'destroy'])->name('job-sources.destroy');
     Route::post('/job-sources/{jobSource}/sync', [QueuedJobSourceController::class, 'sync'])->name('job-sources.sync');
     Route::post('/job-sources/{jobSource}/refresh-pending', [QueuedJobSourceController::class, 'refreshPending'])->name('job-sources.refresh-pending');
-    Route::get('/job-imports/{jobImport}/edit', [JobSourceController::class, 'editImport'])->name('job-imports.edit');
-    Route::put('/job-imports/{jobImport}', [JobSourceController::class, 'updateImport'])->name('job-imports.update');
+    Route::get('/job-imports/{jobImport}/edit', [CanonicalJobImportController::class, 'edit'])->name('job-imports.edit');
+    Route::put('/job-imports/{jobImport}', [CanonicalJobImportController::class, 'update'])->name('job-imports.update');
     Route::post('/job-imports/approve-all', [JobSourceController::class, 'approveAll'])->name('job-imports.approve-all');
     Route::post('/job-imports/{jobImport}/approve', [JobSourceController::class, 'approve'])->name('job-sources.approve');
     Route::post('/job-imports/{jobImport}/reject', [JobSourceController::class, 'reject'])->name('job-sources.reject');
