@@ -1,43 +1,77 @@
-# Jobs Admin Management
+# Jobs Management Center
 
-This feature extends the existing Jobs/JobSource architecture without replacing the mature JobsKind crawler.
+This feature extends the existing Jobs/JobSource architecture without replacing the JobsKind crawler.
 
 ## Admin Jobs section
 
-The sidebar now has a dedicated **Jobs** section with:
+The sidebar now has a dedicated Jobs area:
 
-1. **All Jobs** — all published job records with search, main category, department, source, post type, deadline status, publication-date and sort filters.
-2. **Create New Job** — complete manual job creation form.
+- Jobs Dashboard
+- All Jobs
+- Create New Job
+- Job Templates
+- Expiring Soon
+- Expired Jobs
+
+## Workflow
+
+Every job can move through:
+
+`Draft → Scheduled → Published → Archived`
+
+Existing records are treated as published by default. Draft, scheduled and archived jobs are hidden from the public web/API.
+
+Scheduled jobs are published automatically every minute by `cgjobs:publish-scheduled-jobs`.
+
+## All Jobs
+
+All Jobs supports:
+
+- Search by title, summary, vacancy and source
+- Main category filter
+- Department filter
+- Source filter
+- Post type filter
+- Workflow status filter
+- Deadline filter: open / closing within 2 days / expired
+- Publication date range
+- Sort by newest / oldest / title / views
+- Edit, publish, republish and delete
+- Bulk publish, draft, archive, HOT, NEW, notify and delete
 
 ## Job taxonomy
 
-Every job is classified as:
+Every job is classified using exactly four main categories:
 
 - CGSSB
 - CGPSC
 - Central Govt
 - Contractual
 
-followed by its concerned department.
+followed by the concerned department. The source website is metadata, not the category.
 
-The source website is metadata, not the job category.
+## Create New Job
 
-## Job actions
+The form supports organization, vacancy, application dates, exam/admit-card/result dates, age, salary, eligibility, selection process, notification URL, apply URL, source URL, source image, HOT/NEW flags and workflow choice.
 
-From All Jobs an administrator can:
+Common templates are provided for CGSSB, CGPSC, Central Government, Contractual, Teacher and Police recruitment.
 
-- Modify a job
-- Delete a job
-- Republish a job
+## Notifications
 
-Republishing refreshes the publication date/new status, resets deadline-reminder tracking, and sends a push notification.
+Publishing/republishing and scheduled publishing can create a Firebase push notification and an Alert record. Deadline reminders run daily at 08:00 and target only published jobs whose closing date is today or within the next two days. Reminder tracking prevents duplicates and a changed closing date resets the reminder state.
 
-## Deadline reminders
+## Analytics foundation
 
-The Laravel scheduler runs a daily deadline-reminder command. Jobs whose closing date is today or within the next two days receive one push notification. A database timestamp prevents repeated reminders. Editing the closing date resets the reminder state so a newly extended deadline can be reminded again.
+Jobs now track page views, application clicks and notification count. Application links go through a CGJobs redirect so the official URL remains unchanged while clicks are counted.
 
-The implementation supports the date formats currently encountered by the crawler, including `dd/mm/yyyy`, `dd-mm-yyyy`, ISO dates, and common month-name formats.
+## Public safety
+
+The public website, API and sitemap only expose published jobs. Draft/scheduled/archived records remain available to administrators for editing and historical management.
+
+## Cost control
+
+No paid AI rewriting is added to the automated pipeline. Existing free/structured translation and poster systems remain in place. AI can be added later as an optional manual action rather than a per-job recurring cost.
 
 ## Safety
 
-This feature is implemented on a separate feature branch and does not alter the JobsKind crawler or the JobImport crawler workflow. The existing source crawler remains the acquisition layer; this feature manages already-created Job records.
+This work is on `feature/jobs-admin-management`. The JobsKind crawler and JobImport acquisition workflow are not rewritten; the Jobs management center operates on already-created Job records.
