@@ -54,8 +54,13 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     // Isolated News Studio. Jobs API/model/routes remain unchanged.
     Route::get('/news', [NewsStudioController::class, 'index'])->name('news.index');
     Route::post('/news/fetch', [NewsStudioController::class, 'fetch'])->name('news.fetch');
+    Route::post('/news/batch/add', [NewsStudioController::class, 'addToBatch'])->name('news.batch-add');
+    Route::post('/news/batch/clear', [NewsStudioController::class, 'clearBatch'])->name('news.batch-clear');
     Route::post('/news/batch-process', [NewsStudioController::class, 'batchProcess'])->name('news.batch-process');
     Route::post('/news/publish-selected', [NewsStudioController::class, 'publishSelected'])->name('news.publish-selected');
+    Route::post('/news/{news}/channel', [NewsStudioController::class, 'channel'])->name('news.channel');
+    Route::post('/news/{news}/archive', [NewsStudioController::class, 'archive'])->name('news.archive');
+    Route::post('/news/{news}/unpublish', [NewsStudioController::class, 'unpublish'])->name('news.unpublish');
     Route::get('/news/{news}/view', [NewsStudioController::class, 'view'])->name('news.view');
     Route::delete('/news/{news}/studio-delete', [NewsStudioController::class, 'destroy'])->name('news.studio-delete');
     Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
