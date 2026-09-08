@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\JobSourceController;
 use App\Http\Controllers\Admin\CanonicalJobImportController;
 use App\Http\Controllers\Admin\CanonicalJobImportApprovalController;
 use App\Http\Controllers\Admin\QueuedJobSourceController;
+use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\NewsSyncController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SettingController;
@@ -61,6 +62,12 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::get('/jobs/{job}/notifications', [JobAdvancedController::class, 'notificationHistory'])->name('jobs.notification-history');
     Route::delete('/job-documents/{document}', [JobAdvancedController::class, 'destroyDocument'])->name('jobs.documents.destroy');
     Route::resource('jobs', JobManagementController::class);
+
+    // Isolated Current Affairs admin. This never writes to the Job model/table.
+    Route::post('/news/{news}/publish', [NewsController::class, 'publish'])->name('news.publish');
+    Route::post('/news/{news}/archive', [NewsController::class, 'archive'])->name('news.archive');
+    Route::resource('news', NewsController::class)->except(['show']);
+
     Route::resource('static-gk', StaticGkController::class);
     Route::get('/job-sources', [JobSourceController::class, 'index'])->name('job-sources.index');
     Route::post('/job-sources', [JobSourceController::class, 'store'])->name('job-sources.store');
