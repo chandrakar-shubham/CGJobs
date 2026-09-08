@@ -126,9 +126,20 @@ class NewsStudioController extends Controller
         if(!$setting||!$setting->api_key)return back()->withErrors(['news'=>'AI is not configured. Save an enabled Gemini/Groq API key in AI Engine first.']);
         $items=News::whereIn('id',$ids)->whereIn('status',['draft','review'])->get()->map(fn($news)=>$engine->buildNews($news))->all();
         if(!$items)return back()->withErrors(['news'=>'No valid articles remain in the AI Batch.']);
-        try{$saved=$engine->process($items);}catch(\Throwable $e){return back()->withErrors(['news'=>'AI processing failed: '.$e->getMessage()]);}
-        session()->forget('news_ai_batch');
-        return redirect()->route('admin.news.index',['stage'=>'processed'])->with('success',count($saved).' article(s) processed. Review website + mobile versions before publishing.');
+        try{$engine->process($items);}catch(\Throwable $e){return back()->withErrors(['news'=>'AI processing failed: '.$e->getMessage()]);}
+
+        // Keep failed items in the persistent batch. Previously the batch was cleared even when
+        // every item failed validation/provider processing, which masked the real AI error as "0 processed".
+        $successfulIds=AiContent::where('source_type','news')->whereIn('source_id',$ids->all())->whereIn('status',['generated','published'])->pluck('source_id')->map(fn($id)=>(int)$id);
+        $remainingIds=$ids->diff($successfulIds)->values()->all();
+        if($remainingIds)session(['news_ai_batch'=>$remainingIds]);else session()->forget('news_ai_batch');
+        if($successfulIds->isEmpty()){
+            $failure=AiContent::where('source_type','news')->whereIn('source_id',$ids->all())->where('status','failed')->orderByDesc('updated_at')->value('error_message');
+            return back()->withErrors(['news'=>$failure ?: 'AI returned no successfully generated articles. The batch was kept for retry.']);
+        }
+        $message=count($successfulIds).' article(s) processed. Review website + mobile versions before publishing.';
+        if($remainingIds)$message.=' '.count($remainingIds).' article(s) remain in the AI Batch because they did not generate successfully.';
+        return redirect()->route('admin.news.index',['stage'=>'processed'])->with('success',$message);
     }
 
     public function publishSelected(Request $request)
