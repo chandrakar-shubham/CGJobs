@@ -52,6 +52,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::post('/ai-engine/{aiContent}/publish', [AiContentEngineController::class, 'publish'])->name('ai-engine.publish');
 
     // Isolated News Studio. Jobs API/model/routes remain unchanged.
+    Route::get('/news/dashboard', [NewsStudioController::class, 'dashboard'])->name('news.dashboard');
     Route::get('/news', [NewsStudioController::class, 'index'])->name('news.index');
     Route::post('/news/fetch', [NewsStudioController::class, 'fetch'])->name('news.fetch');
     Route::post('/news/batch/add', [NewsStudioController::class, 'addToBatch'])->name('news.batch-add');
