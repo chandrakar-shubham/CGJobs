@@ -15,7 +15,14 @@ class AiContentEngineController extends Controller
 {
     public function index()
     {
-        return view('admin.ai-engine.index', ['contents'=>AiContent::latest()->paginate(25),'setting'=>AiProviderSetting::latest()->first(),'stats'=>AiContent::selectRaw("count(*) as total, sum(status='pending') as pending, sum(status='generated') as generated, sum(status='failed') as failed, sum(status='published') as published")->first(),'newsIds'=>News::latest('id')->limit(20)->pluck('id'),'jobIds'=>Job::latest('id')->limit(20)->pluck('id')]);
+        $setting = AiProviderSetting::latest()->first();
+        return view('admin.ai-engine.index', [
+            'contents' => AiContent::latest()->paginate(25),
+            'setting' => $setting,
+            'stats' => AiContent::selectRaw("count(*) as total, sum(status='pending') as pending, sum(status='generated') as generated, sum(status='failed') as failed, sum(status='published') as published")->first(),
+            'newsIds' => News::latest('id')->limit(20)->pluck('id'),
+            'jobIds' => Job::latest('id')->limit(20)->pluck('id'),
+        ]);
     }
 
     public function settings(Request $request)
@@ -37,7 +44,11 @@ class AiContentEngineController extends Controller
     public function process(Request $request, ContentEngine $engine)
     {
         $data=$request->validate(['type'=>'required|in:news,job','ids'=>'required|array|min:1|max:100','ids.*'=>'integer']);
+        $setting=AiProviderSetting::latest()->first();
+        if(!$setting || !$setting->enabled){return back()->withErrors(['ai'=>'AI engine is disabled or not configured. Enable it and save provider settings first.']);}
+        if(!$setting->api_key){return back()->withErrors(['ai'=>'No AI API key is configured. Enter your Gemini/Groq API key and click Save Settings before processing News or Jobs.']);}
         $items=collect($data['ids'])->map(function($id)use($data,$engine){if($data['type']==='news'){$m=News::find($id);return $m?$engine->buildNews($m):null;}$m=Job::find($id);return $m?$engine->buildJob($m):null;})->filter()->values()->all();
+        if(!$items){return back()->withErrors(['ai'=>'No valid News/Job records were selected for processing.']);}
         try{$saved=$engine->process($items);}catch(\Throwable$e){return back()->withErrors(['ai'=>$e->getMessage()]);}
         return back()->with('success',count($saved).' item(s) generated in batch.');
     }
