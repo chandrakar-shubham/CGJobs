@@ -51,7 +51,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::post('/ai-engine/{aiContent}/retry', [AiContentEngineController::class, 'retry'])->name('ai-engine.retry');
     Route::post('/ai-engine/{aiContent}/publish', [AiContentEngineController::class, 'publish'])->name('ai-engine.publish');
 
-    // Isolated News Studio. Jobs API/model/routes are not used by this workflow.
+    // Isolated News Studio. Jobs API/model/routes remain unchanged.
     Route::get('/news', [NewsStudioController::class, 'index'])->name('news.index');
     Route::post('/news/fetch', [NewsStudioController::class, 'fetch'])->name('news.fetch');
     Route::post('/news/batch-process', [NewsStudioController::class, 'batchProcess'])->name('news.batch-process');
@@ -65,6 +65,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::post('/news/{news}/publish', [NewsController::class, 'publish'])->name('news.publish');
     Route::delete('/news/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
 
+    // Existing Jobs routes: intentionally preserved.
     Route::get('/jobs/dashboard', [JobManagementController::class, 'dashboard'])->name('jobs.dashboard');
     Route::get('/jobs/templates', [JobManagementController::class, 'templates'])->name('jobs.templates');
     Route::post('/jobs/bulk-action', [JobManagementController::class, 'bulkAction'])->name('jobs.bulk-action');
@@ -74,8 +75,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::get('/jobs/categories', [JobAdvancedController::class, 'categories'])->name('jobs.categories');
     Route::get('/jobs/notifications', [JobAdvancedController::class, 'notifications'])->name('jobs.notifications');
     Route::get('/jobs/analytics', [JobAdvancedController::class, 'analytics'])->name('jobs.analytics');
-    Route::get('/jobs/quality-checker', [JobAdvancedController::class, 'quality'])->name('jobs.quality-checker');
-    Route::get('/jobs/duplicate-detection', [JobAdvancedController::class, 'duplicates'])->name('jobs.duplicate-detection');
+    Route::get('/jobs/quality-checker', [JobAdvancedController::class, 'quality'])->name('jobs.quality');
+    Route::get('/jobs/duplicate-detection', [JobAdvancedController::class, 'duplicates'])->name('jobs.duplicates');
     Route::get('/jobs/import-sync', [JobAdvancedController::class, 'importSync'])->name('jobs.import-sync');
     Route::get('/jobs/{job}/versions', [JobAdvancedController::class, 'versions'])->name('jobs.versions');
     Route::get('/jobs/{job}/timeline', [JobAdvancedController::class, 'timeline'])->name('jobs.timeline');
