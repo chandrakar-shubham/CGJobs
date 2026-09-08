@@ -62,8 +62,8 @@ XML;
 XML;
         Http::fake(function ($request) use ($feed1, $feed2) {
             $url=$request->url();
-            if(str_contains($url,'q=Chhattisgarh%20latest%20news'))return Http::response($feed1,200);
-            if(str_contains($url,'q=Chhattisgarh%20government%20schemes'))return Http::response($feed2,200);
+            if(str_contains($url,'q=Chhattisgarh+latest+news'))return Http::response($feed1,200);
+            if(str_contains($url,'q=Chhattisgarh+government+schemes'))return Http::response($feed2,200);
             return Http::response('<html><head><meta name="description" content="Real article description" /></head></html>',200);
         });
         $articles=app(NewsRssFallback::class)->fetch('Chhattisgarh latest news OR CGPSC OR CG Vyapam OR Chhattisgarh government',3,['source'=>'google_news','geography'=>'chhattisgarh','strict_geo'=>false]);
