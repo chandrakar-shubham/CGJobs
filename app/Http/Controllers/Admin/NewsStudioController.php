@@ -40,7 +40,7 @@ class NewsStudioController extends Controller
         $stage = in_array($request->input('stage','fetched'), ['fetched','processed','all'], true) ? $request->input('stage','fetched') : 'fetched';
         $query = News::query();
         if ($stage === 'processed') {
-            $query->where('status','!=','published')->whereExists(fn($q)=>$q->selectRaw('1')->from('ai_contents')->whereColumn('ai_contents.source_id','news.id')->where('ai_contents.source_type','news')->where('ai_contents.status','generated'));
+            $query->whereIn('status',['draft','review'])->whereExists(fn($q)=>$q->selectRaw('1')->from('ai_contents')->whereColumn('ai_contents.source_id','news.id')->where('ai_contents.source_type','news')->where('ai_contents.status','generated'));
         } elseif ($stage === 'all') {
             $query->whereIn('status',['published','archived']);
         } else {
@@ -52,7 +52,10 @@ class NewsStudioController extends Controller
         $news=$query->orderByDesc('published_at')->orderByDesc('id')->paginate(24)->withQueryString();
         $batchIds = collect(session('news_ai_batch', []))->map(fn($id)=>(int)$id)->filter(fn($id)=>News::whereKey($id)->whereIn('status',['draft','review'])->exists())->values()->all();
         session(['news_ai_batch'=>$batchIds]);
-        return view('admin.news.studio',['news'=>$news,'stage'=>$stage,'categories'=>self::CATEGORIES,'batchIds'=>$batchIds,'stats'=>[
+        $aiByNews = $stage === 'processed'
+            ? AiContent::where('source_type','news')->whereIn('status',['generated','published'])->whereIn('source_id',$news->pluck('id'))->get()->keyBy('source_id')
+            : collect();
+        return view('admin.news.studio',['news'=>$news,'stage'=>$stage,'categories'=>self::CATEGORIES,'batchIds'=>$batchIds,'aiByNews'=>$aiByNews,'stats'=>[
             'fetched'=>News::whereIn('status',['draft','review'])->whereNotExists(fn($q)=>$q->selectRaw('1')->from('ai_contents')->whereColumn('ai_contents.source_id','news.id')->where('ai_contents.source_type','news')->whereIn('ai_contents.status',['generated','published']))->count(),
             'processed'=>AiContent::where('source_type','news')->where('status','generated')->count(),
             'published'=>News::where('status','published')->count(),
