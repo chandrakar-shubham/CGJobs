@@ -37,7 +37,16 @@ class ContentEngine
 
     private function processBatch(AiProviderSetting $setting,array$items):array{
         try{$response=$this->callProvider($setting,$items,false);return['saved'=>$this->saveResults($items,$response,$setting),'tokens'=>$this->responseTokens($response),'requests'=>1];}
-        catch(\Throwable$primaryError){$fallback=$this->fallbackProvider($setting);if($fallback){try{$response=$this->callProvider($fallback,$items,true);return['saved'=>$this->saveResults($items,$response,$setting),'tokens'=>$this->responseTokens($response),'requests'=>2];}catch(\Throwable$fallbackError){$this->logFailure($setting,$items,$fallback,$fallbackError,true);}}else{$this->logFailure($setting,$items,$setting,$primaryError,false);}foreach($items as$item)$this->markFailed($item,'AI generation failed after provider retry.');return['saved'=>[],'tokens'=>0,'requests'=>$fallback?2:1];}
+        catch(\Throwable$primaryError){
+            $fallback=$this->fallbackProvider($setting);
+            if($fallback){
+                // Record the failed primary call before spending a fallback request.
+                $this->logFailure($setting,$items,$setting,$primaryError,false);
+                try{$response=$this->callProvider($fallback,$items,true);return['saved'=>$this->saveResults($items,$response,$setting),'tokens'=>$this->responseTokens($response),'requests'=>2];}
+                catch(\Throwable$fallbackError){$this->logFailure($setting,$items,$fallback,$fallbackError,true);}
+            }else{$this->logFailure($setting,$items,$setting,$primaryError,false);}
+            foreach($items as$item)$this->markFailed($item,'AI generation failed after provider retry.');return['saved'=>[],'tokens'=>0,'requests'=>$fallback?2:1];
+        }
     }
 
     private function saveResults(array$items,array$response,AiProviderSetting$setting):array{
