@@ -21,11 +21,15 @@ class NewsProviderEngine
         if (($source === 'all' || $source === 'newsapi') && count($results) < $limit) {
             $results = array_merge($results, $this->officialNewsApi($query, $limit - count($results), $filters));
         }
+
+        // Current RSS is preferred over the static Saurav mirror when no live API
+        // result is available. The mirror is retained as an explicit fallback/source
+        // because its dataset is not guaranteed to contain current-day articles.
+        if ($source === 'google_news' || ($source === 'all' && count($results) < $limit)) {
+            $results = array_merge($results, app(NewsRssFallback::class)->fetch($query, $limit - count($results), $filters));
+        }
         if (($source === 'saurav_newsapi' || ($source === 'newsapi' && !$results) || ($source === 'all' && count($results) < $limit)) && count($results) < $limit) {
             $results = array_merge($results, $this->sauravMirror($limit - count($results), $filters));
-        }
-        if ($source === 'google_news' || ($source === 'all' && count($results) < $limit)) {
-            $results = array_merge($results, app(NewsRssFallback::class)->fetch($query, $limit - count($results), array_merge($filters, ['strict_geo'=>false])));
         }
         if ($source === 'google_trending') {
             $results = app(NewsRssFallback::class)->fetch('', $limit, ['source'=>'google_trending','geography'=>$filters['geography'] ?? 'india','strict_geo'=>false]);
@@ -81,7 +85,9 @@ class NewsProviderEngine
     {
         $out=[];
         foreach($items as $item){
-            $title=trim((string)($item['title']??'')); $description=trim((string)($item['description']??'')); $url=trim((string)($item['url']??''));
+            $title=trim((string)($item['title']??''));
+            $description=trim((string)($item['description']??''));
+            $url=trim((string)($item['url']??($item['link']??'')));
             if($title===''||$description===''||$url==='') continue;
             $a=['title'=>$this->cleanTitle($title),'description'=>$description,'content'=>trim((string)($item['content']??''))?:null,'source'=>$item['source']['name']??($item['source_id']??(parse_url($url,PHP_URL_HOST)?:'Unknown')),'url'=>$url,'image'=>$this->image($item['urlToImage']??($item['image_url']??($item['image']??null))),'published_at'=>$item['publishedAt']??($item['pubDate']??null)];
             if(!$this->dateOk($a['published_at'],$filters['from']??null,$filters['to']??null)) continue;
