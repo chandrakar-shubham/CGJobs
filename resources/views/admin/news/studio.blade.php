@@ -42,45 +42,64 @@
     </div>
 </div>
 
-@if($stage==='fetched')<form id="bulk-form" method="POST" action="{{route('admin.news.batch-add')}}">@csrf</form>@elseif($stage==='processed')<form id="bulk-form" method="POST" action="{{route('admin.news.publish-selected')}}">@csrf</form>@endif
-
 <div class="bg-white rounded-2xl border overflow-hidden">
-    <div class="p-3 border-b bg-slate-50 flex flex-wrap items-center justify-between gap-2">
-        <div class="flex gap-2 items-center"><input id="selectAll" type="checkbox" class="h-4 w-4" {{$stage==='all'?'disabled':''}}><span class="text-sm font-semibold">Select all on this page</span><span id="selectedCount" class="text-xs px-2 py-1 rounded-lg bg-blue-50 text-blue-700">0 selected</span></div>
-        <div class="flex gap-2">@if($stage==='fetched')<button type="submit" form="bulk-form" class="px-4 py-2 rounded-lg bg-amber-500 text-white text-xs font-semibold">Add Selected to AI Batch</button><button type="button" onclick="deleteSelectedNews()" class="px-4 py-2 rounded-lg bg-rose-600 text-white text-xs font-semibold">Delete Selected</button>@elseif($stage==='processed')<button type="submit" form="bulk-form" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold">Publish Selected → Website + App</button>@endif</div>
-    </div>
-    <div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50 border-b"><tr><th class="p-3 w-10"></th><th class="p-3 text-left w-24">Image</th><th class="p-3 text-left">Article / Content</th><th class="p-3 text-left">Source</th><th class="p-3 text-left">Category</th><th class="p-3 text-left">Status / Channels</th><th class="p-3 text-right">Actions</th></tr></thead><tbody class="divide-y">
-    @forelse($news as $item)
-        @php($ai=$aiByNews[$item->id] ?? null)
-        <tr class="hover:bg-slate-50 align-top">
-            <td class="p-3">@if($stage!=='all')<input name="ids[]" value="{{$item->id}}" form="bulk-form" type="checkbox" class="news-check h-4 w-4">@endif</td>
-            <td class="p-3">@if($item->image_url)<img src="{{$item->image_url}}" alt="" class="w-20 h-14 object-cover rounded-lg">@else<div class="w-20 h-14 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] text-slate-400">No image</div>@endif</td>
-            <td class="p-3 min-w-[420px]">
-                @if($stage==='processed' && $ai)
-                    <div class="font-semibold text-blue-700">Mobile / App</div><div class="text-xs text-slate-600 mt-1">{{data_get($ai->generated_content,'mobile.summary','—')}}</div>
-                    <div class="font-semibold text-emerald-700 mt-3">Website</div><div class="font-semibold mt-1">{{data_get($ai->generated_content,'website.title',$item->title)}}</div><div class="text-xs text-slate-500 mt-1">{{Str::limit(strip_tags(data_get($ai->generated_content,'website.content',$item->content ?: $item->summary)),420)}}</div>
-                    <div class="font-semibold text-purple-700 mt-3">SEO</div><div class="text-xs text-slate-500 mt-1">{{data_get($ai->generated_content,'seo.title','—')}} · {{data_get($ai->generated_content,'seo.description','—')}}</div>
-                @else
-                    <div class="font-semibold">{{Str::limit($item->title,110)}}</div><div class="text-xs text-slate-500 mt-1">{{Str::limit(strip_tags($item->content ?: $item->summary),260)}}</div>
-                @endif
-                <div class="text-[11px] text-slate-400 mt-2">ID {{$item->id}} · {{$item->published_at?->format('d M Y H:i')}}</div>
-            </td>
-            <td class="p-3 min-w-[150px]">{{$item->source ?: 'Unknown'}} @if($item->original_url)<a target="_blank" rel="noopener" href="{{$item->original_url}}" class="block text-blue-600 text-xs mt-1">Original ↗</a>@endif</td>
-            <td class="p-3"><span class="px-2 py-1 rounded-lg bg-slate-100 text-xs">{{$item->category}}</span></td>
-            <td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-semibold {{$item->status==='published'?'bg-emerald-50 text-emerald-700':($item->status==='archived'?'bg-slate-100 text-slate-600':'bg-amber-50 text-amber-700')}}">{{ucfirst($item->status)}}</span>@if($item->status==='published')<div class="text-[11px] mt-2 space-y-1"><div>Web: {{$item->published_web?'✓':'—'}}</div><div>App: {{$item->published_mobile?'✓':'—'}}</div></div>@endif</td>
-            <td class="p-3"><div class="flex flex-wrap justify-end gap-1.5"><a href="{{route('admin.news.view',$item)}}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs">View</a><a href="{{route('admin.news.edit',$item)}}" class="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs">Edit</a>
-                @if($stage==='all' && $item->status==='published')
-                    <form method="POST" action="{{route('admin.news.archive',$item)}}" class="inline">@csrf<button class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs">Archive</button></form>
-                    <form method="POST" action="{{route('admin.news.channel',$item)}}" class="inline">@csrf<input type="hidden" name="channel" value="web"><input type="hidden" name="action" value="{{$item->published_web?'unpublish':'publish'}}"><button class="px-2.5 py-1.5 rounded-lg {{$item->published_web?'bg-amber-50 text-amber-700':'bg-blue-50 text-blue-700'}} text-xs">{{$item->published_web?'Unpublish Web':'Publish Web'}}</button></form>
-                    <form method="POST" action="{{route('admin.news.channel',$item)}}" class="inline">@csrf<input type="hidden" name="channel" value="mobile"><input type="hidden" name="action" value="{{$item->published_mobile?'unpublish':'publish'}}"><button class="px-2.5 py-1.5 rounded-lg {{$item->published_mobile?'bg-amber-50 text-amber-700':'bg-purple-50 text-purple-700'}} text-xs">{{$item->published_mobile?'Unpublish App':'Publish App'}}</button></form>
-                @endif
-                <button type="button" onclick="deleteNews({{$item->id}})" class="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs">Delete</button>
-            </div></td>
-        </tr>
-    @empty
-        <tr><td colspan="7" class="p-12 text-center text-slate-500">No articles in this stage.</td></tr>
-    @endforelse
-    </tbody></table></div><div class="p-4">{{$news->links()}}</div>
+@if($stage==='fetched')
+<form method="POST" action="{{route('admin.news.batch-add')}}" id="bulk-form">
+@csrf
+<div class="p-3 border-b bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+    <div class="flex gap-2 items-center"><input id="selectAll" type="checkbox" class="h-4 w-4"><span class="text-sm font-semibold">Select all on this page</span><span id="selectedCount" class="text-xs px-2 py-1 rounded-lg bg-blue-50 text-blue-700">0 selected</span></div>
+    <div class="flex gap-2"><button type="submit" class="px-4 py-2 rounded-lg bg-amber-500 text-white text-xs font-semibold">Add Selected to AI Batch</button><button type="button" onclick="deleteSelectedNews()" class="px-4 py-2 rounded-lg bg-rose-600 text-white text-xs font-semibold">Delete Selected</button></div>
+</div>
+@elseif($stage==='processed')
+<form method="POST" action="{{route('admin.news.publish-selected')}}" id="bulk-form">
+@csrf
+<div class="p-3 border-b bg-slate-50 flex flex-wrap items-center justify-between gap-2">
+    <div class="flex gap-2 items-center"><input id="selectAll" type="checkbox" class="h-4 w-4"><span class="text-sm font-semibold">Select all on this page</span><span id="selectedCount" class="text-xs px-2 py-1 rounded-lg bg-blue-50 text-blue-700">0 selected</span></div>
+    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold">Publish Selected → Website + App</button>
+</div>
+@else
+<div class="p-3 border-b bg-slate-50"><span class="text-sm font-semibold">Published / Archived News</span></div>
+@endif
+
+<div class="overflow-x-auto"><table class="w-full text-sm"><thead class="bg-slate-50 border-b"><tr><th class="p-3 w-10"></th><th class="p-3 text-left w-24">Image</th><th class="p-3 text-left">Article / Content</th><th class="p-3 text-left">Source</th><th class="p-3 text-left">Category</th><th class="p-3 text-left">Status / Channels</th><th class="p-3 text-right">Actions</th></tr></thead><tbody class="divide-y">
+@forelse($news as $item)
+@php($ai=$aiByNews[$item->id] ?? null)
+<tr class="hover:bg-slate-50 align-top">
+<td class="p-3">@if($stage!=='all')<input name="ids[]" value="{{$item->id}}" form="bulk-form" type="checkbox" class="news-check h-4 w-4">@endif</td>
+<td class="p-3">@if($item->image_url)<img src="{{e($item->image_url)}}" alt="{{e($item->title)}}" loading="lazy" class="w-20 h-14 object-cover rounded-lg border" onerror="this.onerror=null;this.replaceWith(Object.assign(document.createElement('div'),{className:'w-20 h-14 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] text-slate-400',textContent:'Image unavailable'}));">@else<div class="w-20 h-14 rounded-lg bg-slate-100 flex items-center justify-center text-[10px] text-slate-400">No image</div>@endif</td>
+<td class="p-3 min-w-[420px]">
+@if($stage==='processed' && $ai)
+<div class="font-semibold text-blue-700">Mobile / App</div><div class="text-xs text-slate-600 mt-1">{{data_get($ai->generated_content,'mobile.summary','—')}}</div>
+<div class="font-semibold text-emerald-700 mt-3">Website</div><div class="font-semibold mt-1">{{data_get($ai->generated_content,'website.title',$item->title)}}</div><div class="text-xs text-slate-500 mt-1">{{Str::limit(strip_tags(data_get($ai->generated_content,'website.content',$item->content ?: $item->summary)),420)}}</div>
+<div class="font-semibold text-purple-700 mt-3">SEO</div><div class="text-xs text-slate-500 mt-1">{{data_get($ai->generated_content,'seo.title','—')}} · {{data_get($ai->generated_content,'seo.description','—')}}</div>
+@else
+<div class="font-semibold">{{Str::limit($item->title,110)}}</div><div class="text-xs text-slate-500 mt-1">{{Str::limit(strip_tags($item->content ?: $item->summary),260)}}</div>
+@endif
+<div class="text-[11px] text-slate-400 mt-2">ID {{$item->id}} · {{$item->published_at?->format('d M Y H:i')}}</div>
+</td>
+<td class="p-3 min-w-[150px]">{{$item->source ?: 'Unknown'}} @if($item->original_url)<a target="_blank" rel="noopener" href="{{e($item->original_url)}}" class="block text-blue-600 text-xs mt-1">Original ↗</a>@endif</td>
+<td class="p-3"><span class="px-2 py-1 rounded-lg bg-slate-100 text-xs">{{$item->category}}</span></td>
+<td class="p-3"><span class="px-2 py-1 rounded-lg text-xs font-semibold {{$item->status==='published'?'bg-emerald-50 text-emerald-700':($item->status==='archived'?'bg-slate-100 text-slate-600':'bg-amber-50 text-amber-700')}}">{{ucfirst($item->status)}}</span>@if($item->status==='published')<div class="text-[11px] mt-2 space-y-1"><div>Web: {{$item->published_web?'✓':'—'}}</div><div>App: {{$item->published_mobile?'✓':'—'}}</div></div>@endif</td>
+<td class="p-3"><div class="flex flex-wrap justify-end gap-1.5">
+<a href="{{route('admin.news.view',$item)}}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs font-semibold">View</a>
+<a href="{{route('admin.news.edit',$item)}}" class="px-2.5 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-semibold">Edit</a>
+@if($stage==='all')
+@if($item->status==='published')
+<form method="POST" action="{{route('admin.news.archive',$item)}}" class="inline">@csrf<button class="px-2.5 py-1.5 rounded-lg bg-slate-100 text-slate-700 text-xs">Archive</button></form>
+<form method="POST" action="{{route('admin.news.channel',$item)}}" class="inline">@csrf<input type="hidden" name="channel" value="web"><input type="hidden" name="action" value="{{$item->published_web?'unpublish':'publish'}}"><button class="px-2.5 py-1.5 rounded-lg {{$item->published_web?'bg-amber-50 text-amber-700':'bg-blue-50 text-blue-700'}} text-xs">{{$item->published_web?'Unpublish Web':'Publish Web'}}</button></form>
+<form method="POST" action="{{route('admin.news.channel',$item)}}" class="inline">@csrf<input type="hidden" name="channel" value="mobile"><input type="hidden" name="action" value="{{$item->published_mobile?'unpublish':'publish'}}"><button class="px-2.5 py-1.5 rounded-lg {{$item->published_mobile?'bg-amber-50 text-amber-700':'bg-purple-50 text-purple-700'}} text-xs">{{$item->published_mobile?'Unpublish App':'Publish App'}}</button></form>
+@else
+<form method="POST" action="{{route('admin.news.publish',$item)}}" class="inline">@csrf<button class="px-2.5 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs">Publish</button></form>
+@endif
+@endif
+<button type="button" onclick="deleteNews({{$item->id}})" class="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 text-xs font-semibold">Delete</button>
+</div></td>
+</tr>
+@empty
+<tr><td colspan="7" class="p-12 text-center text-slate-500">No articles in this stage.</td></tr>
+@endforelse
+</tbody></table></div><div class="p-4">{{$news->links()}}</div>
+@if($stage!=='all')</form>@endif
 </div>
 
 <script>
