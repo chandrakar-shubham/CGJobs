@@ -48,22 +48,144 @@ fun CGJobsApp(viewModel: CGJobsViewModel = viewModel(), modifier: Modifier = Mod
     val showServerSettingsDialog by viewModel.showServerSettingsDialog.collectAsState()
     val drawerState = rememberDrawerState(DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    if (isSplashVisible) { SplashScreen { viewModel.dismissSplash() }; return }
-    if (selectedArticle != null) { BackHandler { viewModel.closeArticle() }; ArticleDetailScreen(selectedArticle!!, { viewModel.closeArticle() }, { viewModel.toggleSave(selectedArticle!!.id) }); return }
-    if (isSearchActive) { BackHandler { viewModel.closeSearch() }; SearchScreen(searchQuery, searchResults, { viewModel.setSearchQuery(it) }, { viewModel.closeSearch() }, { viewModel.openArticle(it) }, { viewModel.toggleSave(it) }); return }
-    ModalNavigationDrawer(drawerState = drawerState, drawerContent = {
-        AppDrawerContent(isDarkMode = userProfile.isDarkMode, onNavigateHome = { viewModel.selectTab(ScreenTab.HOME) }, onNavigateExplore = { viewModel.selectTab(ScreenTab.EXPLORE) }, onNavigateCurrentAffairs = { viewModel.selectTab(ScreenTab.CURRENT_AFFAIRS) }, onNavigateStaticGk = { viewModel.selectTab(ScreenTab.STATIC_GK) }, onCategorySelected = { viewModel.selectCategory(it); viewModel.selectTab(ScreenTab.HOME) }, onToggleDarkMode = { viewModel.toggleDarkMode(it) }, onOpenServerSettings = { viewModel.setServerSettingsDialogVisible(true) }, onCloseDrawer = { scope.launch { drawerState.close() } })
-    }) {
-        Scaffold(modifier.fillMaxSize(), topBar = { CGJobsTopBar(userProfile.isDarkMode, unreadAlertsCount, { scope.launch { drawerState.open() } }, { viewModel.openSearch() }, { viewModel.selectTab(ScreenTab.ALERTS) }, { viewModel.toggleDarkMode(!userProfile.isDarkMode) }) }, bottomBar = { CGJobsBottomBar(currentTab) { viewModel.selectTab(it) } }) { padding ->
+    if (isSplashVisible) {
+        SplashScreen(onDismiss = { viewModel.dismissSplash() })
+        return
+    }
+    if (selectedArticle != null) {
+        BackHandler { viewModel.closeArticle() }
+        ArticleDetailScreen(
+            article = selectedArticle!!,
+            onBack = { viewModel.closeArticle() },
+            onToggleSave = { viewModel.toggleSave(selectedArticle!!.id) }
+        )
+        return
+    }
+    if (isSearchActive) {
+        BackHandler { viewModel.closeSearch() }
+        SearchScreen(
+            query = searchQuery,
+            searchResults = searchResults,
+            onQueryChange = { viewModel.setSearchQuery(it) },
+            onBack = { viewModel.closeSearch() },
+            onArticleClick = { viewModel.openArticle(it) },
+            onToggleSave = { viewModel.toggleSave(it) }
+        )
+        return
+    }
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AppDrawerContent(
+                isDarkMode = userProfile.isDarkMode,
+                onNavigateHome = { viewModel.selectTab(ScreenTab.HOME) },
+                onNavigateExplore = { viewModel.selectTab(ScreenTab.EXPLORE) },
+                onNavigateCurrentAffairs = { viewModel.selectTab(ScreenTab.CURRENT_AFFAIRS) },
+                onNavigateStaticGk = { viewModel.selectTab(ScreenTab.STATIC_GK) },
+                onCategorySelected = {
+                    viewModel.selectCategory(it)
+                    viewModel.selectTab(ScreenTab.HOME)
+                },
+                onToggleDarkMode = { viewModel.toggleDarkMode(it) },
+                onOpenServerSettings = { viewModel.setServerSettingsDialogVisible(true) },
+                onCloseDrawer = { scope.launch { drawerState.close() } }
+            )
+        }
+    ) {
+        Scaffold(
+            modifier = modifier.fillMaxSize(),
+            topBar = {
+                CGJobsTopBar(
+                    isDarkMode = userProfile.isDarkMode,
+                    unreadAlertsCount = unreadAlertsCount,
+                    onMenuClick = { scope.launch { drawerState.open() } },
+                    onSearchClick = { viewModel.openSearch() },
+                    onNotificationClick = { viewModel.selectTab(ScreenTab.ALERTS) },
+                    onToggleDarkMode = { viewModel.toggleDarkMode(!userProfile.isDarkMode) }
+                )
+            },
+            bottomBar = {
+                CGJobsBottomBar(
+                    currentTab = currentTab,
+                    onTabSelected = { viewModel.selectTab(it) },
+                    unreadAlertsCount = unreadAlertsCount
+                )
+            }
+        ) { padding ->
             Box(Modifier.fillMaxSize().padding(padding)) {
                 when (currentTab) {
-                    ScreenTab.HOME -> HomeScreen(newsList, selectedCategory, isRefreshing, { viewModel.selectCategory(it) }, { viewModel.openArticle(it) }, { viewModel.toggleSave(it) }, { viewModel.refreshFeed() }, jobsCategories)
-                    ScreenTab.CURRENT_AFFAIRS -> CurrentAffairsScreen(if (currentAffairsList.isNotEmpty()) currentAffairsList else newsList, { viewModel.openArticle(it) }, { viewModel.toggleSave(it) }, newsCategories)
-                    ScreenTab.STATIC_GK -> StaticGkScreen(staticGkList, { viewModel.toggleGkSave(it) }, staticGkCategories)
-                    ScreenTab.ALERTS -> AlertsScreen(alertsList, selectedAlertFilter, { viewModel.selectAlertFilter(it) }, { alert -> viewModel.markAlertAsRead(alert.id); alert.articleId?.let(viewModel::openArticleById) }, { viewModel.markAllAlertsAsRead() }, { viewModel.selectTab(ScreenTab.HOME) })
-                    ScreenTab.EXPLORE -> ExploreScreen(newsList, { viewModel.selectCategory(it); viewModel.selectTab(ScreenTab.HOME) }, { viewModel.openArticle(it) }, { viewModel.toggleSave(it) }, { viewModel.openSearch() }, sections, { target -> val p = target.split(":", limit = 2); when (p.firstOrNull()) { "news" -> viewModel.selectTab(ScreenTab.CURRENT_AFFAIRS); "static_gk" -> viewModel.selectTab(ScreenTab.STATIC_GK); else -> { viewModel.selectCategory(p.getOrNull(1) ?: ""); viewModel.selectTab(ScreenTab.HOME) } } })
-                    ScreenTab.SAVED -> SavedScreen(savedNews, { viewModel.openArticle(it) }, { viewModel.toggleSave(it) }, { viewModel.selectTab(ScreenTab.EXPLORE) })
-                    ScreenTab.PROFILE -> ProfileScreen(userProfile, { viewModel.setEditProfileDialogVisible(true) }, { viewModel.setInterestsDialogVisible(true) }, { viewModel.updateNotificationSettings(it, userProfile.examAlertsEnabled, userProfile.resultAlertsEnabled) }, { viewModel.updateNotificationSettings(userProfile.notificationsEnabled, it, userProfile.resultAlertsEnabled) }, { viewModel.updateNotificationSettings(userProfile.notificationsEnabled, userProfile.examAlertsEnabled, it) }, { viewModel.toggleDarkMode(it) }, { viewModel.setAboutDialogVisible(true) }, { viewModel.setServerSettingsDialogVisible(true) }, { viewModel.setLanguage(it) })
+                    ScreenTab.HOME -> HomeScreen(
+                        newsList = newsList,
+                        selectedCategory = selectedCategory,
+                        isRefreshing = isRefreshing,
+                        onCategorySelected = { viewModel.selectCategory(it) },
+                        onArticleClick = { viewModel.openArticle(it) },
+                        onToggleSave = { viewModel.toggleSave(it) },
+                        onRefresh = { viewModel.refreshFeed() },
+                        categories = jobsCategories
+                    )
+                    ScreenTab.CURRENT_AFFAIRS -> CurrentAffairsScreen(
+                        newsList = if (currentAffairsList.isNotEmpty()) currentAffairsList else newsList,
+                        onArticleClick = { viewModel.openArticle(it) },
+                        onToggleSave = { viewModel.toggleSave(it) },
+                        newsCategories = newsCategories
+                    )
+                    ScreenTab.STATIC_GK -> StaticGkScreen(
+                        gkList = staticGkList,
+                        onToggleSave = { viewModel.toggleGkSave(it) },
+                        categories = staticGkCategories
+                    )
+                    ScreenTab.ALERTS -> AlertsScreen(
+                        alerts = alertsList,
+                        selectedFilter = selectedAlertFilter,
+                        onFilterSelected = { viewModel.selectAlertFilter(it) },
+                        onAlertClick = { alert ->
+                            viewModel.markAlertAsRead(alert.id)
+                            alert.articleId?.let(viewModel::openArticleById)
+                        },
+                        onMarkAllRead = { viewModel.markAllAlertsAsRead() },
+                        onBackClick = { viewModel.selectTab(ScreenTab.HOME) }
+                    )
+                    ScreenTab.EXPLORE -> ExploreScreen(
+                        newsList = newsList,
+                        onCategoryClick = {
+                            viewModel.selectCategory(it)
+                            viewModel.selectTab(ScreenTab.HOME)
+                        },
+                        onArticleClick = { viewModel.openArticle(it) },
+                        onToggleSave = { viewModel.toggleSave(it) },
+                        onSearchClick = { viewModel.openSearch() },
+                        sections = sections,
+                        onSectionNavigate = { target ->
+                            val p = target.split(":", limit = 2)
+                            when (p.firstOrNull()) {
+                                "news" -> viewModel.selectTab(ScreenTab.CURRENT_AFFAIRS)
+                                "static_gk" -> viewModel.selectTab(ScreenTab.STATIC_GK)
+                                else -> {
+                                    viewModel.selectCategory(p.getOrNull(1) ?: "")
+                                    viewModel.selectTab(ScreenTab.HOME)
+                                }
+                            }
+                        }
+                    )
+                    ScreenTab.SAVED -> SavedScreen(
+                        savedNews = savedNews,
+                        onArticleClick = { viewModel.openArticle(it) },
+                        onToggleSave = { viewModel.toggleSave(it) },
+                        onExploreClick = { viewModel.selectTab(ScreenTab.EXPLORE) }
+                    )
+                    ScreenTab.PROFILE -> ProfileScreen(
+                        userProfile = userProfile,
+                        onEditProfileClick = { viewModel.setEditProfileDialogVisible(true) },
+                        onChangeInterestsClick = { viewModel.setInterestsDialogVisible(true) },
+                        onNotificationToggle = { viewModel.updateNotificationSettings(it, userProfile.examAlertsEnabled, userProfile.resultAlertsEnabled) },
+                        onExamAlertsToggle = { viewModel.updateNotificationSettings(userProfile.notificationsEnabled, it, userProfile.resultAlertsEnabled) },
+                        onResultAlertsToggle = { viewModel.updateNotificationSettings(userProfile.notificationsEnabled, userProfile.examAlertsEnabled, it) },
+                        onDarkModeToggle = { viewModel.toggleDarkMode(it) },
+                        onAboutClick = { viewModel.setAboutDialogVisible(true) },
+                        onServerSettingsClick = { viewModel.setServerSettingsDialogVisible(true) },
+                        onLanguageChange = { viewModel.setLanguage(it) }
+                    )
                 }
             }
         }

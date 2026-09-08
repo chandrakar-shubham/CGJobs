@@ -36,9 +36,9 @@ class BilingualStaticGkRepository(private val context: Context? = null) {
         try {
             val lang = ServerConfig.getLanguage(context)
             val response = ServerConfig.getApiService(context).getStaticGk(language = lang)
-            if (response.success && !response.items.isNullOrEmpty()) {
+            if (response.success && !response.cards.isNullOrEmpty()) {
                 val saved = _gkStream.value.filter { it.isSaved }.map { it.id }.toSet()
-                _gkStream.value = response.items.map { it.toDomain() }.map { if (it.id in saved) it.copy(isSaved = true) else it }
+                _gkStream.value = response.cards.map { it.toDomain() }.map { if (it.id in saved) it.copy(isSaved = true) else it }
                 Log.d("BilingualGkRepo", "Fetched ${_gkStream.value.size} GK items in $lang")
                 return@withContext true
             }
