@@ -9,25 +9,32 @@ use Illuminate\Support\Str;
 
 class NewsIngestionService
 {
+    private const DEFAULT_QUERY = 'Chhattisgarh OR CGPSC OR CG Vyapam OR Chhattisgarh government';
+
     public function ingestAndProcess(?string $query = null, int $limit = 20, bool $process = true): array
     {
-        $query = $query ?: 'Chhattisgarh recruitment OR CGPSC OR CG Vyapam OR government jobs';
-        $articles = $this->fetch($query, min(max($limit, 1), 100));
+        $query = trim((string) $query) ?: self::DEFAULT_QUERY;
+        $limit = min(max($limit, 1), 100);
+        $articles = $this->fetch($query, $limit);
         $created = [];
 
         foreach ($articles as $article) {
             $title = trim((string) ($article['title'] ?? ''));
-            if ($title === '') continue;
-            $url = trim((string) ($article['url'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
 
-            $duplicateQuery = News::query();
-            $duplicateQuery->where(function ($q) use ($url, $title) {
+            $url = trim((string) ($article['url'] ?? ''));
+            $duplicateQuery = News::query()->where(function ($q) use ($url, $title) {
                 $q->whereRaw('LOWER(title) = ?', [Str::lower($title)]);
                 if ($url !== '') {
                     $q->orWhere('original_url', $url)->orWhere('source_url', $url);
                 }
             });
-            if ($duplicateQuery->exists()) continue;
+
+            if ($duplicateQuery->exists()) {
+                continue;
+            }
 
             $description = trim((string) ($article['description'] ?? '')) ?: $title;
             $news = News::create([
@@ -72,6 +79,7 @@ class NewsIngestionService
     {
         $out = [];
         $newsDataKey = config('services.newsdata.key');
+
         if ($newsDataKey) {
             try {
                 $r = Http::timeout(20)->get('https://newsdata.io/api/1/news', [
@@ -79,6 +87,7 @@ class NewsIngestionService
                     'q' => $query,
                     'country' => 'in',
                     'language' => 'en',
+                    'size' => min($limit, 10),
                 ]);
                 if ($r->successful()) {
                     foreach (($r->json('results') ?: []) as $item) {
@@ -92,7 +101,9 @@ class NewsIngestionService
                         ];
                     }
                 }
-            } catch (\Throwable) {}
+            } catch (\Throwable) {
+                // Continue to the next source.
+            }
         }
 
         if (count($out) < $limit && ($newsApiKey = config('services.newsapi.key'))) {
@@ -102,7 +113,7 @@ class NewsIngestionService
                     'q' => $query,
                     'language' => 'en',
                     'sortBy' => 'publishedAt',
-                    'pageSize' => $limit,
+                    'pageSize' => min($limit, 100),
                 ]);
                 if ($r->successful()) {
                     foreach (($r->json('articles') ?: []) as $item) {
@@ -116,27 +127,38 @@ class NewsIngestionService
                         ];
                     }
                 }
-            } catch (\Throwable) {}
+            } catch (\Throwable) {
+                // Continue to RSS fallback.
+            }
         }
 
-        // Production fallback: public Google News RSS keeps ingestion working when
-        // API keys are absent, expired, or a provider is temporarily unavailable.
+        // RSS is used to fill the requested limit when paid/API sources return too few
+        // results. The fallback service searches several focused feeds for the default
+        // Chhattisgarh query, so a successful API response of only 2-3 stories does not
+        // unnecessarily leave the admin feed almost empty.
         if (count($out) < $limit) {
             $rss = app(NewsRssFallback::class)->fetch($query, $limit - count($out));
             $out = array_merge($out, $rss);
         }
 
-        // Normalize duplicates across providers before applying the requested limit.
         $seenUrls = [];
         $seenTitles = [];
         $unique = [];
         foreach ($out as $article) {
             $title = Str::lower(trim((string) ($article['title'] ?? '')));
             $url = Str::lower(trim((string) ($article['url'] ?? '')));
-            if ($title === '') continue;
-            $key = $url !== '' ? 'url:' . $url : 'title:' . $title;
-            if (isset($seenUrls[$key]) || isset($seenTitles[$title])) continue;
-            if ($url !== '') $seenUrls[$key] = true;
+            if ($title === '') {
+                continue;
+            }
+            if (isset($seenTitles[$title])) {
+                continue;
+            }
+            if ($url !== '' && isset($seenUrls[$url])) {
+                continue;
+            }
+            if ($url !== '') {
+                $seenUrls[$url] = true;
+            }
             $seenTitles[$title] = true;
             $unique[] = $article;
         }
