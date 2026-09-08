@@ -54,7 +54,7 @@ class NewsIngestionService
 
         $processed = 0;
         if ($process && $created) {
-            $engine = app(\App\Services\AI\ContentEngine::class);
+            $engine = app(\App\Services\AI\NewsContentEngine::class);
             $processed = count($engine->process(collect($created)->map(fn ($news) => $engine->buildNews($news))->all()));
         }
 
@@ -70,11 +70,7 @@ class NewsIngestionService
         $from = $filters['from'] ?? null;
         $to = $filters['to'] ?? null;
 
-        $locationTerms = [
-            'chhattisgarh' => 'Chhattisgarh',
-            'india' => 'India',
-            'world' => 'world international',
-        ];
+        $locationTerms = ['chhattisgarh' => 'Chhattisgarh', 'india' => 'India', 'world' => 'world international'];
         $location = $locationTerms[$geography] ?? 'Chhattisgarh';
         $searchQuery = trim($query . ' ' . $location . ' ' . $topic);
         if ($searchQuery === '') $searchQuery = $location . ' ' . ($topic ?: 'latest news');
