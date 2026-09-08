@@ -9,28 +9,42 @@ class Job extends Model
 {
     use HasFactory;
 
+    public const WORKFLOW_STATUSES = ['draft', 'scheduled', 'published', 'archived'];
+
     protected $fillable = [
         'custom_id',
         'slug',
         'title',
+        'title_en',
         'summary',
+        'summary_en',
         'detailed_content',
+        'detailed_content_en',
         'exam_takeaway',
         'category',
+        'category_en',
+        'job_category',
+        'department',
         'section',
         'post_type',
+        'workflow_status',
+        'scheduled_at',
         'source',
         'source_url',
         'image_url',
         'published_at',
         'relative_time',
+        'relative_time_en',
         'is_breaking',
         'is_new',
         'vacancies',
         'salary',
         'eligibility',
+        'eligibility_en',
         'age_limit',
         'selection_process',
+        'selection_process_en',
+        'translation_status',
         'official_notification_url',
         'apply_url',
         'application_start',
@@ -38,7 +52,34 @@ class Job extends Model
         'exam_date',
         'admit_card_date',
         'result_date',
+        'views_count',
+        'apply_clicks',
+        'notification_count',
+        'last_notification_at',
+        'closing_reminder_sent_at',
+        'seo_title',
+        'seo_description',
+        'seo_keywords',
+        'canonical_url',
     ];
+
+    public function scopePublic($query)
+    {
+        return $query->where(function ($q) {
+            $q->whereNull('workflow_status')
+              ->orWhere('workflow_status', 'published');
+        });
+    }
+
+    public function versions()
+    {
+        return $this->hasMany(JobVersion::class);
+    }
+
+    public function documents()
+    {
+        return $this->hasMany(JobDocument::class);
+    }
 
     protected $casts = [
         'is_breaking' => 'boolean',

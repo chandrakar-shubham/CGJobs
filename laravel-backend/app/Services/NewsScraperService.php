@@ -58,7 +58,8 @@ class NewsScraperService
         // 1. Fetch from RSS feeds (DPRCG, PIB, Bhaskar)
         foreach ($this->examRssFeeds as $feed) {
             try {
-                $response = Http::timeout(10)
+                $response = Http::timeout(4)
+                    ->connectTimeout(2)
                     ->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) CGJobsExamBot/2.0'])
                     ->get($feed['url']);
 
@@ -87,7 +88,7 @@ class NewsScraperService
                                 $articles[] = $processed;
                             }
                             $totalFetched++;
-                            if (count($articles) >= 15) break; // Reasonable batch size
+                            if (count($articles) >= 5) break 2; // Keep batch small for fast sync response
                         }
                     }
                 }
