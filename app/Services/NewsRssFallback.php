@@ -7,18 +7,36 @@ use Illuminate\Support\Facades\Http;
 class NewsRssFallback
 {
     /**
-     * Fetch public RSS feeds when the configured news APIs are unavailable.
-     * No API key is required for these feeds.
+     * Fetch public RSS feeds when configured news APIs return too few results.
+     * No API key is required.
      */
     public function fetch(string $query, int $limit): array
     {
-        $feeds = [
-            'https://news.google.com/rss/search?q=' . rawurlencode($query . ' when:1d') . '&hl=en-IN&gl=IN&ceid=IN:en',
-        ];
+        $queries = [$query];
+
+        // The default CG feed benefits from several focused searches because a single
+        // Google News RSS query can legitimately return only a handful of matching items.
+        if (str_contains(strtolower($query), 'chhattisgarh') &&
+            str_contains(strtolower($query), 'cgpsc') &&
+            str_contains(strtolower($query), 'vyapam')) {
+            $queries = [
+                'Chhattisgarh latest news',
+                'Chhattisgarh government jobs recruitment',
+                'CGPSC latest',
+                'CG Vyapam latest',
+                'Chhattisgarh government schemes',
+            ];
+        }
 
         $articles = [];
 
-        foreach ($feeds as $feedUrl) {
+        foreach ($queries as $searchQuery) {
+            if (count($articles) >= $limit) {
+                break;
+            }
+
+            $feedUrl = 'https://news.google.com/rss/search?q=' . rawurlencode($searchQuery . ' when:1d') . '&hl=en-IN&gl=IN&ceid=IN:en';
+
             try {
                 $response = Http::timeout(15)->get($feedUrl);
                 if (!$response->successful()) {
@@ -31,6 +49,10 @@ class NewsRssFallback
                 }
 
                 foreach ($xml->channel->item as $item) {
+                    if (count($articles) >= $limit) {
+                        break;
+                    }
+
                     $title = trim((string) ($item->title ?? ''));
                     $url = trim((string) ($item->link ?? ''));
                     if ($title === '') {
@@ -58,13 +80,9 @@ class NewsRssFallback
                         'image' => null,
                         'published_at' => $publishedAt,
                     ];
-
-                    if (count($articles) >= $limit) {
-                        return $articles;
-                    }
                 }
             } catch (\Throwable) {
-                // RSS is a fallback; a feed failure must not stop the pipeline.
+                // RSS is a fallback; a feed failure must not stop ingestion.
             }
         }
 
