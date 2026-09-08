@@ -43,6 +43,7 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/ai-engine', [AiContentEngineController::class, 'index'])->name('ai-engine.index');
     Route::post('/ai-engine/settings', [AiContentEngineController::class, 'settings'])->name('ai-engine.settings');
+    Route::post('/ai-engine/ingest-news', [AiContentEngineController::class, 'ingestNews'])->name('ai-engine.ingest-news');
     Route::post('/ai-engine/process', [AiContentEngineController::class, 'process'])->name('ai-engine.process');
     Route::get('/ai-engine/{aiContent}/preview', [AiContentEngineController::class, 'preview'])->name('ai-engine.preview');
     Route::post('/ai-engine/{aiContent}/retry', [AiContentEngineController::class, 'retry'])->name('ai-engine.retry');
