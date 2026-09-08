@@ -31,6 +31,13 @@ class NewsContentEngineTest extends TestCase
         $engine=app(NewsContentEngine::class);$saved=$engine->process([$engine->buildNews($news)]);$this->assertCount(1,$saved);$this->assertDatabaseHas('ai_contents',['source_type'=>'news','source_id'=>$news->id,'status'=>'generated','input_tokens'=>100,'output_tokens'=>200]);$this->assertSame('AI News Title',$news->fresh()->title);
     }
 
+    public function test_gemini_model_resource_prefix_is_normalized(): void
+    {
+        $news=News::create(['title'=>'Source title','status'=>'draft']);$this->provider(['model'=>'models/gemini-3.8-flash']);$body=json_encode(['results'=>[$this->generatedPayload($news->id)]],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+        Http::fake(['generativelanguage.googleapis.com/*'=>function($request)use($body){$this->assertStringContainsString('/v1beta/models/gemini-3.8-flash:generateContent',$request->url());$this->assertStringNotContainsString('models%2F',$request->url());return Http::response(['candidates'=>[['content'=>['parts'=>[['text'=>$body]]]]]],200);}]);
+        $engine=app(NewsContentEngine::class);$this->assertCount(1,$engine->process([$engine->buildNews($news)]));
+    }
+
     public function test_gemini_400_retries_without_response_format(): void
     {
         $news=News::create(['title'=>'Source title','status'=>'draft']);$this->provider();$body=json_encode(['results'=>[$this->generatedPayload($news->id)]],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
