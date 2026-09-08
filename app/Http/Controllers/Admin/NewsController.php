@@ -66,8 +66,8 @@ class NewsController extends Controller
 
     public function publish(News $news)
     {
-        $news->update(['status' => 'published', 'published_at' => $news->published_at ?: now()]);
-        return back()->with('success', 'News article published.');
+        $news->update(['status' => 'published', 'published_at' => $news->published_at ?: now(), 'published_web' => true, 'published_mobile' => true]);
+        return back()->with('success', 'News article published to Website + Mobile/App.');
     }
 
     public function destroy(News $news)
