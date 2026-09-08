@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\AiContentController;
 use App\Http\Controllers\Api\AlertApiController;
 use App\Http\Controllers\Api\HealthApiController;
 use App\Http\Controllers\Api\JobApiController;
@@ -8,15 +9,6 @@ use App\Http\Controllers\Api\SectionApiController;
 use App\Http\Controllers\Api\SettingApiController;
 use App\Http\Controllers\Api\StaticGkApiController;
 use Illuminate\Support\Facades\Route;
-
-/*
-|--------------------------------------------------------------------------
-| CGJobs REST API
-|--------------------------------------------------------------------------
-| /api/* is retained for Android backward compatibility.
-| /api/v1/* is the stable public integration contract for WordPress,
-| Android and future clients. Laravel remains the source of truth.
-*/
 
 $registerApiRoutes = static function (): void {
     Route::get('/health', [HealthApiController::class, 'check']);
@@ -34,10 +26,16 @@ $registerApiRoutes = static function (): void {
 Route::group([], $registerApiRoutes);
 Route::prefix('v1')->group($registerApiRoutes);
 
-// Isolated current-affairs API. Existing Jobs-backed /news routes above are unchanged.
+// Isolated current-affairs API. Existing Jobs-backed /news routes are unchanged.
 Route::get('/current-affairs', [NewsApiController::class, 'index']);
 Route::get('/current-affairs/{id}', [NewsApiController::class, 'show']);
 Route::prefix('v1')->group(static function (): void {
     Route::get('/current-affairs', [NewsApiController::class, 'index']);
     Route::get('/current-affairs/{id}', [NewsApiController::class, 'show']);
+});
+
+// AI Content Engine v1. Backend-only; provider keys must never be sent to clients.
+Route::prefix('v1/ai')->group(static function (): void {
+    Route::post('/process', [AiContentController::class, 'process']);
+    Route::get('/content/{aiContent}', [AiContentController::class, 'show']);
 });
