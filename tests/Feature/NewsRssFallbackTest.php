@@ -44,7 +44,7 @@ HTML;
         $this->assertSame('https://example.com/news/systemic-reforms', $articles[0]['url']);
     }
 
-    public function test_google_news_rss_rejects_google_boilerplate_and_requires_real_image_and_description(): void
+    public function test_google_news_rss_rejects_google_boilerplate_and_keeps_valid_story_without_image(): void
     {
         $feed = <<<'XML'
 <?xml version="1.0"?><rss version="2.0"><channel>
@@ -69,11 +69,13 @@ XML;
             'source' => 'google_news', 'geography' => 'india', 'strict_geo' => false,
         ]);
 
-        $this->assertCount(2, $articles);
+        $this->assertCount(3, $articles);
         $this->assertSame('Short valid title', $articles[0]['title']);
         $this->assertSame('https://cdn.example.com/short.jpg', $articles[0]['image']);
-        $this->assertSame('Good story', $articles[1]['title']);
-        $this->assertSame('https://cdn.example.com/good.jpg', $articles[1]['image']);
+        $this->assertSame('Missing image story', $articles[1]['title']);
+        $this->assertNull($articles[1]['image']);
+        $this->assertSame('Good story', $articles[2]['title']);
+        $this->assertSame('https://cdn.example.com/good.jpg', $articles[2]['image']);
     }
 
     public function test_google_news_rss_keeps_collecting_until_requested_unique_limit(): void
