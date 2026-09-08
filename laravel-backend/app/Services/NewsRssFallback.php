@@ -3,77 +3,29 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class NewsRssFallback
 {
-    public function fetch(string $query, int $limit, array $filters = []): array
+    public function fetch(string $query,int $limit,array $filters=[]):array
     {
-        $source = $filters['source'] ?? 'google_news';
-        $geo = $filters['geography'] ?? 'chhattisgarh';
-        $topic = trim((string) ($filters['topic'] ?? ''));
-        $from = $filters['from'] ?? null;
-        $to = $filters['to'] ?? null;
-        $location = ['chhattisgarh'=>'Chhattisgarh','india'=>'India','world'=>'international world'][$geo] ?? 'Chhattisgarh';
-
-        $articles = [];
-        if ($source === 'google_trending') {
-            $geoCode = $geo === 'chhattisgarh' ? 'IN' : ($geo === 'world' ? 'US' : 'IN');
-            $feedUrls = ['https://trends.google.com/trending/rss?geo=' . $geoCode];
-        } else {
-            $queries = [];
-            if ($topic) {
-                $topicQueries = [
-                    'national'=>'India latest national news', 'international'=>'international world latest news',
-                    'economy'=>'India economy banking finance', 'environment'=>'India environment climate ecology',
-                    'science'=>'India science technology ISRO', 'defence'=>'India defence military',
-                    'polity'=>'India government polity governance', 'education'=>'India education schools universities',
-                    'sports'=>'India sports latest', 'awards'=>'India awards appointments',
-                    'reports'=>'India reports indexes rankings', 'important_days'=>'important days India',
-                    'chhattisgarh'=>'Chhattisgarh latest news government', 'cgpsc'=>'CGPSC latest',
-                    'cg_vyapam'=>'CG Vyapam latest',
-                ];
-                $queries[] = $topicQueries[strtolower(str_replace([' & ',' '], ['_','_'], $topic))] ?? ($location . ' ' . $topic . ' latest news');
-            } else {
-                $queries[] = $query;
-            }
-            if (count($queries) === 1 && strtolower($query) === strtolower('Chhattisgarh latest news OR CGPSC OR CG Vyapam OR Chhattisgarh government')) {
-                $queries = ['Chhattisgarh latest news','Chhattisgarh government schemes','CGPSC latest','CG Vyapam latest','Chhattisgarh economy development'];
-            }
-            if (!$topic) $queries[] = $location . ' latest current affairs';
-            $feedUrls = [];
-            foreach (array_unique($queries) as $q) {
-                $datePart = ' when:1d';
-                if ($from) $datePart .= ' after:' . substr($from, 0, 10);
-                if ($to) $datePart .= ' before:' . date('Y-m-d', strtotime($to . ' +1 day'));
-                $feedUrls[] = 'https://news.google.com/rss/search?q=' . rawurlencode($q . $datePart) . '&hl=en-IN&gl=IN&ceid=IN:en';
-            }
+        $source=$filters['source']??'google_news';$geo=$filters['geography']??'chhattisgarh';$topic=trim((string)($filters['topic']??''));$from=$filters['from']??null;$to=$filters['to']??null;$location=['chhattisgarh'=>'Chhattisgarh','india'=>'India','world'=>'international world'][$geo]??'Chhattisgarh';$articles=[];
+        if($source==='google_trending'){$geoCode=$geo==='world'?'US':'IN';$feedUrls=['https://trends.google.com/trending/rss?geo='.$geoCode];}
+        else{
+            $queries=[];
+            if($topic){$topicQueries=['national'=>'India latest national news','international'=>'international world latest news','economy'=>'India economy banking finance','environment'=>'India environment climate ecology','science'=>'India science technology ISRO','defence'=>'India defence military','polity'=>'India government polity governance','education'=>'India education schools universities','sports'=>'India sports latest','awards'=>'India awards appointments','reports'=>'India reports indexes rankings','important_days'=>'important days India','chhattisgarh'=>'Chhattisgarh latest news government','cgpsc'=>'CGPSC latest','cg_vyapam'=>'CG Vyapam latest'];$normalizedTopic=strtolower(str_replace([' & ',' '],['_','_'],$topic));$queries[]=$topicQueries[$normalizedTopic]??($location.' '.$topic.' latest news');}
+            else{$queries[]=$query;if(strtolower($query)===strtolower('Chhattisgarh latest news OR CGPSC OR CG Vyapam OR Chhattisgarh government'))$queries=['Chhattisgarh latest news','Chhattisgarh government schemes','CGPSC latest','CG Vyapam latest','Chhattisgarh economy development'];$queries[]=$location.' latest current affairs';}
+            $feedUrls=[];foreach(array_unique($queries) as $q){$datePart=' when:1d';if($from)$datePart.=' after:'.substr($from,0,10);if($to)$datePart.=' before:'.date('Y-m-d',strtotime($to.' +1 day'));$feedUrls[]='https://news.google.com/rss/search?q='.rawurlencode($q.$datePart).'&hl=en-IN&gl=IN&ceid=IN:en';}
         }
-
-        foreach ($feedUrls as $feedUrl) {
-            if (count($articles) >= $limit) break;
-            try {
-                $response = Http::timeout(15)->get($feedUrl);
-                if (!$response->successful()) continue;
-                $xml = @simplexml_load_string($response->body());
-                if (!$xml || !isset($xml->channel->item)) continue;
-                foreach ($xml->channel->item as $item) {
-                    if (count($articles) >= $limit) break;
-                    $title = trim((string) ($item->title ?? ''));
-                    $url = trim((string) ($item->link ?? ''));
-                    if ($title === '') continue;
-                    $sourceName = 'Google News';
-                    $description = trim(strip_tags((string) ($item->description ?? '')));
-                    $publishedAt = trim((string) ($item->pubDate ?? '')) ?: null;
-                    if (str_contains($title, ' - ')) {
-                        [$cleanTitle, $publisher] = array_pad(explode(' - ', $title, 2), 2, '');
-                        if (trim($publisher) !== '') { $title = trim($cleanTitle); $sourceName = trim($publisher); }
-                    }
-                    $image = null;
-                    if (isset($item->enclosure['url'])) $image = (string) $item->enclosure['url'];
-                    $articles[] = ['title'=>$title,'description'=>$description ?: $title,'source'=>$sourceName,'url'=>$url,'image'=>$image,'published_at'=>$publishedAt];
-                }
-            } catch (\Throwable) {}
-        }
+        foreach($feedUrls as $feedUrl){if(count($articles)>=$limit)break;try{$response=Http::timeout(15)->get($feedUrl);if(!$response->successful())continue;$xml=@simplexml_load_string($response->body());if(!$xml||!isset($xml->channel->item))continue;foreach($xml->channel->item as $item){if(count($articles)>=$limit)break;$title=trim(html_entity_decode(strip_tags((string)($item->title??'')),ENT_QUOTES|ENT_HTML5,'UTF-8'));$url=trim((string)($item->link??''));if($title==='')continue;$sourceName=$source==='google_trending'?'Google Trending':'Google News';$description=trim(html_entity_decode(strip_tags((string)($item->description??'')),ENT_QUOTES|ENT_HTML5,'UTF-8'));$description=preg_replace('/\s+/u',' ',str_replace(["\xC2\xA0",'&nbsp;'],' ',$description));$publishedAt=trim((string)($item->pubDate??''))?:null;if(str_contains($title,' - ')){[$cleanTitle,$publisher]=array_pad(explode(' - ',$title,2),2,'');if(trim($publisher)!==''){$title=trim($cleanTitle);$sourceName=trim($publisher);}}if(!$this->passesGeographyFilter($title.' '.$description,$geo,$topic))continue;$image=isset($item->enclosure['url'])?(string)$item->enclosure['url']:null;$articles[]=['title'=>$title,'description'=>$description?:$title,'source'=>$sourceName,'url'=>$url,'image'=>$image,'published_at'=>$publishedAt];}}catch(\Throwable){}}
         return $articles;
+    }
+
+    private function passesGeographyFilter(string $text,string $geo,string $topic):bool
+    {
+        if($topic!=='')return true;$text=Str::lower($text);
+        if($geo==='chhattisgarh')return Str::contains($text,['chhattisgarh','raipur','bilaspur','durg','bastar','korba','jagdalpur','bhilai','ambikapur','rajnandgaon','surguja','kondagaon','kanker','dhamtari','mahasamund','balod','baloda bazar','janjgir','mungeli','gariaband','sukma','dantewada','narayanpur']);
+        if($geo==='india')return Str::contains($text,['india','indian','new delhi','mumbai','delhi','government of india','rbi','isro','supreme court']);
+        return Str::contains($text,['international','global','world','united nations','usa','china','russia','ukraine','europe','middle east']);
     }
 }
