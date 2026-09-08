@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\JobSourceController;
 use App\Http\Controllers\Admin\CanonicalJobImportController;
 use App\Http\Controllers\Admin\CanonicalJobImportApprovalController;
 use App\Http\Controllers\Admin\QueuedJobSourceController;
+use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\NewsSyncController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SettingController;
@@ -48,6 +49,16 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::get('/ai-engine/{aiContent}/preview', [AiContentEngineController::class, 'preview'])->name('ai-engine.preview');
     Route::post('/ai-engine/{aiContent}/retry', [AiContentEngineController::class, 'retry'])->name('ai-engine.retry');
     Route::post('/ai-engine/{aiContent}/publish', [AiContentEngineController::class, 'publish'])->name('ai-engine.publish');
+
+    // Isolated News / Current Affairs admin management. No Jobs API/model logic is used here.
+    Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+    Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
+    Route::post('/news', [NewsController::class, 'store'])->name('news.store');
+    Route::get('/news/{news}/edit', [NewsController::class, 'edit'])->name('news.edit');
+    Route::put('/news/{news}', [NewsController::class, 'update'])->name('news.update');
+    Route::post('/news/{news}/publish', [NewsController::class, 'publish'])->name('news.publish');
+    Route::delete('/news/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
+
     Route::get('/jobs/dashboard', [JobManagementController::class, 'dashboard'])->name('jobs.dashboard');
     Route::get('/jobs/templates', [JobManagementController::class, 'templates'])->name('jobs.templates');
     Route::post('/jobs/bulk-action', [JobManagementController::class, 'bulkAction'])->name('jobs.bulk-action');
