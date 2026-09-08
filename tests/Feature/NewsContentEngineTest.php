@@ -14,7 +14,7 @@ class NewsContentEngineTest extends TestCase
 {
     use RefreshDatabase;
 
-    private function result(int $id): array
+    private function generatedPayload(int $id): array
     {
         return [
             'id' => $id,
@@ -36,7 +36,7 @@ class NewsContentEngineTest extends TestCase
     {
         $news = News::create(['title' => 'Source title', 'summary' => 'Source summary', 'content' => 'Source content', 'status' => 'draft']);
         $this->provider();
-        $body = json_encode(['results' => [$this->result($news->id)]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $body = json_encode(['results' => [$this->generatedPayload($news->id)]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         Http::fake(['generativelanguage.googleapis.com/*' => function ($request) use ($body) {
             $this->assertSame('primary-secret', $request->header('x-goog-api-key')[0] ?? null);
@@ -63,7 +63,7 @@ class NewsContentEngineTest extends TestCase
     {
         $news = News::create(['title' => 'Source title', 'status' => 'draft']);
         $this->provider(['fallback_provider' => 'groq', 'fallback_api_key' => 'fallback-secret', 'fallback_model' => 'llama-3.3-70b-versatile']);
-        $body = json_encode(['results' => [$this->result($news->id)]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        $body = json_encode(['results' => [$this->generatedPayload($news->id)]], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         Http::fakeSequence()
             ->push(['error' => ['message' => 'Bad request']], 400)
             ->push(['choices' => [['message' => ['content' => $body]]], 'usage' => ['prompt_tokens' => 20, 'completion_tokens' => 40]], 200);
