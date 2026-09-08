@@ -41,12 +41,21 @@ class CurrentAffairsWebController extends Controller
     /**
      * Public Full Article Reading Page with Source Citations
      */
-    public function show(string $slugOrId)
+    public function show(Request $request, string $slugOrId)
     {
+        $lang = $request->query('lang', session('language', 'hi')) === 'en' ? 'en' : 'hi';
+
         $article = Job::where('slug', $slugOrId)
             ->orWhere('custom_id', $slugOrId)
             ->orWhere('id', $slugOrId)
             ->firstOrFail();
+
+        if ($lang === 'en') {
+            $article->title = $article->title_en ?: $article->title;
+            $article->summary = $article->summary_en ?: $article->summary;
+            $article->detailed_content = $article->detailed_content_en ?: $article->detailed_content;
+            $article->category = $article->category_en ?: $article->category;
+        }
 
         // Related articles for CGPSC / CGSSB exam preparation
         $related = Job::where('section', 'news')
@@ -59,6 +68,14 @@ class CurrentAffairsWebController extends Controller
             ->take(4)
             ->get();
 
-        return view('web.current_affairs.show', compact('article', 'related'));
+        if ($lang === 'en') {
+            foreach ($related as $rel) {
+                $rel->title = $rel->title_en ?: $rel->title;
+                $rel->summary = $rel->summary_en ?: $rel->summary;
+                $rel->category = $rel->category_en ?: $rel->category;
+            }
+        }
+
+        return view('web.current_affairs.show', compact('article', 'related', 'lang'));
     }
 }
