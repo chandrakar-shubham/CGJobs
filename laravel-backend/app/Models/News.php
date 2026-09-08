@@ -13,6 +13,7 @@ class News extends Model
         'title', 'title_en', 'summary', 'summary_en', 'content', 'content_en',
         'source', 'source_url', 'original_url', 'image_url', 'category', 'category_en',
         'tags', 'language', 'published_at', 'exam_relevance', 'featured', 'status',
+        'published_web', 'published_mobile',
     ];
 
     protected $casts = [
@@ -20,11 +21,19 @@ class News extends Model
         'published_at' => 'datetime',
         'exam_relevance' => 'integer',
         'featured' => 'boolean',
+        'published_web' => 'boolean',
+        'published_mobile' => 'boolean',
     ];
 
     public function scopePublished($query)
     {
         return $query->where('status', 'published');
+    }
+
+    public function scopePublishedOn($query, string $channel)
+    {
+        return $query->published()->when($channel === 'web', fn ($q) => $q->where('published_web', true))
+            ->when($channel === 'mobile', fn ($q) => $q->where('published_mobile', true));
     }
 
     public function toApiArray(?string $language = null): array
@@ -55,6 +64,8 @@ class News extends Model
             'featured' => (bool) $this->featured,
             'tags' => $this->tags ?: [],
             'status' => $this->status,
+            'publishedWeb' => (bool) $this->published_web,
+            'publishedMobile' => (bool) $this->published_mobile,
         ];
     }
 }
