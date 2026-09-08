@@ -161,6 +161,23 @@ class AiContentEngineTest extends TestCase
         $this->assertDatabaseHas('news', ['original_url' => 'https://example.com/new']);
     }
 
+    public function test_rss_fallback_fetches_news_when_api_keys_are_not_configured(): void
+    {
+        config()->set('services.newsdata.key', null);
+        config()->set('services.newsapi.key', null);
+
+        Http::fake([
+            'news.google.com/*' => Http::response('<?xml version="1.0"?><rss><channel><item><title>CGPSC recruitment update - Example News</title><link>https://example.com/rss-one</link><description>Latest update</description><pubDate>Tue, 08 Sep 2026 10:00:00 GMT</pubDate></item><item><title>Chhattisgarh education update - Another News</title><link>https://example.com/rss-two</link><description>Education update</description></item></channel></rss>', 200),
+        ]);
+
+        $result = app(NewsIngestionService::class)->ingestAndProcess('Chhattisgarh recruitment', 2, false);
+
+        $this->assertSame(2, $result['fetched']);
+        $this->assertSame(2, $result['created']);
+        $this->assertSame(2, News::count());
+        $this->assertSame('Example News', News::first()->source);
+    }
+
     public function test_news_auto_publish_can_be_enabled(): void
     {
         $this->provider(['auto_publish_news' => true]);
