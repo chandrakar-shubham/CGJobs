@@ -174,7 +174,7 @@ class AiContentEngineTest extends TestCase
             ['title' => 'Another New Story', 'link' => 'https://example.com/existing'],
         ]], 200)]);
 
-        $result = app(NewsIngestionService::class)->ingestAndProcess('CG recruitment', 10, false);
+        $result = app(NewsIngestionService::class)->ingestAndProcess('CG recruitment', 3, false);
 
         $this->assertSame(3, $result['fetched']);
         $this->assertSame(1, $result['created']);
