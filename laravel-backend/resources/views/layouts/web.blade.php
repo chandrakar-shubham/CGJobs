@@ -65,14 +65,20 @@
             </div>
 
             <nav class="hidden md:flex items-center space-x-6 text-sm font-semibold">
+                <a href="{{ url('/') }}" class="text-slate-600 hover:text-brand-600 transition">
+                    <i class="fa-solid fa-house-chimney mr-1.5"></i> होम
+                </a>
+                <a href="{{ url('/jobs') }}" class="text-slate-600 hover:text-brand-600 transition">
+                    <i class="fa-solid fa-briefcase mr-1.5"></i> सरकारी नौकरियां
+                </a>
                 <a href="{{ url('/current-affairs') }}" class="text-brand-600 border-b-2 border-brand-600 pb-1">
                     <i class="fa-solid fa-newspaper mr-1.5"></i> समसामयिकी (Current Affairs)
                 </a>
-                <a href="{{ url('/admin/jobs') }}" class="text-slate-600 hover:text-brand-600 transition">
-                    <i class="fa-solid fa-briefcase mr-1.5"></i> सरकारी नौकरियां
+                <a href="{{ url('/gk') }}" class="text-slate-600 hover:text-brand-600 transition">
+                    <i class="fa-solid fa-book-open mr-1.5"></i> Static GK
                 </a>
-                <a href="{{ url('/admin/dashboard') }}" class="text-slate-600 hover:text-brand-600 transition">
-                    <i class="fa-solid fa-gauge-high mr-1.5"></i> एडमिन पैनल
+                <a href="{{ url('/notifications') }}" class="text-slate-600 hover:text-brand-600 transition">
+                    <i class="fa-solid fa-bell mr-1.5 text-amber-500"></i> सूचनाएं
                 </a>
             </nav>
 

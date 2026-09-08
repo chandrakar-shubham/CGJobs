@@ -1,10 +1,11 @@
-@extends('layouts.web')
+@extends('web.layout')
 
 @section('title', 'दैनिक समसामयिकी व करंट अफेयर्स | CGPSC, CGSSB, व्यापम परीक्षा विशेषांक')
 @section('meta_description', 'छत्तीसगढ़ व राष्ट्रीय दैनिक करंट अफेयर्स, शासकीय योजनाएं, बजट, पुरस्कार एवं आयोग परीक्षाओं के महत्वपूर्ण बिंदु')
 
 @section('content')
-<div class="space-y-8">
+<div class="bg-slate-50 py-10 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
     <!-- Hero Header Banner -->
     <div class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-slate-900 via-brand-900 to-slate-900 text-white p-8 sm:p-10 shadow-xl border border-white/10">
@@ -52,7 +53,7 @@
                 <i class="fa-regular fa-newspaper"></i>
             </div>
             <h3 class="text-base font-bold text-slate-800">वर्तमान में कोई लेख उपलब्ध नहीं है</h3>
-            <p class="text-xs text-slate-500 max-w-md mx-auto">एडमिन पैनल से समाचार स्क्रैपर चलाएं या नई समसामयिकी प्रविष्टि जोड़ें।</p>
+            <p class="text-xs text-slate-500 max-w-md mx-auto">कृपया कुछ समय बाद पुनः देखें अथवा अन्य श्रेणी चुनें।</p>
         </div>
     @else
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -120,5 +121,6 @@
         </div>
     @endif
 
+    </div>
 </div>
 @endsection
