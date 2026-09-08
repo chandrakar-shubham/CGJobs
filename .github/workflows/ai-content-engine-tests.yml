@@ -7,6 +7,7 @@ on:
       - '.github/workflows/ai-content-engine-tests.yml'
   push:
     branches:
+      - main
       - feature/ai-content-engine-v1
     paths:
       - 'laravel-backend/**'
