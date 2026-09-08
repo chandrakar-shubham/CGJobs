@@ -1,0 +1,28 @@
+@csrf
+<div class="grid lg:grid-cols-3 gap-5">
+<div class="lg:col-span-2 space-y-4">
+<div><label class="block text-sm font-semibold mb-1">Title *</label><input name="title" required value="{{old('title',$news->title)}}" class="w-full rounded-xl border-slate-200 border px-3 py-2.5"></div>
+<div><label class="block text-sm font-semibold mb-1">English Title</label><input name="title_en" value="{{old('title_en',$news->title_en)}}" class="w-full rounded-xl border-slate-200 border px-3 py-2.5"></div>
+<div><label class="block text-sm font-semibold mb-1">Summary</label><textarea name="summary" rows="4" class="w-full rounded-xl border-slate-200 border px-3 py-2.5">{{old('summary',$news->summary)}}</textarea></div>
+<div><label class="block text-sm font-semibold mb-1">Detailed Content</label><textarea name="content" rows="14" class="w-full rounded-xl border-slate-200 border px-3 py-2.5">{{old('content',$news->content)}}</textarea></div>
+<div><label class="block text-sm font-semibold mb-1">English Content</label><textarea name="content_en" rows="10" class="w-full rounded-xl border-slate-200 border px-3 py-2.5">{{old('content_en',$news->content_en)}}</textarea></div>
+</div>
+<div class="space-y-4">
+<div class="bg-white border rounded-2xl p-4 space-y-4">
+<div><label class="block text-sm font-semibold mb-1">Category *</label><select name="category" required class="w-full rounded-xl border-slate-200 border px-3 py-2.5">@foreach($categories as $category)<option value="{{$category}}" @selected(old('category',$news->category)===$category)>{{$category}}</option>@endforeach</select></div>
+<div><label class="block text-sm font-semibold mb-1">English Category</label><input name="category_en" value="{{old('category_en',$news->category_en)}}" class="w-full rounded-xl border-slate-200 border px-3 py-2.5"></div>
+<div><label class="block text-sm font-semibold mb-1">Source</label><input name="source" value="{{old('source',$news->source)}}" class="w-full rounded-xl border-slate-200 border px-3 py-2.5"></div>
+<div><label class="block text-sm font-semibold mb-1">Source URL</label><input type="url" name="source_url" value="{{old('source_url',$news->source_url)}}" class="w-full rounded-xl border-slate-200 border px-3 py-2.5"></div>
+<div><label class="block text-sm font-semibold mb-1">Original Article URL</label><input type="url" name="original_url" value="{{old('original_url',$news->original_url)}}" class="w-full rounded-xl border-slate-200 border px-3 py-2.5"></div>
+@if($news->original_url)<a href="{{$news->original_url}}" target="_blank" rel="noopener" class="inline-flex text-sm text-blue-700 hover:underline">Open original article ↗</a>@endif
+<div><label class="block text-sm font-semibold mb-1">Image URL</label><input type="url" name="image_url" value="{{old('image_url',$news->image_url)}}" class="w-full rounded-xl border-slate-200 border px-3 py-2.5"></div>
+</div>
+<div class="bg-white border rounded-2xl p-4 space-y-4">
+<div><label class="block text-sm font-semibold mb-1">Exam Relevance (0–5)</label><input type="number" min="0" max="5" name="exam_relevance" value="{{old('exam_relevance',$news->exam_relevance)}}" class="w-full rounded-xl border-slate-200 border px-3 py-2.5"></div>
+<div><label class="block text-sm font-semibold mb-1">Tags</label><textarea name="tags" rows="3" class="w-full rounded-xl border-slate-200 border px-3 py-2.5">{{old('tags',is_array($news->tags)?implode(', ',$news->tags):'')}}</textarea></div>
+<div><label class="block text-sm font-semibold mb-1">Language</label><select name="language" class="w-full rounded-xl border-slate-200 border px-3 py-2.5"><option value="en" @selected(old('language',$news->language)==='en')>English</option><option value="hi" @selected(old('language',$news->language)==='hi')>Hindi</option></select></div>
+<div><label class="block text-sm font-semibold mb-1">Status</label><select name="status" class="w-full rounded-xl border-slate-200 border px-3 py-2.5">@foreach(['draft','review','published','archived'] as $status)<option value="{{$status}}" @selected(old('status',$news->status ?: 'draft')===$status)>{{ucfirst($status)}}</option>@endforeach</select></div>
+<div><label class="block text-sm font-semibold mb-1">Published At</label><input type="datetime-local" name="published_at" value="{{old('published_at',$news->published_at?->format('Y-m-d\TH:i'))}}" class="w-full rounded-xl border-slate-200 border px-3 py-2.5"></div>
+<label class="flex items-center gap-2 text-sm"><input type="checkbox" name="featured" value="1" @checked(old('featured',$news->featured))> Featured current affair</label>
+</div></div></div>
+<div class="mt-5 flex gap-3"><button class="px-5 py-2.5 rounded-xl bg-blue-700 text-white font-semibold">Save News</button><a href="{{route('admin.news.index')}}" class="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold">Cancel</a></div>
