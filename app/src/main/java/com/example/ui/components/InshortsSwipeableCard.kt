@@ -114,6 +114,7 @@ data class InshortsPostItem(
     val applyUrl: String? = null,
     val officialNotificationUrl: String? = null,
     val examTakeaway: String? = null,
+    val webArticleUrl: String? = null,
     val isSaved: Boolean = false,
     val deepLinkUri: String = "cgjobs://post/$id"
 )
@@ -141,7 +142,8 @@ fun JobUpdate.toInshortsPostItem(isJob: Boolean = true): InshortsPostItem {
         lastDate = importantDates.lastDate,
         applyUrl = applyUrl,
         officialNotificationUrl = officialNotificationUrl,
-        examTakeaway = if (!isJob) eligibility ?: "CGPSC, व्यापम व राज्य स्तरीय प्रतियोगी परीक्षाओं हेतु महत्वपूर्ण।" else null,
+        examTakeaway = examTakeaway ?: if (!isJob) eligibility ?: "CGPSC, व्यापम व राज्य स्तरीय प्रतियोगी परीक्षाओं हेतु महत्वपूर्ण।" else null,
+        webArticleUrl = webArticleUrl,
         isSaved = isSaved,
         deepLinkUri = "cgjobs://post/$id"
     )
@@ -398,13 +400,18 @@ fun InshortsSwipeableCard(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Secondary Row: Direct External Portal Link + Copy Deep Link + Swipe Cue
+                // Secondary Row: Direct External Portal Link + Real News Portal/Website Link + Deep Link + Swipe Cue
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    val targetUrl = item.applyUrl ?: item.officialNotificationUrl ?: item.sourceUrl
+                    val targetUrl = if (!item.isJob) {
+                        item.sourceUrl ?: item.webArticleUrl
+                    } else {
+                        item.applyUrl ?: item.officialNotificationUrl ?: item.sourceUrl
+                    }
+
                     if (!targetUrl.isNullOrBlank()) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -416,10 +423,17 @@ fun InshortsSwipeableCard(
                                 .padding(horizontal = 4.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = if (item.isJob && !item.applyUrl.isNullOrBlank()) "ऑनलाइन आवेदन लिंक" else "आधिकारिक पोर्टल",
+                                text = when {
+                                    item.isJob && !item.applyUrl.isNullOrBlank() -> "ऑनलाइन आवेदन लिंक"
+                                    item.isJob -> "आधिकारिक पोर्टल"
+                                    !item.source.isNullOrBlank() -> "स्रोत: ${item.source}"
+                                    else -> "मूल समाचार पोर्टल"
+                                },
                                 fontSize = 11.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = BrandGreen
+                                color = BrandGreen,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
                             )
                             Spacer(modifier = Modifier.width(3.dp))
                             Icon(
@@ -431,6 +445,33 @@ fun InshortsSwipeableCard(
                         }
                     } else {
                         Spacer(modifier = Modifier.width(1.dp))
+                    }
+
+                    // Website Portal Link for Current Affairs
+                    if (!item.isJob && !item.webArticleUrl.isNullOrBlank()) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable {
+                                    openExternalUrl(context, item.webArticleUrl)
+                                }
+                                .padding(horizontal = 4.dp, vertical = 3.dp)
+                        ) {
+                            Text(
+                                text = "वेबसाइट",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = BrandGreenDark
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Icon(
+                                imageVector = Icons.Outlined.OpenInNew,
+                                contentDescription = "Web Article",
+                                tint = BrandGreenDark,
+                                modifier = Modifier.size(10.dp)
+                            )
+                        }
                     }
 
                     // Deep Link Copy Badge
@@ -453,7 +494,7 @@ fun InshortsSwipeableCard(
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = "डीप लिंक",
+                            text = "लिंक",
                             fontSize = 10.sp,
                             color = Slate600
                         )

@@ -54,7 +54,7 @@ class ServerBackedNotificationRepository(
     suspend fun registerDeviceToken(token: String, model: String? = null): Boolean = withContext(Dispatchers.IO) {
         try {
             val api = ServerConfig.getApiService(context)
-            api.registerDeviceToken(RegisterTokenRequest(token = token, deviceModel = model, platform = "Android"))
+            api.registerDeviceToken(RegisterTokenRequest(token = token, deviceName = model, platform = "android"))
             return@withContext true
         } catch (e: Exception) {
             Log.e("ServerBackedNotifRepo", "Token registration error: ${e.message}")

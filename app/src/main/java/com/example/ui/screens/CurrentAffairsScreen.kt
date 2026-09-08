@@ -113,12 +113,13 @@ fun CurrentAffairsScreen(
 
     // Filter news list based on selected tab chip
     val filteredList = remember(newsList, selectedFilter) {
-        val baseList = if (newsList.any { it.category.equals("Current Affairs", ignoreCase = true) }) {
+        val baseList = if (newsList.any { it.section.equals("news", ignoreCase = true) || it.category.equals("Current Affairs", ignoreCase = true) }) {
             newsList.filter {
+                it.section.equals("news", ignoreCase = true) ||
                 it.category.equals("Current Affairs", ignoreCase = true) ||
-                        it.title.contains("समसामयिकी") ||
-                        it.title.contains("करेंट अफेयर्स") ||
-                        it.title.contains("बजट")
+                it.title.contains("समसामयिकी") ||
+                it.title.contains("करेंट अफेयर्स") ||
+                it.title.contains("बजट")
             }
         } else {
             newsList
@@ -562,7 +563,7 @@ fun InshortNewsCard(
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = if (news.eligibility != null) {
+                            text = news.examTakeaway ?: if (news.eligibility != null) {
                                 "${news.eligibility} • विभाग: ${news.source}"
                             } else {
                                 "CGPSC, व्यापम, शिक्षक व राज्य स्तरीय प्रतियोगी परीक्षाओं हेतु महत्वपूर्ण।"
@@ -656,33 +657,60 @@ fun InshortNewsCard(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Secondary Row: Source link & Swipe cue
+                // Secondary Row: Source link, Website link & Swipe cue
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Source web link
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(8.dp))
-                            .clickable { onOpenSourceUrl(news.sourceUrl) }
-                            .padding(horizontal = 4.dp, vertical = 2.dp)
-                    ) {
-                        Text(
-                            text = "स्रोत: ${news.source}",
-                            fontSize = 10.5.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Slate600
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Icon(
-                            imageVector = Icons.Outlined.OpenInNew,
-                            contentDescription = "Open Source",
-                            tint = Slate600,
-                            modifier = Modifier.size(12.dp)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // Source web link (Real news portal)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .clickable { onOpenSourceUrl(news.sourceUrl) }
+                                .padding(horizontal = 4.dp, vertical = 2.dp)
+                        ) {
+                            Text(
+                                text = "स्रोत: ${news.source}",
+                                fontSize = 10.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Slate600
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Outlined.OpenInNew,
+                                contentDescription = "Open Source",
+                                tint = Slate600,
+                                modifier = Modifier.size(12.dp)
+                            )
+                        }
+
+                        if (!news.webArticleUrl.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .clickable { onOpenSourceUrl(news.webArticleUrl!!) }
+                                    .padding(horizontal = 4.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "वेबसाइट लेख",
+                                    fontSize = 10.5.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = BrandGreenDark
+                                )
+                                Spacer(modifier = Modifier.width(3.dp))
+                                Icon(
+                                    imageVector = Icons.Outlined.OpenInNew,
+                                    contentDescription = "Open Web Article",
+                                    tint = BrandGreenDark,
+                                    modifier = Modifier.size(11.dp)
+                                )
+                            }
+                        }
                     }
 
                     // Swipe next cue

@@ -162,8 +162,8 @@ class StaticGkRepository(
         try {
             val api = ServerConfig.getApiService(context)
             val response = api.getStaticGk()
-            if (response.success && !response.items.isNullOrEmpty()) {
-                val mapped = response.items.map { it.toDomain() }
+            if (response.success && !response.cards.isNullOrEmpty()) {
+                val mapped = response.cards.map { it.toDomain() }
                 val savedIds = _gkStream.value.filter { it.isSaved }.map { it.id }.toSet()
                 _gkStream.value = mapped.map { item ->
                     if (savedIds.contains(item.id)) item.copy(isSaved = true) else item

@@ -314,81 +314,127 @@ fun ArticleDetailScreen(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(20.dp))
+                // If News or has Exam Takeaways, display Exam Capsule
+                val examNotes = article.examTakeaway
+                val isNewsItem = article.section.equals("news", ignoreCase = true) || 
+                                 article.category.equals("Current Affairs", ignoreCase = true) ||
+                                 !examNotes.isNullOrBlank()
 
-                // "मुख्य जानकारी" (Key Information) Section Table
-                Text(
-                    text = "मुख्य जानकारी",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = BorderStroke(1.dp, BorderLight)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        DetailInfoRow(
-                            icon = Icons.Outlined.People,
-                            label = "पदों की संख्या",
-                            value = article.vacancies ?: "विभिन्न पद"
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
-
-                        DetailInfoRow(
-                            icon = Icons.Outlined.DateRange,
-                            label = "आवेदन प्रारंभ",
-                            value = article.importantDates.applicationStart
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
-
-                        DetailInfoRow(
-                            icon = Icons.Outlined.Timer,
-                            label = "अंतिम तिथि",
-                            value = article.importantDates.lastDate
-                        )
-
-                        if (article.importantDates.examDate != null) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
-                            DetailInfoRow(
-                                icon = Icons.Outlined.CheckCircle,
-                                label = "परीक्षा तिथि",
-                                value = article.importantDates.examDate
-                            )
-                        }
-
-                        if (article.eligibility != null) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
-                            DetailInfoRow(
-                                icon = Icons.Outlined.School,
-                                label = "योग्यता",
-                                value = article.eligibility
-                            )
-                        }
-
-                        if (article.ageLimit != null) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
-                            DetailInfoRow(
-                                icon = Icons.Outlined.DateRange,
-                                label = "आयु सीमा",
-                                value = article.ageLimit
-                            )
-                        }
-
-                        if (article.selectionProcess != null) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
-                            DetailInfoRow(
-                                icon = Icons.Outlined.CheckCircle,
-                                label = "चयन प्रक्रिया",
-                                value = article.selectionProcess
+                if (isNewsItem && !examNotes.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(com.example.ui.theme.BrandGreenLight)
+                            .border(1.2.dp, BrandGreen.copy(alpha = 0.35f), RoundedCornerShape(14.dp))
+                            .padding(16.dp)
+                    ) {
+                        Column {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Outlined.School,
+                                    contentDescription = null,
+                                    tint = BrandGreen,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "परीक्षा दृष्टि (Exam Takeaways):",
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = BrandGreenDark
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = examNotes,
+                                fontSize = 13.5.sp,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                lineHeight = 20.sp
                             )
                         }
                     }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // "मुख्य जानकारी" (Key Information) Section Table
+                if (!isNewsItem) {
+                    Text(
+                        text = "मुख्य जानकारी",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        border = BorderStroke(1.dp, BorderLight)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            DetailInfoRow(
+                                icon = Icons.Outlined.People,
+                                label = "पदों की संख्या",
+                                value = article.vacancies ?: "विभिन्न पद"
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
+
+                            DetailInfoRow(
+                                icon = Icons.Outlined.DateRange,
+                                label = "आवेदन प्रारंभ",
+                                value = article.importantDates.applicationStart
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
+
+                            DetailInfoRow(
+                                icon = Icons.Outlined.Timer,
+                                label = "अंतिम तिथि",
+                                value = article.importantDates.lastDate
+                            )
+
+                            if (article.importantDates.examDate != null) {
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
+                                DetailInfoRow(
+                                    icon = Icons.Outlined.CheckCircle,
+                                    label = "परीक्षा तिथि",
+                                    value = article.importantDates.examDate
+                                )
+                            }
+
+                            if (article.eligibility != null) {
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
+                                DetailInfoRow(
+                                    icon = Icons.Outlined.School,
+                                    label = "योग्यता",
+                                    value = article.eligibility
+                                )
+                            }
+
+                            if (article.ageLimit != null) {
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
+                                DetailInfoRow(
+                                    icon = Icons.Outlined.DateRange,
+                                    label = "आयु सीमा",
+                                    value = article.ageLimit
+                                )
+                            }
+
+                            if (article.selectionProcess != null) {
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp), color = DividerLight)
+                                DetailInfoRow(
+                                    icon = Icons.Outlined.CheckCircle,
+                                    label = "चयन प्रक्रिया",
+                                    value = article.selectionProcess
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(20.dp))
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -413,70 +459,138 @@ fun ArticleDetailScreen(
                 Spacer(modifier = Modifier.height(28.dp))
 
                 // Call to Action Buttons
-                Button(
-                    onClick = {
-                        if (article.officialNotificationUrl != null) {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(article.officialNotificationUrl))
-                            runCatching { context.startActivity(intent) }.onFailure {
-                                Toast.makeText(context, "आधिकारिक अधिसूचना लिंक खोला जा रहा है...", Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            Toast.makeText(context, "आधिकारिक सूचना शीघ्र उपलब्ध होगी", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .testTag("official_notification_cta"),
-                    colors = ButtonDefaults.buttonColors(containerColor = BrandGreen),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Description,
-                        contentDescription = "Notification",
-                        tint = Color.White
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Official Notification",
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
+                if (isNewsItem) {
+                    // News / Current Affairs CTAs: Original News Source & Website Full Article
+                    val originalPortalUrl = article.sourceUrl.ifBlank { article.applyUrl ?: "" }
+                    val webArticleUrl = article.webArticleUrl
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick = {
-                        if (article.applyUrl != null) {
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(article.applyUrl))
-                            runCatching { context.startActivity(intent) }.onFailure {
-                                Toast.makeText(context, "आवेदन पोर्टल खोला जा रहा है...", Toast.LENGTH_SHORT).show()
-                            }
-                        } else {
-                            Toast.makeText(context, "ऑनलाइन आवेदन तिथि शीघ्र घोषित होगी", Toast.LENGTH_SHORT).show()
+                    if (originalPortalUrl.isNotBlank()) {
+                        Button(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(originalPortalUrl))
+                                runCatching { context.startActivity(intent) }.onFailure {
+                                    Toast.makeText(context, "मूल समाचार पोर्टल खोला जा रहा है...", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .testTag("source_portal_cta"),
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandGreen),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Language,
+                                contentDescription = "Source",
+                                tint = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "मूल समाचार पोर्टल पर देखें (${article.source})",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
                         }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp)
-                        .testTag("apply_online_cta"),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, BorderLight)
-                ) {
-                    Icon(
-                        imageVector = Icons.Outlined.Link,
-                        contentDescription = "Apply",
-                        tint = BrandGreen
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = if (article.applyUrl != null) "Apply Online (आधिकारिक पोर्टल)" else "Apply Online (Soon)",
-                        fontSize = 14.5.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
+                    }
+
+                    if (!webArticleUrl.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(webArticleUrl))
+                                runCatching { context.startActivity(intent) }.onFailure {
+                                    Toast.makeText(context, "वेबसाइट लेख खोला जा रहा है...", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(48.dp)
+                                .testTag("web_article_cta"),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, BorderLight)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.OpenInNew,
+                                contentDescription = "Web Portal",
+                                tint = BrandGreen
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "वेबसाइट पर पूरा लेख पढ़ें (darkgoldenrod-camel)",
+                                fontSize = 13.5.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                } else {
+                    // Job Post CTAs
+                    Button(
+                        onClick = {
+                            if (article.officialNotificationUrl != null) {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(article.officialNotificationUrl))
+                                runCatching { context.startActivity(intent) }.onFailure {
+                                    Toast.makeText(context, "आधिकारिक अधिसूचना लिंक खोला जा रहा है...", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                Toast.makeText(context, "आधिकारिक सूचना शीघ्र उपलब्ध होगी", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .testTag("official_notification_cta"),
+                        colors = ButtonDefaults.buttonColors(containerColor = BrandGreen),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Description,
+                            contentDescription = "Notification",
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Official Notification",
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            if (article.applyUrl != null) {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(article.applyUrl))
+                                runCatching { context.startActivity(intent) }.onFailure {
+                                    Toast.makeText(context, "आवेदन पोर्टल खोला जा रहा है...", Toast.LENGTH_SHORT).show()
+                                }
+                            } else {
+                                Toast.makeText(context, "ऑनलाइन आवेदन तिथि शीघ्र घोषित होगी", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
+                            .testTag("apply_online_cta"),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, BorderLight)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Link,
+                            contentDescription = "Apply",
+                            tint = BrandGreen
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (article.applyUrl != null) "Apply Online (आधिकारिक पोर्टल)" else "Apply Online (Soon)",
+                            fontSize = 14.5.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(40.dp))
