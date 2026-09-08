@@ -88,11 +88,20 @@ class NewsContentEngine
     {
         $prompt=$this->prompt($items);$provider=strtolower((string)$setting->provider);
         if($provider==='gemini'){
-            $model=$setting->model?:'gemini-3.8-flash';$url='https://generativelanguage.googleapis.com/v1beta/models/'.rawurlencode($model).':generateContent';$headers=['x-goog-api-key'=>$setting->api_key,'Content-Type'=>'application/json'];$requestCount=1;
+            // The admin setting may contain either "gemini-3.8-flash" or the REST resource form
+            // "models/gemini-3.8-flash". Normalize both before constructing the endpoint. Passing
+            // the resource prefix through rawurlencode produces models%2F... and Gemini rejects it
+            // with "GenerateContentRequest.model: unexpected model name format".
+            $model=trim((string)($setting->model?:'gemini-3.8-flash'));
+            $model=preg_replace('#^https?://generativelanguage\.googleapis\.com/v1beta/models/#i','',$model);
+            $model=preg_replace('#^models/#i','',$model);
+            $model=trim((string)$model,"/ \t\r\n");
+            if($model==='')$model='gemini-3.8-flash';
+            $url='https://generativelanguage.googleapis.com/v1beta/models/'.rawurlencode($model).':generateContent';$headers=['x-goog-api-key'=>$setting->api_key,'Content-Type'=>'application/json'];$requestCount=1;
             $body=['contents'=>[['role'=>'user','parts'=>[['text'=>$prompt]]]],'generationConfig'=>['responseFormat'=>['text'=>['mimeType'=>'application/json']],'thinkingConfig'=>['thinkingLevel'=>'low']]];
             $r=Http::timeout(120)->withHeaders($headers)->post($url,$body);
             if($r->status()===400){$requestCount++;$r=Http::timeout(120)->withHeaders($headers)->post($url,['contents'=>[['role'=>'user','parts'=>[['text'=>$prompt]]]],'generationConfig'=>['thinkingConfig'=>['thinkingLevel'=>'low']]]);}
-            if(!$r->successful()){throw new RuntimeException('AI provider request failed with HTTP '.$r->status().($this->providerError($r)!==''?'. '.substr($this->providerError($r),0,900):'.'));}
+            if(!$r->successful()){throw new RuntimeException('AI provider request failed with HTTP '.$r->status().'. Model: '.$model.($this->providerError($r)!==''?'. '.substr($this->providerError($r),0,900):'.'));}
             $json=$r->json();$decoded=$this->decodeJsonResponse($this->extractGeminiText($json));$usage=$json['usageMetadata']??[];$decoded['usage']=['input_tokens'=>(int)($usage['promptTokenCount']??0),'output_tokens'=>(int)($usage['candidatesTokenCount']??0)];$decoded['_request_count']=$requestCount;$this->logSuccess($setting,$provider,$model,$items,$decoded,$fallbackUsed);return $decoded;
         }
         if($provider==='groq'){
