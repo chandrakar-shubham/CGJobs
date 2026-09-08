@@ -34,8 +34,8 @@ Route::prefix('v1')->group(static function (): void {
     Route::get('/current-affairs/{id}', [NewsApiController::class, 'show']);
 });
 
-// AI Content Engine v1. Backend-only; provider keys must never be sent to clients.
-Route::prefix('v1/ai')->group(static function (): void {
+// AI processing is an admin/backend operation and is never exposed to Android clients.
+Route::prefix('v1/ai')->middleware('admin.auth')->group(static function (): void {
     Route::post('/process', [AiContentController::class, 'process']);
     Route::get('/content/{aiContent}', [AiContentController::class, 'show']);
 });
