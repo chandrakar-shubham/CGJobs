@@ -71,19 +71,19 @@ class NewsSyncController extends Controller
      */
     public function sync(Request $request, NewsScraperService $scraper)
     {
-        $type = $request->input('sync_type', 'exam_news');
+        @set_time_limit(30);
 
-        if ($type === 'exam_news') {
+        try {
+            $type = $request->input('sync_type', 'exam_news');
             $result = $scraper->syncExamCurrentAffairs($request->input('query'));
-        } else {
-            // fallback
-            $result = $scraper->syncExamCurrentAffairs($request->input('query'));
-        }
 
-        if ($result['imported'] > 0) {
-            return back()->with('success', $result['message']);
-        }
+            if (($result['imported'] ?? 0) > 0) {
+                return back()->with('success', $result['message']);
+            }
 
-        return back()->with('info', $result['message']);
+            return back()->with('info', $result['message'] ?? 'कोई नया लेख नहीं मिला।');
+        } catch (\Throwable $e) {
+            return back()->withErrors(['error' => 'सिंक प्रक्रिया में त्रुटि: ' . $e->getMessage()]);
+        }
     }
 }
