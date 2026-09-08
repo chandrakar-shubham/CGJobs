@@ -40,13 +40,19 @@ class AiContentEngineTest extends TestCase
         ], $overrides));
     }
 
-    public function test_generated_news_is_saved_from_structured_response(): void
+    public function test_generated_news_is_saved_from_structured_response_and_uses_gemini_rest_json_mode(): void
     {
         $body = json_encode(['results' => [$this->generatedResult(1)]]);
-        Http::fake(['generativelanguage.googleapis.com/*' => Http::response([
-            'candidates' => [['content' => ['parts' => [['text' => $body]]]]],
-            'usageMetadata' => ['promptTokenCount' => 100, 'candidatesTokenCount' => 200],
-        ], 200)]);
+        Http::fake(['generativelanguage.googleapis.com/*' => function ($request) use ($body) {
+            $this->assertSame('primary-secret', $request->header('x-goog-api-key')[0] ?? null);
+            $payload = $request->data();
+            $this->assertSame('application/json', $payload['generationConfig']['response_mime_type'] ?? null);
+            $this->assertArrayNotHasKey('responseMimeType', $payload['generationConfig'] ?? []);
+            return Http::response([
+                'candidates' => [['content' => ['parts' => [['text' => $body]]]]],
+                'usageMetadata' => ['promptTokenCount' => 100, 'candidatesTokenCount' => 200],
+            ], 200);
+        }]);
 
         $news = News::create(['title' => 'Source title', 'summary' => 'Source summary', 'content' => 'Source content', 'status' => 'draft']);
         $this->provider();
@@ -78,6 +84,21 @@ class AiContentEngineTest extends TestCase
         $this->assertCount(2, AiUsageLog::all());
         $this->assertTrue(AiUsageLog::where('success', false)->exists());
         $this->assertTrue(AiUsageLog::where('success', true)->where('provider', 'groq')->exists());
+    }
+
+    public function test_provider_error_body_is_preserved_for_diagnosis(): void
+    {
+        Http::fake(['generativelanguage.googleapis.com/*' => Http::response([
+            'error' => ['code' => 400, 'message' => 'Invalid JSON mode parameter'],
+        ], 400)]);
+
+        $news = News::create(['title' => 'Source title', 'status' => 'draft']);
+        $this->provider();
+
+        app(ContentEngine::class)->process([app(ContentEngine::class)->buildNews($news)]);
+
+        $this->assertStringContainsString('HTTP 400', (string) AiContent::first()->error_message);
+        $this->assertStringContainsString('Invalid JSON mode parameter', (string) AiContent::first()->error_message);
     }
 
     public function test_malformed_item_does_not_block_valid_items(): void
