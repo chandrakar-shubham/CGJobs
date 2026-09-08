@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AiContentEngineController;
 use App\Http\Controllers\Admin\AlertController;
 use App\Http\Controllers\Admin\AuthController;
 use App\Http\Controllers\Admin\CacheController;
@@ -40,6 +41,13 @@ Route::match(['get', 'post'], '/admin/logout', [AuthController::class, 'logout']
 Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('/ai-engine', [AiContentEngineController::class, 'index'])->name('ai-engine.index');
+    Route::post('/ai-engine/settings', [AiContentEngineController::class, 'settings'])->name('ai-engine.settings');
+    Route::post('/ai-engine/ingest-news', [AiContentEngineController::class, 'ingestNews'])->name('ai-engine.ingest-news');
+    Route::post('/ai-engine/process', [AiContentEngineController::class, 'process'])->name('ai-engine.process');
+    Route::get('/ai-engine/{aiContent}/preview', [AiContentEngineController::class, 'preview'])->name('ai-engine.preview');
+    Route::post('/ai-engine/{aiContent}/retry', [AiContentEngineController::class, 'retry'])->name('ai-engine.retry');
+    Route::post('/ai-engine/{aiContent}/publish', [AiContentEngineController::class, 'publish'])->name('ai-engine.publish');
     Route::get('/jobs/dashboard', [JobManagementController::class, 'dashboard'])->name('jobs.dashboard');
     Route::get('/jobs/templates', [JobManagementController::class, 'templates'])->name('jobs.templates');
     Route::post('/jobs/bulk-action', [JobManagementController::class, 'bulkAction'])->name('jobs.bulk-action');
