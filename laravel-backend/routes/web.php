@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\CanonicalJobImportController;
 use App\Http\Controllers\Admin\CanonicalJobImportApprovalController;
 use App\Http\Controllers\Admin\QueuedJobSourceController;
 use App\Http\Controllers\Admin\NewsController;
+use App\Http\Controllers\Admin\NewsStudioController;
 use App\Http\Controllers\Admin\NewsSyncController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SettingController;
@@ -38,7 +39,7 @@ Route::get('/sitemap.xml', [HomeController::class, 'sitemap'])->name('sitemap');
 Route::get('/robots.txt', [HomeController::class, 'robots'])->name('robots');
 Route::get('/admin/login', [AuthController::class, 'showLogin'])->name('admin.login');
 Route::post('/admin/login', [AuthController::class, 'login'])->name('admin.login.submit');
-Route::match(['get', 'post'], '/admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
+Route::match(['get','post'], '/admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
 Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index']);
@@ -50,8 +51,13 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::post('/ai-engine/{aiContent}/retry', [AiContentEngineController::class, 'retry'])->name('ai-engine.retry');
     Route::post('/ai-engine/{aiContent}/publish', [AiContentEngineController::class, 'publish'])->name('ai-engine.publish');
 
-    // Isolated News / Current Affairs admin management. No Jobs API/model logic is used here.
-    Route::get('/news', [NewsController::class, 'index'])->name('news.index');
+    // Isolated News Studio. Jobs API/model/routes are not used by this workflow.
+    Route::get('/news', [NewsStudioController::class, 'index'])->name('news.index');
+    Route::post('/news/fetch', [NewsStudioController::class, 'fetch'])->name('news.fetch');
+    Route::post('/news/batch-process', [NewsStudioController::class, 'batchProcess'])->name('news.batch-process');
+    Route::post('/news/publish-selected', [NewsStudioController::class, 'publishSelected'])->name('news.publish-selected');
+    Route::get('/news/{news}/view', [NewsStudioController::class, 'view'])->name('news.view');
+    Route::delete('/news/{news}/studio-delete', [NewsStudioController::class, 'destroy'])->name('news.studio-delete');
     Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
     Route::post('/news', [NewsController::class, 'store'])->name('news.store');
     Route::get('/news/{news}/edit', [NewsController::class, 'edit'])->name('news.edit');
@@ -68,8 +74,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::get('/jobs/categories', [JobAdvancedController::class, 'categories'])->name('jobs.categories');
     Route::get('/jobs/notifications', [JobAdvancedController::class, 'notifications'])->name('jobs.notifications');
     Route::get('/jobs/analytics', [JobAdvancedController::class, 'analytics'])->name('jobs.analytics');
-    Route::get('/jobs/quality-checker', [JobAdvancedController::class, 'quality'])->name('jobs.quality');
-    Route::get('/jobs/duplicate-detection', [JobAdvancedController::class, 'duplicates'])->name('jobs.duplicates');
+    Route::get('/jobs/quality-checker', [JobAdvancedController::class, 'quality'])->name('jobs.quality-checker');
+    Route::get('/jobs/duplicate-detection', [JobAdvancedController::class, 'duplicates'])->name('jobs.duplicate-detection');
     Route::get('/jobs/import-sync', [JobAdvancedController::class, 'importSync'])->name('jobs.import-sync');
     Route::get('/jobs/{job}/versions', [JobAdvancedController::class, 'versions'])->name('jobs.versions');
     Route::get('/jobs/{job}/timeline', [JobAdvancedController::class, 'timeline'])->name('jobs.timeline');
