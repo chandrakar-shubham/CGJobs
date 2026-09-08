@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AiContent;
 use App\Models\AiProviderSetting;
 use App\Models\News;
-use App\Services\AI\ContentEngine;
+use App\Services\AI\NewsContentEngine;
 use App\Services\NewsIngestionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,12 +28,10 @@ class NewsStudioController extends Controller
             'mobile_published' => News::where('status','published')->where('published_mobile',true)->count(),
             'today' => News::whereDate('created_at',today())->count(),
         ];
-
         $categoryStats = News::query()->select('category',DB::raw('count(*) as total'))->groupBy('category')->orderByDesc('total')->limit(8)->get();
         $sourceStats = News::query()->select('source',DB::raw('count(*) as total'))->whereNotNull('source')->where('source','!=','')->groupBy('source')->orderByDesc('total')->limit(6)->get();
         $recent = News::query()->orderByDesc('id')->limit(8)->get();
         $recentPublished = News::where('status','published')->orderByDesc('published_at')->orderByDesc('id')->limit(6)->get();
-
         return view('admin.news.dashboard',compact('stats','categoryStats','sourceStats','recent','recentPublished'));
     }
 
@@ -82,7 +80,7 @@ class NewsStudioController extends Controller
 
     public function clearBatch(){session()->forget('news_ai_batch');return back()->with('success','AI Batch cleared. News articles were not deleted.');}
 
-    public function batchProcess(Request $request, ContentEngine $engine)
+    public function batchProcess(Request $request, NewsContentEngine $engine)
     {
         $sessionIds=collect(session('news_ai_batch', []))->map(fn($id)=>(int)$id)->unique()->values();
         $postedIds=collect($request->input('ids', []))->map(fn($id)=>(int)$id)->filter();
@@ -110,8 +108,8 @@ class NewsStudioController extends Controller
         $data=$request->validate(['channel'=>'required|in:web,mobile','action'=>'required|in:publish,unpublish']);
         $column=$data['channel']==='web'?'published_web':'published_mobile';
         $news->update([$column=>$data['action']==='publish']);
-        if($news->published_web||$news->published_mobile){$news->update(['status'=>'published','published_at'=>$news->published_at?:now()]);}
-        elseif($news->status==='published'){$news->update(['status'=>'archived']);}
+        if($news->published_web||$news->published_mobile)$news->update(['status'=>'published','published_at'=>$news->published_at?:now()]);
+        elseif($news->status==='published')$news->update(['status'=>'archived']);
         return back()->with('success',ucfirst($data['channel']).' '.($data['action']==='publish'?'published.':'unpublished.'));
     }
 
