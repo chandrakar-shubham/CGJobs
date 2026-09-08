@@ -62,12 +62,8 @@ class NewsRssFallback
             $feedUrls = [];
             foreach (array_unique($queries) as $q) {
                 $datePart = ' when:1d';
-                if ($from) {
-                    $datePart .= ' after:' . substr($from, 0, 10);
-                }
-                if ($to) {
-                    $datePart .= ' before:' . date('Y-m-d', strtotime($to . ' +1 day'));
-                }
+                if ($from) $datePart .= ' after:' . substr($from, 0, 10);
+                if ($to) $datePart .= ' before:' . date('Y-m-d', strtotime($to . ' +1 day'));
                 $feedUrls[] = 'https://news.google.com/rss/search?q=' . rawurlencode($q . $datePart) . '&hl=en-IN&gl=IN&ceid=IN:en';
             }
         }
@@ -77,13 +73,11 @@ class NewsRssFallback
             try {
                 $response = Http::timeout(15)->get($feedUrl);
                 if (!$response->successful()) continue;
-
                 $xml = @simplexml_load_string($response->body());
                 if (!$xml || !isset($xml->channel->item)) continue;
 
                 foreach ($xml->channel->item as $item) {
                     if (count($articles) >= $limit) break;
-
                     $rawTitle = $this->cleanText((string) ($item->title ?? ''));
                     $url = trim((string) ($item->link ?? ''));
                     if ($rawTitle === '' || $this->isGenericFeedItem($rawTitle, $url)) continue;
@@ -93,7 +87,6 @@ class NewsRssFallback
                     $description = $this->cleanText((string) ($item->description ?? ''));
                     $contentEncoded = $this->cleanText((string) ($item->children('content', true)->encoded ?? ''));
                     if ($this->isGenericDescription($description) && $contentEncoded !== '') $description = $contentEncoded;
-
                     $publishedAt = trim((string) ($item->pubDate ?? '')) ?: null;
 
                     if (str_contains($title, ' - ')) {
@@ -130,8 +123,10 @@ class NewsRssFallback
                     }
                     if ($finalDescription === '' || $this->isGenericDescription($finalDescription) || Str::lower($finalDescription) === Str::lower($finalTitle)) continue;
 
-                    if (!$finalImage) continue;
-
+                    // Images are preferred, but they are not a reason to discard a valid news story.
+                    // Google News RSS frequently exposes only a Google-hosted thumbnail, which we
+                    // deliberately reject. Keep the article with a null image instead of returning
+                    // zero results; the admin/public UI can show its neutral image placeholder.
                     $finalUrlKey = Str::lower($finalUrl);
                     $finalTitleKey = Str::lower($finalTitle);
                     if (isset($seenTitles[$finalTitleKey]) || ($finalUrlKey !== '' && isset($seenUrls[$finalUrlKey]))) continue;
@@ -160,17 +155,9 @@ class NewsRssFallback
 
     private function enrichArticle(string $url, string $fallbackTitle, ?string $fallbackDescription, ?string $fallbackImage): array
     {
-        if ($url === '' || !Str::startsWith($url, ['http://', 'https://'])) {
-            return ['url' => $url, 'title' => $fallbackTitle, 'description' => $fallbackDescription, 'image' => $fallbackImage];
-        }
+        if ($url === '' || !Str::startsWith($url, ['http://', 'https://'])) return ['url' => $url, 'title' => $fallbackTitle, 'description' => $fallbackDescription, 'image' => $fallbackImage];
         try {
-            $response = Http::timeout(8)
-                ->withHeaders([
-                    'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36',
-                    'Accept' => 'text/html,application/xhtml+xml',
-                ])
-                ->withOptions(['allow_redirects' => ['max' => 5, 'strict' => false]])
-                ->get($url);
+            $response = Http::timeout(8)->withHeaders(['User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/140 Safari/537.36', 'Accept' => 'text/html,application/xhtml+xml'])->withOptions(['allow_redirects' => ['max' => 5, 'strict' => false]])->get($url);
             if (!$response->successful()) return ['url' => $url, 'title' => $fallbackTitle, 'description' => $fallbackDescription, 'image' => $fallbackImage];
             $html = (string) $response->body();
             if ($html === '') return ['url' => $url, 'title' => $fallbackTitle, 'description' => $fallbackDescription, 'image' => $fallbackImage];
@@ -206,9 +193,7 @@ class NewsRssFallback
         $url = trim((string) $url);
         if ($url === '' || !Str::startsWith($url, ['http://', 'https://'])) return null;
         $host = Str::lower((string) parse_url($url, PHP_URL_HOST));
-        foreach (['googleusercontent.com', 'gstatic.com', 'google.com', 'google.co.in', 'google.co.uk'] as $blockedHost) {
-            if ($host === $blockedHost || Str::endsWith($host, '.' . $blockedHost)) return null;
-        }
+        foreach (['googleusercontent.com', 'gstatic.com', 'google.com', 'google.co.in', 'google.co.uk'] as $blockedHost) if ($host === $blockedHost || Str::endsWith($host, '.' . $blockedHost)) return null;
         return $url;
     }
 
@@ -244,30 +229,10 @@ class NewsRssFallback
         return null;
     }
 
-    private function isGoogleNewsUrl(?string $url): bool
-    {
-        return Str::contains(Str::lower((string) $url), ['news.google.com', 'trends.google.com']);
-    }
-
-    private function isGenericTitle(?string $value): bool
-    {
-        return in_array(Str::lower($this->cleanText($value)), ['google news', 'google', 'news', 'google trends', 'trending searches', 'home'], true);
-    }
-
-    private function isGenericDescription(?string $value): bool
-    {
-        $v = Str::lower($this->cleanText($value));
-        return $v === '' || Str::contains($v, [
-            'comprehensive, up-to-date news coverage, aggregated from sources all over the world by google news',
-            'google news provides timely updates',
-            'google trends',
-        ]);
-    }
-
-    private function isGenericFeedItem(string $title, string $url): bool
-    {
-        return $this->isGoogleNewsUrl($url) && $this->isGenericTitle($title);
-    }
+    private function isGoogleNewsUrl(?string $url): bool { return Str::contains(Str::lower((string) $url), ['news.google.com', 'trends.google.com']); }
+    private function isGenericTitle(?string $value): bool { return in_array(Str::lower($this->cleanText($value)), ['google news', 'google', 'news', 'google trends', 'trending searches', 'home'], true); }
+    private function isGenericDescription(?string $value): bool { $v = Str::lower($this->cleanText($value)); return $v === '' || Str::contains($v, ['comprehensive, up-to-date news coverage, aggregated from sources all over the world by google news', 'google news provides timely updates', 'google trends']); }
+    private function isGenericFeedItem(string $title, string $url): bool { return $this->isGoogleNewsUrl($url) && $this->isGenericTitle($title); }
 
     private function metaValue(string $html, string $attribute, string $value): string
     {
@@ -302,11 +267,7 @@ class NewsRssFallback
         return [];
     }
 
-    private function cleanText(?string $value): string
-    {
-        $value = trim(html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, 'UTF-8'));
-        return preg_replace('/\s+/u', ' ', $value) ?: '';
-    }
+    private function cleanText(?string $value): string { $value = trim(html_entity_decode(strip_tags((string) $value), ENT_QUOTES | ENT_HTML5, 'UTF-8')); return preg_replace('/\s+/u', ' ', $value) ?: ''; }
 
     private function absoluteUrl(?string $url, string $base): ?string
     {
