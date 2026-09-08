@@ -34,4 +34,4 @@ jobs:
           extensions: mbstring, dom, fileinfo, sqlite3, pdo_sqlite
           coverage: none
       - run: composer install --no-interaction --prefer-dist --no-progress
-      - run: php artisan test --testsuite=Feature --display-warnings --display-deprecations -v
+      - run: php artisan test --testsuite=Feature --display-warnings --display-deprecations
