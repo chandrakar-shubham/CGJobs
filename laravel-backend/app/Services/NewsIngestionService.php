@@ -21,13 +21,12 @@ class NewsIngestionService
             $url = trim((string) ($article['url'] ?? ''));
 
             $duplicateQuery = News::query();
-            if ($url !== '') {
-                $duplicateQuery->where(function ($q) use ($url) {
-                    $q->where('original_url', $url)->orWhere('source_url', $url);
-                })->orWhereRaw('LOWER(title) = ?', [Str::lower($title)]);
-            } else {
-                $duplicateQuery->whereRaw('LOWER(title) = ?', [Str::lower($title)]);
-            }
+            $duplicateQuery->where(function ($q) use ($url, $title) {
+                $q->whereRaw('LOWER(title) = ?', [Str::lower($title)]);
+                if ($url !== '') {
+                    $q->orWhere('original_url', $url)->orWhere('source_url', $url);
+                }
+            });
             if ($duplicateQuery->exists()) continue;
 
             $description = trim((string) ($article['description'] ?? '')) ?: $title;
@@ -120,6 +119,13 @@ class NewsIngestionService
             } catch (\Throwable) {}
         }
 
+        // Production fallback: public Google News RSS keeps ingestion working when
+        // API keys are absent, expired, or a provider is temporarily unavailable.
+        if (count($out) < $limit) {
+            $rss = app(NewsRssFallback::class)->fetch($query, $limit - count($out));
+            $out = array_merge($out, $rss);
+        }
+
         // Normalize duplicates across providers before applying the requested limit.
         $seenUrls = [];
         $seenTitles = [];
@@ -127,6 +133,7 @@ class NewsIngestionService
         foreach ($out as $article) {
             $title = Str::lower(trim((string) ($article['title'] ?? '')));
             $url = Str::lower(trim((string) ($article['url'] ?? '')));
+            if ($title === '') continue;
             $key = $url !== '' ? 'url:' . $url : 'title:' . $title;
             if (isset($seenUrls[$key]) || isset($seenTitles[$title])) continue;
             if ($url !== '') $seenUrls[$key] = true;
