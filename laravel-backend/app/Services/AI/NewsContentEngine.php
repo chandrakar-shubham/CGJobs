@@ -26,18 +26,13 @@ class NewsContentEngine
         if (!$items) return [];
         $setting=AiProviderSetting::where('enabled',true)->latest()->first();
         if (!$setting || !$setting->api_key) throw new RuntimeException('AI provider is not configured. Save an enabled API key first.');
-
         $requestCount=(int)AiUsageLog::where('provider_setting_id',$setting->id)->whereDate('created_at',today())->count();
         $tokenCount=(int)AiUsageLog::where('provider_setting_id',$setting->id)->whereDate('created_at',today())->sum('input_tokens')+(int)AiUsageLog::where('provider_setting_id',$setting->id)->whereDate('created_at',today())->sum('output_tokens');
-        $configured=max(1,min((int)($setting->max_items_per_request?:10),100));
-        $maxItems=strtolower((string)$setting->provider)==='gemini'?min($configured,10):min($configured,20);
-        $saved=[];
-
+        $configured=max(1,min((int)($setting->max_items_per_request?:10),100));$maxItems=strtolower((string)$setting->provider)==='gemini'?min($configured,10):min($configured,20);$saved=[];
         foreach(array_chunk($items,$maxItems) as $chunk){
             if($requestCount >= (int)$setting->daily_request_limit){foreach($chunk as $item)$this->markFailed($item,'Daily AI request limit reached.');continue;}
             if($tokenCount >= (int)$setting->daily_token_limit){foreach($chunk as $item)$this->markFailed($item,'Daily AI token limit reached.');continue;}
-            $result=$this->processBatch($setting,$chunk);
-            $saved=array_merge($saved,$result['saved']);$requestCount+=$result['requests'];$tokenCount+=$result['tokens'];
+            $result=$this->processBatch($setting,$chunk);$saved=array_merge($saved,$result['saved']);$requestCount+=$result['requests'];$tokenCount+=$result['tokens'];
         }
         return $saved;
     }
@@ -47,28 +42,20 @@ class NewsContentEngine
         try{$response=$this->callProvider($setting,$items,false);return ['saved'=>$this->saveResults($items,$response,$setting),'tokens'=>$this->responseTokens($response),'requests'=>(int)($response['_request_count']??1)];}
         catch(\Throwable $primaryError){
             $fallback=$this->fallbackProvider($setting);
-            if($fallback){
-                $this->logFailure($setting,$items,$setting,$primaryError,false);
-                try{$response=$this->callProvider($fallback,$items,true);return ['saved'=>$this->saveResults($items,$response,$setting),'tokens'=>$this->responseTokens($response),'requests'=>(int)($response['_request_count']??1)+1];}
-                catch(\Throwable $fallbackError){$this->logFailure($setting,$items,$fallback,$fallbackError,true);$message=$fallbackError->getMessage();}
-            }else{$this->logFailure($setting,$items,$setting,$primaryError,false);$message=$primaryError->getMessage();}
-            foreach($items as $item)$this->markFailed($item,'AI generation failed: '.substr($message,0,900));
-            return ['saved'=>[],'tokens'=>0,'requests'=>1];
+            if($fallback){$this->logFailure($setting,$items,$setting,$primaryError,false);try{$response=$this->callProvider($fallback,$items,true);return ['saved'=>$this->saveResults($items,$response,$setting),'tokens'=>$this->responseTokens($response),'requests'=>(int)($response['_request_count']??1)+1];}catch(\Throwable $fallbackError){$this->logFailure($setting,$items,$fallback,$fallbackError,true);$message=$fallbackError->getMessage();}}
+            else{$this->logFailure($setting,$items,$setting,$primaryError,false);$message=$primaryError->getMessage();}
+            foreach($items as $item)$this->markFailed($item,'AI generation failed: '.substr($message,0,900));return ['saved'=>[],'tokens'=>0,'requests'=>1];
         }
     }
 
     private function saveResults(array $items,array $response,AiProviderSetting $setting):array
     {
-        $results=$response['results']??null;if(!is_array($results))throw new RuntimeException('AI response has no results array.');
-        $byId=[];foreach($results as $result)if(is_array($result)&&isset($result['id']))$byId[(int)$result['id']=$result];
-        if(!$byId)throw new RuntimeException('AI response contained no valid item results.');
-        $saved=[];
+        $results=$response['results']??null;if(!is_array($results))throw new RuntimeException('AI response has no results array.');$byId=[];
+        foreach($results as $result)if(is_array($result)&&isset($result['id']))$byId[(int)$result['id']]=$result;
+        if(!$byId)throw new RuntimeException('AI response contained no valid item results.');$saved=[];
         foreach($items as $item){$id=(int)$item['id'];if(!isset($byId[$id])){$this->markFailed($item,'AI response omitted this item.');continue;}
-            try{$result=$byId[$id];$this->validateResult($item,$result);$record=AiContent::updateOrCreate(['source_type'=>'news','source_id'=>$id],[
-                'status'=>'generated','source_snapshot'=>$item['source'],'generated_content'=>$result,'input_tokens'=>(int)($response['usage']['input_tokens']??0),
-                'output_tokens'=>(int)($response['usage']['output_tokens']??0),'attempts'=>1,'processed_at'=>now(),'published_at'=>null,'error_message'=>null]);
-                $saved[]=$record;$this->applyGeneratedContent($item,$result,$setting);
-            }catch(\Throwable $e){$this->markFailed($item,'Validation failed: '.substr($e->getMessage(),0,700));}
+            try{$result=$byId[$id];$this->validateResult($item,$result);$record=AiContent::updateOrCreate(['source_type'=>'news','source_id'=>$id],['status'=>'generated','source_snapshot'=>$item['source'],'generated_content'=>$result,'input_tokens'=>(int)($response['usage']['input_tokens']??0),'output_tokens'=>(int)($response['usage']['output_tokens']??0),'attempts'=>1,'processed_at'=>now(),'published_at'=>null,'error_message'=>null]);$saved[]=$record;$this->applyGeneratedContent($item,$result,$setting);}
+            catch(\Throwable $e){$this->markFailed($item,'Validation failed: '.substr($e->getMessage(),0,700));}
         }
         return $saved;
     }
@@ -90,14 +77,10 @@ class NewsContentEngine
     }
 
     private function markFailed(array $item,string $message):void
-    {
-        $previous=AiContent::where('source_type','news')->where('source_id',$item['id'])->first();
-        AiContent::updateOrCreate(['source_type'=>'news','source_id'=>$item['id']],['status'=>'failed','source_snapshot'=>$item['source'],'attempts'=>((int)($previous?->attempts??0))+1,'error_message'=>$message]);
-    }
+    {$previous=AiContent::where('source_type','news')->where('source_id',$item['id'])->first();AiContent::updateOrCreate(['source_type'=>'news','source_id'=>$item['id']],['status'=>'failed','source_snapshot'=>$item['source'],'attempts'=>((int)($previous?->attempts??0))+1,'error_message'=>$message]);}
 
     private function logFailure(AiProviderSetting $setting,array $items,AiProviderSetting $provider,\Throwable $e,bool $fallback):void
     {AiUsageLog::create(['provider_setting_id'=>$setting->id,'provider'=>$provider->provider,'model'=>$provider->model,'source_type'=>'news','item_count'=>count($items),'fallback_used'=>$fallback,'success'=>false,'error_message'=>substr($e->getMessage(),0,1200)]);}
-
     private function fallbackProvider(AiProviderSetting $setting):?AiProviderSetting
     {if(!$setting->fallback_provider||!$setting->fallback_api_key)return null;$fallback=clone $setting;$fallback->provider=$setting->fallback_provider;$fallback->api_key=$setting->fallback_api_key;$fallback->model=$setting->fallback_model?:null;return $fallback;}
 
@@ -105,8 +88,7 @@ class NewsContentEngine
     {
         $prompt=$this->prompt($items);$provider=strtolower((string)$setting->provider);
         if($provider==='gemini'){
-            $model=$setting->model?:'gemini-3.8-flash';$url='https://generativelanguage.googleapis.com/v1beta/models/'.rawurlencode($model).':generateContent';
-            $headers=['x-goog-api-key'=>$setting->api_key,'Content-Type'=>'application/json'];$requestCount=1;
+            $model=$setting->model?:'gemini-3.8-flash';$url='https://generativelanguage.googleapis.com/v1beta/models/'.rawurlencode($model).':generateContent';$headers=['x-goog-api-key'=>$setting->api_key,'Content-Type'=>'application/json'];$requestCount=1;
             $body=['contents'=>[['role'=>'user','parts'=>[['text'=>$prompt]]]],'generationConfig'=>['responseFormat'=>['text'=>['mimeType'=>'application/json']],'thinkingConfig'=>['thinkingLevel'=>'low']]];
             $r=Http::timeout(120)->withHeaders($headers)->post($url,$body);
             if($r->status()===400){$requestCount++;$r=Http::timeout(120)->withHeaders($headers)->post($url,['contents'=>[['role'=>'user','parts'=>[['text'=>$prompt]]]],'generationConfig'=>['thinkingConfig'=>['thinkingLevel'=>'low']]]);}
@@ -122,20 +104,13 @@ class NewsContentEngine
     }
 
     private function extractGeminiText(array $json):string
-    {
-        $parts=$json['candidates'][0]['content']['parts']??[];$texts=[];foreach($parts as $part){if(is_array($part)&&isset($part['text'])&&!($part['thought']??false))$texts[]=(string)$part['text'];}
-        $text=trim(implode("\n",$texts));if($text===''&&isset($parts[0]['text']))$text=trim((string)$parts[0]['text']);if($text==='')throw new RuntimeException('AI provider returned an empty response.');return $text;
-    }
-
+    {$parts=$json['candidates'][0]['content']['parts']??[];$texts=[];foreach($parts as $part)if(is_array($part)&&isset($part['text'])&&!($part['thought']??false))$texts[]=(string)$part['text'];$text=trim(implode("\n",$texts));if($text===''&&isset($parts[0]['text']))$text=trim((string)$parts[0]['text']);if($text==='')throw new RuntimeException('AI provider returned an empty response.');return $text;}
     private function decodeJsonResponse(string $text):array
-    {$text=trim($text);if(str_starts_with($text,'```')){$text=preg_replace('/^```(?:json)?\s*/i','',$text);$text=preg_replace('/\s*```$/','',$text);} $decoded=json_decode(trim($text),true);if(!is_array($decoded))throw new RuntimeException('AI provider returned invalid JSON.');return $decoded;}
-
+    {$text=trim($text);if(str_starts_with($text,'```')){$text=preg_replace('/^```(?:json)?\s*/i','',$text);$text=preg_replace('/\s*```$/','',$text);}$decoded=json_decode(trim($text),true);if(!is_array($decoded))throw new RuntimeException('AI provider returned invalid JSON.');return $decoded;}
     private function providerError($response):string
     {$error=$response->json('error');if(is_array($error))return trim((string)($error['message']??json_encode($error,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)));return trim((string)$response->body());}
-
     private function logSuccess(AiProviderSetting $setting,string $provider,string $model,array $items,array $decoded,bool $fallbackUsed):void
     {AiUsageLog::create(['provider_setting_id'=>$setting->id,'provider'=>$provider,'model'=>$model,'source_type'=>'news','item_count'=>count($items),'input_tokens'=>(int)($decoded['usage']['input_tokens']??0),'output_tokens'=>(int)($decoded['usage']['output_tokens']??0),'fallback_used'=>$fallbackUsed,'success'=>true]);}
-
     private function responseTokens(array $response):int{return (int)($response['usage']['input_tokens']??0)+(int)($response['usage']['output_tokens']??0);}
 
     private function prompt(array $items):string
