@@ -1,121 +1,63 @@
 <?php
 
-use App\Http\Controllers\Admin\AiContentEngineController;
 use App\Http\Controllers\Admin\AlertController;
 use App\Http\Controllers\Admin\AuthController;
-use App\Http\Controllers\Admin\CacheController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\JobAdvancedController;
-use App\Http\Controllers\Admin\JobManagementController;
-use App\Http\Controllers\Admin\JobPosterTemplateController;
-use App\Http\Controllers\Admin\JobSourceController;
-use App\Http\Controllers\Admin\CanonicalJobImportController;
-use App\Http\Controllers\Admin\CanonicalJobImportApprovalController;
-use App\Http\Controllers\Admin\QueuedJobSourceController;
-use App\Http\Controllers\Admin\NewsController;
-use App\Http\Controllers\Admin\NewsStudioController;
+use App\Http\Controllers\Admin\JobController;
 use App\Http\Controllers\Admin\NewsSyncController;
 use App\Http\Controllers\Admin\SectionController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\StaticGkController;
-use App\Http\Controllers\Web\HomeController;
-use App\Http\Controllers\Web\JobApplyRedirectController;
-use App\Http\Controllers\Web\JobPosterController;
-use App\Http\Controllers\Web\NotificationController;
+use App\Http\Controllers\CurrentAffairsWebController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [HomeController::class, 'index'])->name('home');
-Route::get('/jobs', [HomeController::class, 'jobs'])->name('listing.jobs');
-Route::get('/current-affairs', [HomeController::class, 'currentAffairs'])->name('listing.current-affairs');
-Route::get('/gk', [HomeController::class, 'staticGk'])->name('listing.gk');
-Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications');
-Route::get('/jobs/{id}/poster', [JobPosterController::class, 'show'])->name('job.poster');
-Route::get('/jobs/{id}/apply', JobApplyRedirectController::class)->name('job.apply');
-Route::get('/jobs/{id}', [HomeController::class, 'job'])->name('job.show');
-Route::get('/current-affairs/{id}', [HomeController::class, 'job'])->name('current-affairs.show');
-Route::get('/gk/{id}', [HomeController::class, 'gk'])->name('gk.show');
-Route::get('/sitemap.xml', [HomeController::class, 'sitemap'])->name('sitemap');
-Route::get('/robots.txt', [HomeController::class, 'robots'])->name('robots');
+// Public Web Views
+Route::get('/', [CurrentAffairsWebController::class, 'index'])->name('home');
+Route::get('/current-affairs', [CurrentAffairsWebController::class, 'index'])->name('current-affairs.index');
+Route::get('/current-affairs/{slug}', [CurrentAffairsWebController::class, 'show'])->name('current-affairs.show');
+Route::get('/news/{slug}', [CurrentAffairsWebController::class, 'show'])->name('news.show');
+
+// Authentication
 Route::get('/admin/login', [AuthController::class, 'showLogin'])->name('admin.login');
 Route::post('/admin/login', [AuthController::class, 'login'])->name('admin.login.submit');
-Route::match(['get','post'], '/admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
+Route::match(['get', 'post'], '/admin/logout', [AuthController::class, 'logout'])->name('admin.logout');
+
+// Protected Admin Panel Routes
 Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function () {
+    
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard', [DashboardController::class, 'index']);
-    Route::get('/ai-engine', [AiContentEngineController::class, 'index'])->name('ai-engine.index');
-    Route::post('/ai-engine/settings', [AiContentEngineController::class, 'settings'])->name('ai-engine.settings');
-    Route::post('/ai-engine/ingest-news', [AiContentEngineController::class, 'ingestNews'])->name('ai-engine.ingest-news');
-    Route::post('/ai-engine/process', [AiContentEngineController::class, 'process'])->name('ai-engine.process');
-    Route::get('/ai-engine/{aiContent}/preview', [AiContentEngineController::class, 'preview'])->name('ai-engine.preview');
-    Route::post('/ai-engine/{aiContent}/retry', [AiContentEngineController::class, 'retry'])->name('ai-engine.retry');
-    Route::post('/ai-engine/{aiContent}/publish', [AiContentEngineController::class, 'publish'])->name('ai-engine.publish');
 
-    // Isolated News Studio. Jobs API/model/routes remain unchanged.
-    Route::get('/news/dashboard', [NewsStudioController::class, 'dashboard'])->name('news.dashboard');
-    Route::get('/news', [NewsStudioController::class, 'index'])->name('news.index');
-    Route::post('/news/fetch', [NewsStudioController::class, 'fetch'])->name('news.fetch');
-    Route::post('/news/batch/add', [NewsStudioController::class, 'addToBatch'])->name('news.batch-add');
-    Route::post('/news/batch/clear', [NewsStudioController::class, 'clearBatch'])->name('news.batch-clear');
-    Route::post('/news/batch-process', [NewsStudioController::class, 'batchProcess'])->name('news.batch-process');
-    Route::post('/news/publish-selected', [NewsStudioController::class, 'publishSelected'])->name('news.publish-selected');
-    Route::delete('/news/bulk-delete', [NewsStudioController::class, 'bulkDelete'])->name('news.bulk-delete');
-    Route::post('/news/clear-queue', [NewsStudioController::class, 'clearReviewQueue'])->name('news.clear-queue');
-    Route::post('/news/{news}/channel', [NewsStudioController::class, 'channel'])->name('news.channel');
-    Route::post('/news/{news}/archive', [NewsStudioController::class, 'archive'])->name('news.archive');
-    Route::post('/news/{news}/unpublish', [NewsStudioController::class, 'unpublish'])->name('news.unpublish');
-    Route::get('/news/{news}/view', [NewsStudioController::class, 'view'])->name('news.view');
-    Route::delete('/news/{news}/studio-delete', [NewsStudioController::class, 'destroy'])->name('news.studio-delete');
-    Route::get('/news/create', [NewsController::class, 'create'])->name('news.create');
-    Route::post('/news', [NewsController::class, 'store'])->name('news.store');
-    Route::get('/news/{news}/edit', [NewsController::class, 'edit'])->name('news.edit');
-    Route::put('/news/{news}', [NewsController::class, 'update'])->name('news.update');
-    Route::post('/news/{news}/publish', [NewsController::class, 'publish'])->name('news.publish');
-    Route::delete('/news/{news}', [NewsController::class, 'destroy'])->name('news.destroy');
+    // Job Postings & News CRUD
+    Route::resource('jobs', JobController::class);
 
-    // Existing Jobs routes: intentionally preserved.
-    Route::get('/jobs/dashboard', [JobManagementController::class, 'dashboard'])->name('jobs.dashboard');
-    Route::get('/jobs/templates', [JobManagementController::class, 'templates'])->name('jobs.templates');
-    Route::post('/jobs/bulk-action', [JobManagementController::class, 'bulkAction'])->name('jobs.bulk-action');
-    Route::post('/jobs/{job}/publish', [JobManagementController::class, 'publish'])->name('jobs.publish');
-    Route::post('/jobs/{job}/republish', [JobManagementController::class, 'republish'])->name('jobs.republish');
-    Route::get('/jobs/republished', [JobAdvancedController::class, 'republished'])->name('jobs.republished');
-    Route::get('/jobs/categories', [JobAdvancedController::class, 'categories'])->name('jobs.categories');
-    Route::get('/jobs/notifications', [JobAdvancedController::class, 'notifications'])->name('jobs.notifications');
-    Route::get('/jobs/analytics', [JobAdvancedController::class, 'analytics'])->name('jobs.analytics');
-    Route::get('/jobs/quality-checker', [JobAdvancedController::class, 'quality'])->name('jobs.quality');
-    Route::get('/jobs/duplicate-detection', [JobAdvancedController::class, 'duplicates'])->name('jobs.duplicates');
-    Route::get('/jobs/import-sync', [JobAdvancedController::class, 'importSync'])->name('jobs.import-sync');
-    Route::get('/jobs/{job}/versions', [JobAdvancedController::class, 'versions'])->name('jobs.versions');
-    Route::get('/jobs/{job}/timeline', [JobAdvancedController::class, 'timeline'])->name('jobs.timeline');
-    Route::get('/jobs/{job}/documents', [JobAdvancedController::class, 'documents'])->name('jobs.documents');
-    Route::post('/jobs/{job}/documents', [JobAdvancedController::class, 'storeDocument'])->name('jobs.documents.store');
-    Route::get('/jobs/{job}/seo', [JobAdvancedController::class, 'seo'])->name('jobs.seo');
-    Route::put('/jobs/{job}/seo', [JobAdvancedController::class, 'updateSeo'])->name('jobs.seo.update');
-    Route::get('/jobs/{job}/notifications', [JobAdvancedController::class, 'notificationHistory'])->name('jobs.notification-history');
-    Route::delete('/job-documents/{document}', [JobAdvancedController::class, 'destroyDocument'])->name('jobs.documents.destroy');
-    Route::resource('jobs', JobManagementController::class);
+    // Static GK CRUD
     Route::resource('static-gk', StaticGkController::class);
-    Route::get('/job-sources', [JobSourceController::class, 'index'])->name('job-sources.index');
-    Route::post('/job-sources', [JobSourceController::class, 'store'])->name('job-sources.store');
-    Route::put('/job-sources/{jobSource}', [JobSourceController::class, 'update'])->name('job-sources.update');
-    Route::post('/job-sources/{jobSource}/toggle-notify', [JobSourceController::class, 'toggleNotify'])->name('job-sources.toggle-notify');
-    Route::delete('/job-sources/{jobSource}', [JobSourceController::class, 'destroy'])->name('job-sources.destroy');
-    Route::post('/job-sources/{jobSource}/sync', [QueuedJobSourceController::class, 'sync'])->name('job-sources.sync');
-    Route::post('/job-sources/{jobSource}/refresh-pending', [QueuedJobSourceController::class, 'refreshPending'])->name('job-sources.refresh-pending');
-    Route::get('/job-imports/{jobImport}/edit', [CanonicalJobImportController::class, 'edit'])->name('job-imports.edit');
-    Route::put('/job-imports/{jobImport}', [CanonicalJobImportController::class, 'update'])->name('job-imports.update');
-    Route::post('/job-imports/approve-all', [JobSourceController::class, 'approveAll'])->name('job-imports.approve-all');
-    Route::post('/job-imports/{jobImport}/approve', CanonicalJobImportApprovalController::class)->name('job-sources.approve');
-    Route::post('/job-imports/{jobImport}/reject', [JobSourceController::class, 'reject'])->name('job-sources.reject');
-    Route::post('/job-poster-template', [JobPosterTemplateController::class, 'upload'])->name('job-poster-template.upload');
-    Route::resource('categories', CategoryController::class);
-    Route::resource('sections', SectionController::class);
-    Route::resource('alerts', AlertController::class);
+
+    // Sections & Category Hierarchy
+    Route::get('/sections', [SectionController::class, 'index'])->name('sections.index');
+    Route::post('/sections', [SectionController::class, 'storeSection'])->name('sections.store');
+    Route::post('/sections/{section}/toggle', [SectionController::class, 'toggleSection'])->name('sections.toggle');
+
+    // Categories
+    Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
+
+    // App Settings & Live Marquee Ticker
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'update'])->name('settings.update');
-    Route::get('/news-sync', [NewsSyncController::class, 'index'])->name('sync.index');
-    Route::post('/news-sync', [NewsSyncController::class, 'sync'])->name('sync.run');
-    Route::post('/news-sync/run', [NewsSyncController::class, 'sync'])->name('news-sync');
-    Route::post('/cache/clear', [CacheController::class, 'clear'])->name('cache.clear');
+
+    // Push Alerts & FCM
+    Route::get('/alerts', [AlertController::class, 'index'])->name('alerts.index');
+    Route::get('/alerts/create', [AlertController::class, 'create'])->name('alerts.create');
+    Route::post('/alerts', [AlertController::class, 'store'])->name('alerts.store');
+    Route::delete('/alerts/{alert}', [AlertController::class, 'destroy'])->name('alerts.destroy');
+
+    // News Scraper & Gemini AI Sync
+    Route::get('/sync', [NewsSyncController::class, 'index'])->name('sync.index');
+    Route::post('/sync', [NewsSyncController::class, 'sync'])->name('sync.run');
+    Route::post('/sync/gemini-key', [NewsSyncController::class, 'saveGeminiKey'])->name('sync.gemini-key');
+    Route::post('/sync/gemini-preview', [NewsSyncController::class, 'previewGemini'])->name('sync.gemini-preview');
 });

@@ -8,19 +8,77 @@ use Illuminate\Database\Eloquent\Model;
 class Job extends Model
 {
     use HasFactory;
-    public const MAIN_CATEGORIES=['CGSSB','CGPSC','Central Govt','Contractual'];
-    public const WORKFLOW_STATUSES=['draft','scheduled','published','archived'];
-    protected $fillable=['custom_id','title','title_en','summary','summary_en','detailed_content','detailed_content_en','category','category_en','job_category','department','published_by','section','post_type','source','source_url','image_url','image_urls','poster_path','published_at','relative_time','relative_time_en','translation_status','translation_error','translated_at','is_breaking','is_new','vacancies','salary','eligibility','eligibility_en','age_limit','selection_process','selection_process_en','official_notification_url','apply_url','application_start','last_date','exam_date','admit_card_date','result_date','closing_reminder_sent_at','workflow_status','scheduled_at','views_count','apply_clicks','notification_count','last_notification_at','seo_title','seo_description','seo_keywords','canonical_url'];
-    protected $casts=['image_urls'=>'array','is_breaking'=>'boolean','is_new'=>'boolean','translated_at'=>'datetime','closing_reminder_sent_at'=>'datetime','scheduled_at'=>'datetime','last_notification_at'=>'datetime'];
-    protected static function booted(): void
+
+    protected $fillable = [
+        'custom_id',
+        'slug',
+        'title',
+        'summary',
+        'detailed_content',
+        'exam_takeaway',
+        'category',
+        'section',
+        'post_type',
+        'source',
+        'source_url',
+        'image_url',
+        'published_at',
+        'relative_time',
+        'is_breaking',
+        'is_new',
+        'vacancies',
+        'salary',
+        'eligibility',
+        'age_limit',
+        'selection_process',
+        'official_notification_url',
+        'apply_url',
+        'application_start',
+        'last_date',
+        'exam_date',
+        'admit_card_date',
+        'result_date',
+    ];
+
+    protected $casts = [
+        'is_breaking' => 'boolean',
+        'is_new' => 'boolean',
+    ];
+
+    public function toApiArray(): array
     {
-        static::created(function(Job $job){ $job->versions()->create(['action'=>'created','snapshot'=>$job->attributesToArray()]); });
-        static::updating(function(Job $job){ if($job->isDirty()) $job->versions()->create(['action'=>'updated','snapshot'=>array_merge(['before'=>$job->getRawOriginal()],['after'=>$job->getDirty()])]); });
+        return [
+            'id' => $this->custom_id ?: (string)$this->id,
+            'slug' => $this->slug ?: ('news-' . $this->id),
+            'title' => $this->title,
+            'summary' => $this->summary,
+            'detailedContent' => $this->detailed_content ?: $this->summary,
+            'examTakeaway' => $this->exam_takeaway,
+            'category' => $this->category,
+            'section' => $this->section ?: 'jobs',
+            'postType' => $this->post_type ?: 'job',
+            'source' => $this->source ?: 'cgstate.gov.in',
+            'sourceUrl' => $this->source_url ?: 'https://cgstate.gov.in',
+            'webArticleUrl' => url('/current-affairs/' . ($this->slug ?: $this->id)),
+            'imageUrl' => $this->image_url,
+            'publishedAt' => $this->published_at ?: $this->created_at?->format('Y-m-d') ?: date('Y-m-d'),
+            'relativeTime' => $this->relative_time ?: 'हाल ही में',
+            'isBreaking' => (bool)$this->is_breaking,
+            'isNew' => (bool)$this->is_new,
+            'vacancies' => $this->vacancies,
+            'salary' => $this->salary,
+            'eligibility' => $this->eligibility,
+            'ageLimit' => $this->age_limit,
+            'selectionProcess' => $this->selection_process,
+            'officialNotificationUrl' => $this->official_notification_url,
+            'applyUrl' => $this->apply_url,
+            'importantDates' => [
+                'applicationStart' => $this->application_start ?: 'जारी',
+                'lastDate' => $this->last_date ?: 'शीघ्र',
+                'examDate' => $this->exam_date,
+                'admitCardDate' => $this->admit_card_date,
+                'resultDate' => $this->result_date,
+            ]
+        ];
     }
-    public function versions(){ return $this->hasMany(JobVersion::class); }
-    public function documents(){ return $this->hasMany(JobDocument::class); }
-    public function scopePublic($query){return $query->where(fn($q)=>$q->whereNull('workflow_status')->orWhere('workflow_status','published'));}
-    public function isPublished():bool{return($this->workflow_status?:'published')==='published';}
-    public function toApiArray(?string $language=null):array{$language=$language?:request()->query('lang','hi');$language=in_array($language,['hi','en'],true)?$language:'hi';$english=$language==='en';$fallback=fn($en,$hi)=>$english?($en?:$hi):($hi?:$en);$posterUrl=route('job.poster',$this->custom_id?:$this->id);$applyUrl=$this->apply_url?route('job.apply',$this->custom_id?:$this->id):null;return['id'=>$this->custom_id?: (string)$this->id,'language'=>$language,'title'=>$fallback($this->title_en,$this->title),'titleHindi'=>$this->title,'titleEnglish'=>$this->title_en?:$this->title,'summary'=>$fallback($this->summary_en,$this->summary),'shortSummary'=>$this->makeApiShortSummary($fallback($this->summary_en,$this->summary)),'detailedContent'=>$fallback($this->detailed_content_en,$this->detailed_content?:$this->summary),'category'=>$fallback($this->category_en,$this->category),'categoryHindi'=>$this->category,'categoryEnglish'=>$this->category_en?:$this->category,'jobCategory'=>$this->job_category?:'CGSSB','department'=>$this->department?:($this->category?:'Other Departments'),'mainJobCategories'=>self::MAIN_CATEGORIES,'section'=>$this->section?:'jobs','postType'=>$this->post_type?:'job','source'=>$this->source?:$this->published_by?:'CGJobs','sourceUrl'=>$this->source_url,'webUrl'=>url('/jobs/'.($this->custom_id?:$this->id)),'imageUrl'=>$posterUrl,'posterUrl'=>$posterUrl,'sourceImageUrl'=>$this->image_url,'bodyImageUrls'=>array_values($this->image_urls?:[]),'imageSource'=>'CGJobs fixed poster template','publishedAt'=>$this->published_at?:($this->created_at?->format('Y-m-d')?:date('Y-m-d')),'relativeTime'=>$fallback($this->relative_time_en,$this->relative_time?:'हाल ही में'),'isBreaking'=>(bool)$this->is_breaking,'isNew'=>(bool)$this->is_new,'vacancies'=>$this->vacancies,'salary'=>$this->salary,'eligibility'=>$fallback($this->eligibility_en,$this->eligibility),'ageLimit'=>$this->age_limit,'selectionProcess'=>$fallback($this->selection_process_en,$this->selection_process),'officialNotificationUrl'=>$this->official_notification_url,'applyUrl'=>$applyUrl,'originalApplyUrl'=>$this->apply_url,'importantDates'=>['applicationStart'=>$this->application_start?:($english?'Open':'जारी'),'lastDate'=>$this->last_date?:($english?'Soon':'शीघ्र'),'examDate'=>$this->exam_date,'admitCardDate'=>$this->admit_card_date,'resultDate'=>$this->result_date]];}
-    private function makeApiShortSummary(?string $text):?string{$text=trim(strip_tags((string)$text));if($text===''||mb_strlen($text)<=220)return$text?:null;$cut=mb_substr($text,0,220);$pos=mb_strrpos($cut,' ');return mb_substr($cut,0,$pos?:220).'…';}
 }
