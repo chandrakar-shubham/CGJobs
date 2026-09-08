@@ -1,20 +1,273 @@
 <!doctype html>
-<html lang="{{ request('lang', session('language', 'hi')) === 'en' ? 'en' : 'hi' }}">
+<html lang="{{ request('lang', session('language', 'hi')) === 'en' ? 'en' : 'hi' }}" class="h-full bg-slate-50 scroll-smooth">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#075985"><meta name="robots" content="index,follow">
-@php($lang = request('lang', session('language', 'hi')) === 'en' ? 'en' : 'hi')
-<title>@yield('title', $lang === 'en' ? 'CGJobs — Government Jobs, Exams & Results' : 'CGJobs — सरकारी नौकरी, परीक्षा और परिणाम')</title>
-<meta name="description" content="{{ $lang === 'en' ? 'Government jobs, exams, current affairs, Static GK, admit cards and results for Chhattisgarh aspirants.' : 'छत्तीसगढ़ के अभ्यर्थियों के लिए सरकारी नौकरी, परीक्षा, Current Affairs, Static GK, Admit Card और Result.' }}">
-<link rel="canonical" href="{{ url()->current() }}">
-<style>
-:root{--navy:#082f49;--blue:#0b78d0;--blue2:#075985;--cyan:#e0f2fe;--green:#059669;--red:#ef4444;--amber:#f59e0b;--violet:#7c3aed;--ink:#10233b;--muted:#64748b;--line:#e2e8f0;--bg:#f7f9fc;--white:#fff;--shadow:0 10px 30px rgba(15,45,70,.07)}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:14px;line-height:1.5}a{color:inherit;text-decoration:none}.container{width:min(1180px,calc(100% - 32px));margin:auto}.topbar{background:#082f49;color:#dbeafe;font-size:11px}.topbar-inner{height:31px;display:flex;align-items:center;justify-content:space-between}.site-header{background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}.mainnav{min-height:72px;display:flex;align-items:center;gap:16px}.brand{display:flex;align-items:center;gap:10px;margin-right:auto}.brand-mark{width:42px;height:42px;border-radius:12px;background:linear-gradient(145deg,#075985,#0b78d0);color:#fff;display:grid;place-items:center;font-weight:950;font-size:15px;box-shadow:0 7px 18px rgba(7,89,133,.2)}.brand-name{font-size:22px;font-weight:950;letter-spacing:-.045em}.brand-sub{display:block;color:#64748b;font-size:9px;font-weight:650;margin-top:0}.nav-links{display:flex;align-self:stretch;align-items:center}.nav-links a{height:100%;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:800;border-bottom:3px solid transparent;color:#243b53}.nav-links a:hover{color:var(--blue);border-bottom-color:var(--blue);background:#f8fbff}.nav-links a:first-child{color:var(--blue)}.lang{display:flex;border:1px solid var(--line);border-radius:9px;padding:2px;background:#fff;font-size:10px;font-weight:850}.lang a{padding:6px 8px;border-radius:7px}.lang a.active{background:var(--navy);color:#fff}.app-btn{background:var(--blue);color:#fff;padding:9px 13px;border-radius:9px;font-size:11px;font-weight:900;box-shadow:0 6px 15px rgba(11,120,208,.2)}.ticker{border-bottom:1px solid var(--line);background:#fff}.ticker-inner{display:flex;align-items:center;min-height:36px;gap:10px;overflow:hidden}.ticker-label{background:#fee2e2;color:#b91c1c;border-radius:5px;padding:4px 8px;font-size:9px;font-weight:950;white-space:nowrap}.ticker-text{font-size:11px;color:#52677a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.mobile-nav{display:none}.hero{color:#fff}.hero-home{position:relative;overflow:hidden;background:linear-gradient(135deg,#062d49 0%,#075985 48%,#0b78d0 100%)}.hero-home:after{content:"";position:absolute;inset:auto -10% -120px auto;width:480px;height:320px;background:rgba(125,211,252,.13);border-radius:50%;filter:blur(8px)}.hero-glow{position:absolute;inset:0;background:radial-gradient(circle at 80% 25%,rgba(255,255,255,.14),transparent 28%),radial-gradient(circle at 15% 100%,rgba(34,211,238,.14),transparent 35%)}.hero-home-inner{position:relative;z-index:1;padding:55px 0 52px;display:grid;grid-template-columns:1.22fr .78fr;gap:44px;align-items:center}.hero-kicker{display:inline-flex;align-items:center;gap:7px;font-size:11px;font-weight:900;letter-spacing:.04em;text-transform:uppercase;color:#bae6fd}.hero h1{font-size:clamp(36px,5vw,58px);line-height:1.04;margin:13px 0 15px;letter-spacing:-.055em}.hero p{max-width:680px;color:#e0f2fe;line-height:1.75;margin:0;font-size:15px}.hero-search{margin-top:25px;display:flex;align-items:center;background:#fff;border-radius:13px;padding:5px 5px 5px 15px;box-shadow:0 18px 45px rgba(0,0,0,.18);max-width:680px}.hero-search span{font-size:24px;color:#64748b;line-height:1}.hero-search input{flex:1;min-width:0;border:0;outline:0;padding:13px 11px;font:inherit;color:var(--ink);font-size:13px}.hero-search button{border:0;background:var(--blue);color:#fff;border-radius:9px;padding:12px 21px;font-weight:900;cursor:pointer}.popular{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:13px;font-size:10px}.popular b{color:#bae6fd}.popular a{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.16);padding:5px 9px;border-radius:999px}.popular a:hover{background:rgba(255,255,255,.2)}.hero-side{background:rgba(255,255,255,.98);color:var(--ink);border-radius:18px;overflow:hidden;box-shadow:0 20px 55px rgba(0,0,0,.18)}.hero-side-top{display:flex;gap:11px;padding:17px 18px;background:#eff8ff;border-bottom:1px solid #dbeafe}.hero-side-top span{font-size:23px}.hero-side-top b,.hero-side-top small{display:block}.hero-side-top b{font-size:13px}.hero-side-top small{font-size:10px;color:var(--muted);margin-top:2px}.hero-news{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid #eef2f7}.hero-news:hover{background:#f8fbff}.hero-news>span{width:23px;height:23px;border-radius:50%;background:#e0f2fe;color:#075985;display:grid;place-items:center;font-size:10px;font-weight:950;flex:none}.hero-news div{min-width:0;flex:1}.hero-news small,.hero-news strong{display:block}.hero-news small{font-size:9px;color:var(--blue);font-weight:850}.hero-news strong{font-size:11px;line-height:1.35;margin-top:2px}.hero-news i{font-style:normal;color:var(--blue);font-weight:900}.empty{padding:25px;color:#64748b;font-size:12px}.section{padding:42px 0}.section-tint{background:#f0f7fb;border-top:1px solid #e3eef5;border-bottom:1px solid #e3eef5}.section-head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:18px}.section-kicker{font-size:10px;color:var(--blue);font-weight:950;text-transform:uppercase;letter-spacing:.08em}.section-kicker.red{color:#dc2626}.section-head h2{font-size:26px;line-height:1.18;margin:4px 0 3px;font-weight:950;letter-spacing:-.04em}.section-head p{margin:0;color:var(--muted);font-size:11px}.section-link{font-size:11px;font-weight:900;color:var(--blue);white-space:nowrap}.category-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.category-card{position:relative;display:flex;align-items:center;gap:14px;min-height:150px;padding:20px;border:1px solid var(--line);border-radius:16px;background:#fff;box-shadow:var(--shadow);overflow:hidden;transition:.2s}.category-card:hover{transform:translateY(-3px);box-shadow:0 15px 35px rgba(15,45,70,.11)}.category-card:after{content:"";position:absolute;right:-28px;bottom:-40px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.6)}.category-icon{width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-size:25px;flex:none}.cat-blue .category-icon{background:#dbeafe}.cat-violet .category-icon{background:#ede9fe}.cat-amber .category-icon{background:#fef3c7}.cat-green .category-icon{background:#d1fae5}.cat-blue{background:linear-gradient(135deg,#fff,#f3f8ff)}.cat-violet{background:linear-gradient(135deg,#fff,#faf7ff)}.cat-amber{background:linear-gradient(135deg,#fff,#fffbeb)}.cat-green{background:linear-gradient(135deg,#fff,#f1fdf8)}.category-card h3{font-size:18px;margin:0 0 3px;font-weight:950;letter-spacing:-.03em}.category-card p{margin:0;color:#64748b;font-size:10px;line-height:1.45}.arrow{margin-left:auto;color:var(--blue);font-size:22px;position:relative;z-index:1}.department-strip{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:15px;padding:11px 13px;border:1px solid var(--line);background:#fff;border-radius:12px}.department-strip b{font-size:10px;margin-right:4px}.department-strip a{font-size:9px;font-weight:800;color:#53687a;background:#f8fafc;padding:5px 8px;border-radius:999px}.department-strip a:hover{color:var(--blue);background:#eff6ff}.job-card-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}.job-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:15px;box-shadow:var(--shadow);display:flex;flex-direction:column;min-width:0;transition:.2s}.job-card:hover{transform:translateY(-3px);box-shadow:0 16px 36px rgba(15,45,70,.11)}.job-card-top{display:flex;justify-content:space-between;align-items:center;gap:5px}.badges{display:flex;gap:5px}.badge{padding:4px 7px;border-radius:999px;font-size:8px;font-weight:950}.badge.hot{background:#fee2e2;color:#dc2626}.badge.new{background:#dcfce7;color:#047857}.date{font-size:9px;color:#8293a3}.job-logo{width:48px;height:48px;border-radius:13px;background:#eef6fb;color:#075985;display:grid;place-items:center;font-weight:950;font-size:12px;margin:13px 0 8px}.job-card h3{font-size:15px;line-height:1.35;margin:0 0 4px;font-weight:950;letter-spacing:-.02em}.job-card .department{font-size:10px;color:#53687a;min-height:30px;margin:0}.job-meta{display:grid;gap:5px;margin:11px 0;font-size:10px;color:#334e68}.tags{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:13px}.tags span{font-size:8px;background:#eaf3fb;color:#075985;padding:4px 7px;border-radius:5px;font-weight:850}.job-button{display:block;text-align:center;background:var(--blue);color:#fff;padding:10px 8px;border-radius:8px;font-size:10px;font-weight:900;margin-top:auto}.job-button:hover{background:#0564af}.latest-layout{display:grid;grid-template-columns:1.5fr .75fr;gap:16px}.latest-list{display:grid;gap:8px}.latest-row{display:flex;align-items:center;gap:12px;padding:11px 13px;background:#fff;border:1px solid var(--line);border-radius:11px;transition:.18s}.latest-row:hover{border-color:#b9d4e8;box-shadow:var(--shadow)}.latest-icon{width:37px;height:37px;border-radius:10px;background:#eff6ff;display:grid;place-items:center;flex:none}.latest-main{min-width:0;flex:1}.latest-main strong{display:block;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.latest-main small,.latest-info small{display:block;color:var(--muted);font-size:9px;margin-top:2px}.latest-info{text-align:center;min-width:52px}.latest-info b{font-size:11px}.latest-deadline{font-size:9px;color:#b91c1c;white-space:nowrap}.row-arrow{color:var(--blue);font-weight:950}.hot-panel{background:#fff;border:1px solid var(--line);border-radius:15px;overflow:hidden;box-shadow:var(--shadow)}.panel-title{display:flex;align-items:center;gap:10px;padding:15px;background:#fff7ed;border-bottom:1px solid #fed7aa}.panel-title>span{font-size:20px}.panel-title h3{margin:0;font-size:15px}.panel-title small{color:#9a6a2f;font-size:9px}.panel-title>a{margin-left:auto;color:var(--blue);font-weight:900}.hot-row{display:flex;gap:10px;padding:12px 13px;border-bottom:1px solid #eef2f7}.hot-row:last-child{border:0}.hot-row:hover{background:#f8fafc}.rank{width:24px;height:24px;border-radius:50%;background:#eff6ff;color:#075985;display:grid;place-items:center;font-size:10px;font-weight:950;flex:none}.hot-row strong,.hot-row small{display:block}.hot-row strong{font-size:10px;line-height:1.35}.hot-row small{font-size:9px;color:var(--muted);margin-top:2px}.exam-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr auto 1fr;align-items:center;gap:12px}.exam-flow>div{background:#fff;border:1px solid var(--line);border-radius:13px;padding:17px 12px;text-align:center;box-shadow:var(--shadow)}.exam-flow span{display:block;font-size:22px}.exam-flow b,.exam-flow small{display:block}.exam-flow b{font-size:11px;margin-top:5px}.exam-flow small{font-size:9px;color:var(--muted);margin-top:2px}.exam-flow>i{font-style:normal;color:var(--blue);font-size:21px;font-weight:900}.content-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.news-card{display:flex;gap:11px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px;min-width:0;transition:.18s}.news-card:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:#bfd9eb}.news-icon{width:39px;height:39px;border-radius:10px;background:#eff6ff;display:grid;place-items:center;flex:none}.news-cat{font-size:8px;color:var(--blue);font-weight:900;text-transform:uppercase}.news-card h3{font-size:11px;line-height:1.4;margin:3px 0}.news-card small{font-size:9px;color:#8796a5}.gk-section{background:#fff}.gk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}.gk-card{display:flex;gap:12px;align-items:flex-start;padding:15px;background:#f8fbff;border:1px solid #dceaf4;border-radius:13px;transition:.18s}.gk-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}.gk-icon{width:40px;height:40px;border-radius:10px;background:#e0f2fe;display:grid;place-items:center;flex:none}.gk-card span:not(.gk-icon){font-size:8px;color:var(--blue);font-weight:900;text-transform:uppercase}.gk-card h3{font-size:11px;line-height:1.4;margin:3px 0}.gk-card p{font-size:9px;color:var(--muted);margin:0;line-height:1.5}.gk-card>b{margin-left:auto;color:var(--blue)}.utility-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px}.utility-card{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:13px;padding:16px;box-shadow:var(--shadow)}.utility-card>span{width:42px;height:42px;border-radius:11px;background:#eff6ff;display:grid;place-items:center;font-size:20px}.utility-card h3{font-size:13px;margin:0}.utility-card p{font-size:9px;color:var(--muted);margin:2px 0 0}.utility-card a{margin-left:auto;color:var(--blue);font-weight:950}.app-cta{background:linear-gradient(135deg,#082f49,#075985);color:#fff}.app-cta-inner{padding:38px 0;display:flex;align-items:center;justify-content:space-between;gap:25px}.app-cta h2{font-size:27px;line-height:1.15;letter-spacing:-.04em;margin:6px 0}.app-cta p{color:#dbeafe;margin:0;font-size:12px}.cta-actions{display:flex;gap:9px;margin-top:17px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;padding:10px 15px;border-radius:8px;font-size:11px;font-weight:900;border:1px solid transparent}.btn-light{background:#fff;color:var(--navy)}.btn-outline-light{border-color:#7dd3fc;color:#fff}.stats{display:flex;gap:9px}.stats div{min-width:82px;text-align:center;padding:12px 9px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.08);border-radius:12px}.stats b,.stats span{display:block}.stats b{font-size:16px}.stats span{font-size:8px;color:#bae6fd;margin-top:2px}.footer{background:#fff;border-top:1px solid var(--line);margin-top:0}.footer-inner{padding:35px 0;display:grid;grid-template-columns:1.5fr 1fr 1fr 1fr;gap:28px}.footer b{font-size:11px}.footer p,.footer a{font-size:10px;color:var(--muted);line-height:1.7}.footer-links{display:grid;gap:4px;margin-top:7px}.footer-links a:hover{color:var(--blue)}.copyright{border-top:1px solid var(--line);padding:13px 0;text-align:center;color:#84929e;font-size:9px}.page-head{background:#fff;border-bottom:1px solid var(--line);padding:30px 0 25px}.page-head h1{font-size:31px;margin:5px 0}.page-head p{color:var(--muted);font-size:12px;margin:0}.pager{margin-top:20px}.content-card{transition:box-shadow .15s ease,transform .15s ease}.content-card:hover{transform:translateY(-2px)}@media(max-width:1000px){.nav-links{display:none}.hero-home-inner{grid-template-columns:1fr}.job-card-grid{grid-template-columns:repeat(2,1fr)}.category-grid{grid-template-columns:repeat(2,1fr)}.latest-layout{grid-template-columns:1fr}.footer-inner{grid-template-columns:1.5fr 1fr 1fr}.exam-flow{grid-template-columns:1fr 1fr}.exam-flow>i{display:none}}@media(max-width:700px){.container{width:calc(100% - 20px)}.topbar{display:none}.mainnav{min-height:61px;gap:8px}.brand-mark{width:36px;height:36px;border-radius:10px}.brand-name{font-size:19px}.brand-sub{font-size:8px}.app-btn{padding:8px 9px;font-size:9px}.lang{font-size:8px}.mobile-nav{display:flex;gap:5px;overflow:auto;border-top:1px solid var(--line);padding:6px 0}.mobile-nav a{white-space:nowrap;padding:7px 10px;background:#f5f8fa;border-radius:7px;font-size:9px;font-weight:850}.hero-home-inner{padding:38px 0 35px;gap:25px}.hero h1{font-size:37px}.hero p{font-size:13px}.hero-search{border-radius:10px;padding:4px 4px 4px 10px}.hero-search input{padding:11px 7px;font-size:11px}.hero-search button{padding:11px 13px}.popular{font-size:9px}.hero-side{border-radius:13px}.section{padding:30px 0}.section-head{align-items:flex-start;margin-bottom:14px}.section-head h2{font-size:22px}.category-grid,.job-card-grid,.content-grid,.gk-grid,.utility-grid{grid-template-columns:1fr}.category-card{min-height:110px}.job-card{padding:14px}.latest-row{gap:8px}.latest-info,.latest-deadline{display:none}.exam-flow{grid-template-columns:1fr}.exam-flow>i{display:none}.app-cta-inner{display:block;padding:32px 0}.app-cta h2{font-size:23px}.stats{margin-top:20px;justify-content:space-between}.stats div{flex:1;min-width:0}.footer-inner{grid-template-columns:1fr 1fr;gap:22px}.ticker-text{font-size:9px}}
-</style>
-@stack('head')
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0369a1">
+    <meta name="robots" content="index,follow">
+    @php($lang = request('lang', session('language', 'hi')) === 'en' ? 'en' : 'hi')
+    <title>@yield('title', $lang === 'en' ? 'CGJobs — Government Jobs, Exams & Results Portal' : 'CGJobs — छत्तीसगढ़ सरकारी नौकरी, परीक्षा एवं परिणाम पोर्टल')</title>
+    <meta name="description" content="{{ $lang === 'en' ? 'Official portal for Chhattisgarh government jobs, CGPSC, CGSSB/Vyapam, daily current affairs, static GK, admit cards and results.' : 'छत्तीसगढ़ सरकारी नौकरी, CGPSC, व्यापम (CGSSB), दैनिक समसामयिकी (Current Affairs), स्टैटिक GK, प्रवेश पत्र एवं परीक्षा परिणाम।' }}">
+    <link rel="canonical" href="{{ url()->current() }}">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            200: '#bae6fd',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        },
+                        accent: {
+                            500: '#f97316',
+                            600: '#ea580c',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'system-ui', '-apple-system', 'sans-serif'],
+                        hindi: ['Tiro Devanagari Hindi', 'serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts: Plus Jakarta Sans & Tiro Devanagari Hindi -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Tiro+Devanagari+Hindi:ital@0;1&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        }
+        .hindi-font {
+            font-family: 'Tiro Devanagari Hindi', serif;
+        }
+        /* Custom card micro-interactions */
+        .job-card-hover {
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .job-card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+    @stack('head')
 </head>
-<body>
-<div class="topbar"><div class="container topbar-inner"><span>{{ $lang==='en'?'Chhattisgarh Government Jobs & Exam Information Portal':'छत्तीसगढ़ सरकारी नौकरी एवं परीक्षा सूचना पोर्टल' }}</span><span>CGJobs • Jobs • Exams • Knowledge</span></div></div>
-<header class="site-header"><div class="container mainnav"><a href="{{ route('home',['lang'=>$lang]) }}" class="brand"><span class="brand-mark">CG</span><span><span class="brand-name">CGJobs</span><span class="brand-sub">Sarkari Naukri • Exam • Behtar Bhavishya</span></span></a><nav class="nav-links"><a href="{{ route('home',['lang'=>$lang]) }}">Home</a><a href="{{ route('listing.jobs',['lang'=>$lang]) }}">{{ $lang==='en'?'Jobs':'नौकरी' }}</a><a href="#exam-connectors">{{ $lang==='en'?'Exams':'परीक्षा' }}</a><a href="{{ route('listing.current-affairs',['lang'=>$lang]) }}">{{ $lang==='en'?'Current Affairs':'करेंट अफेयर्स' }}</a><a href="{{ route('listing.gk',['lang'=>$lang]) }}">Static GK</a><a href="#updates">{{ $lang==='en'?'Admit Card':'Admit Card' }}</a><a href="#updates">{{ $lang==='en'?'Results':'Results' }}</a><a href="#exam-connectors">{{ $lang==='en'?'Syllabus':'Syllabus' }}</a></nav><div class="lang"><a class="{{ $lang==='hi'?'active':'' }}" href="{{ url()->current() }}?{{ http_build_query(array_merge(request()->query(),['lang'=>'hi'])) }}">हिंदी</a><a class="{{ $lang==='en'?'active':'' }}" href="{{ url()->current() }}?{{ http_build_query(array_merge(request()->query(),['lang'=>'en'])) }}">EN</a></div><a class="app-btn" href="https://play.google.com/store">📱 {{ $lang==='en'?'App':'ऐप' }}</a></div><div class="container mobile-nav"><a href="{{ route('home',['lang'=>$lang]) }}">Home</a><a href="{{ route('listing.jobs',['lang'=>$lang]) }}">{{ $lang==='en'?'Jobs':'नौकरी' }}</a><a href="#exam-connectors">{{ $lang==='en'?'Exams':'परीक्षा' }}</a><a href="{{ route('listing.current-affairs',['lang'=>$lang]) }}">News</a><a href="{{ route('listing.gk',['lang'=>$lang]) }}">GK</a><a href="{{ route('notifications',['lang'=>$lang]) }}">🔔</a></div></header>
-<div class="ticker"><div class="container ticker-inner"><span class="ticker-label">{{ $lang==='en'?'LATEST':'ताज़ा' }}</span><span class="ticker-text">{{ $lang==='en'?'Latest government jobs, examinations, admit cards, results and important updates — all in one place.':'नवीनतम सरकारी नौकरी, परीक्षा, Admit Card, Result और महत्वपूर्ण अपडेट — सब एक ही जगह।' }}</span></div></div>
-<main>@yield('content')</main>
-<footer class="footer"><div class="container footer-inner"><div><div class="brand"><span class="brand-mark">CG</span><span><span class="brand-name">CGJobs</span><span class="brand-sub">Sarkari Naukri • Exam • Behtar Bhavishya</span></span></div><p>{{ $lang==='en'?'A focused government-job and exam-preparation ecosystem for Chhattisgarh aspirants.':'छत्तीसगढ़ के अभ्यर्थियों के लिए सरकारी नौकरी और परीक्षा तैयारी का focused ecosystem.' }}</p></div><div><b>Explore</b><div class="footer-links"><a href="{{ route('listing.jobs',['lang'=>$lang]) }}">Government Jobs</a><a href="{{ route('listing.current-affairs',['lang'=>$lang]) }}">Current Affairs</a><a href="{{ route('listing.gk',['lang'=>$lang]) }}">Static GK</a><a href="#exam-connectors">Exams & Syllabus</a></div></div><div><b>Important</b><div class="footer-links"><a href="#updates">Admit Cards</a><a href="#updates">Results</a><a href="{{ route('notifications',['lang'=>$lang]) }}">Notifications</a><a href="#">Previous Papers</a></div></div><div><b>Support</b><div class="footer-links"><a href="#">About Us</a><a href="#">Contact</a><a href="#">Privacy Policy</a><a href="#">Disclaimer</a></div></div></div><div class="copyright">© {{ date('Y') }} CGJobs. All rights reserved.</div></footer>
-</body></html>
+<body class="min-h-full flex flex-col text-slate-800 antialiased bg-slate-50 selection:bg-brand-600 selection:text-white">
+
+    <!-- Top Notice Bar -->
+    <div class="bg-slate-900 text-slate-300 text-xs py-1.5 border-b border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-400 mr-1.5 animate-ping"></span>
+                    {{ $lang === 'en' ? 'LIVE NOTICES' : 'लाइव सूचनाएं' }}
+                </span>
+                <span class="truncate hidden sm:inline text-slate-400">
+                    {{ $lang === 'en' ? 'Chhattisgarh Public Service Commission, CGSSB & State Recruitment Alerts' : 'छत्तीसगढ़ लोक सेवा आयोग (CGPSC), व्यापम एवं राज्य भर्ती त्वरित अपडेट्स' }}
+                </span>
+            </div>
+            <div class="flex items-center space-x-4 text-[11px]">
+                <a href="{{ route('listing.current-affairs', ['lang' => $lang]) }}" class="hover:text-white transition">
+                    <i class="fa-solid fa-bolt text-amber-400 mr-1"></i> {{ $lang === 'en' ? 'Exam Inshorts' : 'परीक्षा कैप्सूल' }}
+                </a>
+                <span class="text-slate-700">|</span>
+                <a href="{{ route('admin.login') }}" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-lock mr-1 text-[10px]"></i> {{ $lang === 'en' ? 'Admin Portal' : 'विभागीय लॉगिन' }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Navigation Header -->
+    <header class="bg-white/95 backdrop-blur-md sticky top-0 z-50 border-b border-slate-200/80 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+            
+            <!-- Brand Logo -->
+            <a href="{{ route('home', ['lang' => $lang]) }}" class="flex items-center space-x-3 group flex-shrink-0">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-brand-900 via-brand-700 to-brand-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-700/20 group-hover:scale-105 transition duration-200">
+                    CG
+                </div>
+                <div>
+                    <div class="flex items-center space-x-1.5">
+                        <span class="font-black text-2xl tracking-tight text-slate-900 leading-none">CG<span class="text-brand-600">Jobs</span></span>
+                        <span class="px-1.5 py-0.5 rounded-md bg-brand-50 text-brand-700 text-[10px] font-black uppercase tracking-wider border border-brand-200">Portal</span>
+                    </div>
+                    <span class="text-[11px] font-semibold text-slate-500 tracking-wide block mt-1">
+                        {{ $lang === 'en' ? 'Government Jobs & Exam Network' : 'सरकारी नौकरी • परीक्षा • बेहतर भविष्य' }}
+                    </span>
+                </div>
+            </a>
+
+            <!-- Desktop Navigation Links -->
+            <nav class="hidden lg:flex items-center space-x-1 text-sm font-bold text-slate-650">
+                <a href="{{ route('home', ['lang' => $lang]) }}" class="px-3 py-2 rounded-xl text-slate-900 hover:bg-slate-100/80 transition {{ request()->routeIs('home') ? 'bg-brand-50 text-brand-700 font-extrabold' : '' }}">
+                    <i class="fa-solid fa-house-chimney mr-1.5 text-xs text-brand-600"></i> {{ $lang === 'en' ? 'Home' : 'होम' }}
+                </a>
+                <a href="{{ route('listing.jobs', ['lang' => $lang]) }}" class="px-3 py-2 rounded-xl hover:bg-slate-100/80 transition {{ request()->routeIs('listing.jobs') ? 'bg-brand-50 text-brand-700 font-extrabold' : 'text-slate-700' }}">
+                    <i class="fa-solid fa-briefcase mr-1.5 text-xs text-emerald-600"></i> {{ $lang === 'en' ? 'All Jobs' : 'सरकारी नौकरियां' }}
+                </a>
+                <a href="{{ route('listing.current-affairs', ['lang' => $lang]) }}" class="px-3 py-2 rounded-xl hover:bg-slate-100/80 transition {{ request()->routeIs('listing.current-affairs') ? 'bg-brand-50 text-brand-700 font-extrabold' : 'text-slate-700' }}">
+                    <i class="fa-solid fa-newspaper mr-1.5 text-xs text-brand-600"></i> {{ $lang === 'en' ? 'Current Affairs' : 'समसामयिकी' }}
+                </a>
+                <a href="{{ route('listing.gk', ['lang' => $lang]) }}" class="px-3 py-2 rounded-xl hover:bg-slate-100/80 transition {{ request()->routeIs('listing.gk') ? 'bg-brand-50 text-brand-700 font-extrabold' : 'text-slate-700' }}">
+                    <i class="fa-solid fa-book-open mr-1.5 text-xs text-purple-600"></i> Static GK
+                </a>
+                <a href="{{ route('notifications', ['lang' => $lang]) }}" class="px-3 py-2 rounded-xl hover:bg-slate-100/80 transition text-slate-700">
+                    <i class="fa-solid fa-bell mr-1.5 text-xs text-amber-500"></i> {{ $lang === 'en' ? 'Alerts' : 'अलर्ट्स' }}
+                </a>
+            </nav>
+
+            <!-- Right Utilities: Language Segmented Button & App Download -->
+            <div class="flex items-center space-x-3">
+                <!-- Language Toggle -->
+                <div class="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-bold">
+                    <a href="{{ url()->current() }}?{{ http_build_query(array_merge(request()->query(), ['lang' => 'hi'])) }}" class="px-2.5 py-1 rounded-lg transition {{ $lang === 'hi' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">
+                        हिंदी
+                    </a>
+                    <a href="{{ url()->current() }}?{{ http_build_query(array_merge(request()->query(), ['lang' => 'en'])) }}" class="px-2.5 py-1 rounded-lg transition {{ $lang === 'en' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900' }}">
+                        EN
+                    </a>
+                </div>
+
+                <!-- Android App CTA Button -->
+                <a href="https://play.google.com/store" target="_blank" rel="noopener" class="hidden sm:inline-flex items-center space-x-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-700 to-brand-600 hover:from-brand-800 hover:to-brand-700 text-white text-xs font-extrabold shadow-md shadow-brand-700/25 transition">
+                    <i class="fa-brands fa-android text-base text-emerald-300"></i>
+                    <span>{{ $lang === 'en' ? 'Get Android App' : 'ऐप डाउनलोड करें' }}</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Mobile Horizontal Tab Bar -->
+        <div class="lg:hidden border-t border-slate-100 px-4 py-2 overflow-x-auto flex items-center space-x-2 scrollbar-none text-xs font-bold text-slate-700">
+            <a href="{{ route('home', ['lang' => $lang]) }}" class="px-3 py-1.5 rounded-lg whitespace-nowrap {{ request()->routeIs('home') ? 'bg-brand-50 text-brand-700' : 'bg-slate-100' }}">
+                <i class="fa-solid fa-house-chimney mr-1 text-[11px]"></i> होम
+            </a>
+            <a href="{{ route('listing.jobs', ['lang' => $lang]) }}" class="px-3 py-1.5 rounded-lg whitespace-nowrap {{ request()->routeIs('listing.jobs') ? 'bg-brand-50 text-brand-700' : 'bg-slate-100' }}">
+                <i class="fa-solid fa-briefcase mr-1 text-[11px]"></i> नौकरियां
+            </a>
+            <a href="{{ route('listing.current-affairs', ['lang' => $lang]) }}" class="px-3 py-1.5 rounded-lg whitespace-nowrap {{ request()->routeIs('listing.current-affairs') ? 'bg-brand-50 text-brand-700' : 'bg-slate-100' }}">
+                <i class="fa-solid fa-newspaper mr-1 text-[11px]"></i> समसामयिकी
+            </a>
+            <a href="{{ route('listing.gk', ['lang' => $lang]) }}" class="px-3 py-1.5 rounded-lg whitespace-nowrap {{ request()->routeIs('listing.gk') ? 'bg-brand-50 text-brand-700' : 'bg-slate-100' }}">
+                <i class="fa-solid fa-book-open mr-1 text-[11px]"></i> GK
+            </a>
+            <a href="{{ route('notifications', ['lang' => $lang]) }}" class="px-3 py-1.5 rounded-lg whitespace-nowrap bg-slate-100">
+                <i class="fa-solid fa-bell mr-1 text-[11px]"></i> अलर्ट्स
+            </a>
+        </div>
+    </header>
+
+    <!-- Content Area -->
+    <main class="flex-1">
+        @yield('content')
+    </main>
+
+    <!-- Comprehensive Modern Footer -->
+    <footer class="bg-slate-900 text-slate-300 pt-16 pb-12 border-t border-slate-800 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10">
+                
+                <!-- Brand & Mission Column -->
+                <div class="lg:col-span-2 space-y-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-brand-400 flex items-center justify-center text-white font-black text-lg shadow-md">
+                            CG
+                        </div>
+                        <span class="font-black text-2xl text-white tracking-tight">CG<span class="text-brand-400">Jobs</span></span>
+                    </div>
+                    <p class="text-slate-400 text-sm leading-relaxed max-w-sm">
+                        {{ $lang === 'en' ? 'The trusted digital gateway for Chhattisgarh youth and aspirants. Up-to-date government recruitment notifications, examinations, daily exam-focused current affairs, and comprehensive static GK.' : 'छत्तीसगढ़ के युवाओं एवं प्रतियोगी परीक्षार्थियों हेतु समर्पित सूचना तंत्र। शासकीय भर्ती विज्ञप्तियां, परीक्षा तिथियां, समसामयिकी और सामान्य ज्ञान एक ही स्थान पर।' }}
+                    </p>
+                    <div class="pt-2 flex items-center space-x-3">
+                        <a href="https://play.google.com/store" class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition">
+                            <i class="fa-brands fa-google-play text-emerald-400"></i>
+                            <span>Google Play</span>
+                        </a>
+                        <a href="{{ route('notifications', ['lang' => $lang]) }}" class="inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white text-xs font-bold transition">
+                            <i class="fa-solid fa-bell text-amber-400"></i>
+                            <span>{{ $lang === 'en' ? 'Push Alerts' : 'पुश अलर्ट्स' }}</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Core Categories -->
+                <div class="space-y-3">
+                    <h4 class="text-white font-extrabold text-sm uppercase tracking-wider">{{ $lang === 'en' ? 'Job Categories' : 'प्रमुख श्रेणियां' }}</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="{{ route('listing.jobs', ['lang' => $lang, 'job_category' => 'CGSSB']) }}" class="hover:text-brand-400 transition">CGSSB (व्यापम)</a></li>
+                        <li><a href="{{ route('listing.jobs', ['lang' => $lang, 'job_category' => 'CGPSC']) }}" class="hover:text-brand-400 transition">CGPSC राज्य सेवा</a></li>
+                        <li><a href="{{ route('listing.jobs', ['lang' => $lang, 'job_category' => 'Central Govt']) }}" class="hover:text-brand-400 transition">Central Govt (SSC/Rly)</a></li>
+                        <li><a href="{{ route('listing.jobs', ['lang' => $lang, 'job_category' => 'Contractual']) }}" class="hover:text-brand-400 transition">संविदा एवं अस्थायी भर्ती</a></li>
+                    </ul>
+                </div>
+
+                <!-- Exam Preparation -->
+                <div class="space-y-3">
+                    <h4 class="text-white font-extrabold text-sm uppercase tracking-wider">{{ $lang === 'en' ? 'Preparation' : 'परीक्षा तैयारी' }}</h4>
+                    <ul class="space-y-2 text-sm text-slate-400">
+                        <li><a href="{{ route('listing.current-affairs', ['lang' => $lang]) }}" class="hover:text-brand-400 transition">दैनिक समसामयिकी (News)</a></li>
+                        <li><a href="{{ route('listing.gk', ['lang' => $lang]) }}" class="hover:text-brand-400 transition">छत्तीसगढ़ सामान्य ज्ञान (GK)</a></li>
+                        <li><a href="{{ route('listing.jobs', ['lang' => $lang, 'sort' => 'closing']) }}" class="hover:text-brand-400 transition">शीघ्र बंद हो रही नौकरियां</a></li>
+                        <li><a href="{{ route('notifications', ['lang' => $lang]) }}" class="hover:text-brand-400 transition">परीक्षा सूचनाएं (Alerts)</a></li>
+                    </ul>
+                </div>
+
+                <!-- Official Sources & Legal -->
+                <div class="space-y-3">
+                    <h4 class="text-white font-extrabold text-sm uppercase tracking-wider">{{ $lang === 'en' ? 'Attribution & Portals' : 'आधिकारिक स्रोत व साभार' }}</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        विज्ञप्तियां आधिकारिक शासकीय वेबसाइटों (cgstate.gov.in, psc.cg.gov.in, vyapam.cgstate.gov.in) एवं DPRCG जनसंपर्क से साभार ली जाती हैं।
+                    </p>
+                    <div class="pt-1">
+                        <a href="{{ route('admin.login') }}" class="text-xs text-slate-500 hover:text-slate-300 transition block">
+                            <i class="fa-solid fa-user-shield mr-1"></i> एडमिन लॉगिन
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bottom Copyright & Disclaimer -->
+            <div class="mt-12 pt-8 border-t border-slate-800 text-center text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <p>© {{ date('Y') }} CGJobs Network. शैक्षणिक एवं प्रतियोगी परीक्षा सूचना संदर्भ हेतु।</p>
+                <div class="flex items-center space-x-4">
+                    <a href="{{ route('sitemap') }}" class="hover:text-slate-400 transition">Sitemap</a>
+                    <span>•</span>
+                    <a href="{{ route('robots') }}" class="hover:text-slate-400 transition">Robots.txt</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
