@@ -45,4 +45,31 @@ HTML;
         $this->assertSame('https://example.com/images/reforms.jpg', $articles[0]['image']);
         $this->assertSame('https://example.com/news/systemic-reforms', $articles[0]['url']);
     }
+
+    public function test_google_news_rss_keeps_collecting_until_requested_unique_limit(): void
+    {
+        $feed1 = <<<'XML'
+<?xml version="1.0"?><rss version="2.0"><channel>
+<item><title>Chhattisgarh cabinet approves new development plan - Source One</title><link>https://news.google.com/rss/articles/one</link><description>Chhattisgarh government approved a new development plan.</description></item>
+<item><title>Chhattisgarh cabinet approves new development plan - Source One</title><link>https://news.google.com/rss/articles/duplicate</link><description>Duplicate story.</description></item>
+</channel></rss>
+XML;
+        $feed2 = <<<'XML'
+<?xml version="1.0"?><rss version="2.0"><channel>
+<item><title>Raipur launches new public transport project - Source Two</title><link>https://news.google.com/rss/articles/two</link><description>Raipur announced a new public transport project.</description></item>
+<item><title>Bilaspur receives major infrastructure investment - Source Three</title><link>https://news.google.com/rss/articles/three</link><description>Bilaspur received new infrastructure investment.</description></item>
+</channel></rss>
+XML;
+        Http::fake(function ($request) use ($feed1, $feed2) {
+            $url=$request->url();
+            if(str_contains($url,'q=Chhattisgarh%20latest%20news'))return Http::response($feed1,200);
+            if(str_contains($url,'q=Chhattisgarh%20government%20schemes'))return Http::response($feed2,200);
+            return Http::response('<html><head><meta name="description" content="Real article description" /></head></html>',200);
+        });
+        $articles=app(NewsRssFallback::class)->fetch('Chhattisgarh latest news OR CGPSC OR CG Vyapam OR Chhattisgarh government',3,['source'=>'google_news','geography'=>'chhattisgarh','strict_geo'=>false]);
+        $this->assertCount(3,$articles);
+        $this->assertSame('Chhattisgarh cabinet approves new development plan',$articles[0]['title']);
+        $this->assertSame('Raipur launches new public transport project',$articles[1]['title']);
+        $this->assertSame('Bilaspur receives major infrastructure investment',$articles[2]['title']);
+    }
 }
