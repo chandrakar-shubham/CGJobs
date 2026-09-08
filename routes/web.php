@@ -59,6 +59,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     Route::post('/news/batch/clear', [NewsStudioController::class, 'clearBatch'])->name('news.batch-clear');
     Route::post('/news/batch-process', [NewsStudioController::class, 'batchProcess'])->name('news.batch-process');
     Route::post('/news/publish-selected', [NewsStudioController::class, 'publishSelected'])->name('news.publish-selected');
+    Route::delete('/news/bulk-delete', [NewsStudioController::class, 'bulkDelete'])->name('news.bulk-delete');
+    Route::post('/news/clear-queue', [NewsStudioController::class, 'clearReviewQueue'])->name('news.clear-queue');
     Route::post('/news/{news}/channel', [NewsStudioController::class, 'channel'])->name('news.channel');
     Route::post('/news/{news}/archive', [NewsStudioController::class, 'archive'])->name('news.archive');
     Route::post('/news/{news}/unpublish', [NewsStudioController::class, 'unpublish'])->name('news.unpublish');
