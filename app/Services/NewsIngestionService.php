@@ -3,40 +3,33 @@
 namespace App\Services;
 
 use App\Models\News;
-use App\Services\AI\ContentEngine;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 class NewsIngestionService
 {
-    private const DEFAULT_QUERY = 'Chhattisgarh OR CGPSC OR CG Vyapam OR Chhattisgarh government';
+    private const DEFAULT_QUERY = 'Chhattisgarh latest news OR CGPSC OR CG Vyapam OR Chhattisgarh government';
 
-    public function ingestAndProcess(?string $query = null, int $limit = 20, bool $process = true): array
+    public function ingestAndProcess(?string $query = null, int $limit = 20, bool $process = true, array $filters = []): array
     {
-        $query = trim((string) $query) ?: self::DEFAULT_QUERY;
+        $query = trim((string) $query);
         $limit = min(max($limit, 1), 100);
-        $articles = $this->fetch($query, $limit);
+        $articles = $this->fetch($query ?: self::DEFAULT_QUERY, $limit, $filters);
         $created = [];
 
         foreach ($articles as $article) {
             $title = trim((string) ($article['title'] ?? ''));
-            if ($title === '') {
-                continue;
-            }
+            if ($title === '') continue;
 
             $url = trim((string) ($article['url'] ?? ''));
             $duplicateQuery = News::query()->where(function ($q) use ($url, $title) {
                 $q->whereRaw('LOWER(title) = ?', [Str::lower($title)]);
-                if ($url !== '') {
-                    $q->orWhere('original_url', $url)->orWhere('source_url', $url);
-                }
+                if ($url !== '') $q->orWhere('original_url', $url)->orWhere('source_url', $url);
             });
-
-            if ($duplicateQuery->exists()) {
-                continue;
-            }
+            if ($duplicateQuery->exists()) continue;
 
             $description = trim((string) ($article['description'] ?? '')) ?: $title;
+            $category = $this->category($title . ' ' . $description);
             $news = News::create([
                 'title' => $title,
                 'title_en' => $title,
@@ -48,12 +41,12 @@ class NewsIngestionService
                 'source_url' => $url ?: null,
                 'original_url' => $url ?: null,
                 'image_url' => $article['image'] ?? null,
-                'category' => $this->category($title),
-                'category_en' => $this->category($title),
-                'tags' => $this->tags($title),
+                'category' => $category,
+                'category_en' => $category,
+                'tags' => $this->tags($title . ' ' . $description),
                 'language' => 'en',
                 'published_at' => $article['published_at'] ?? now(),
-                'exam_relevance' => $this->relevance($title),
+                'exam_relevance' => $this->relevance($title . ' ' . $description),
                 'status' => 'draft',
             ]);
             $created[] = $news;
@@ -61,134 +54,110 @@ class NewsIngestionService
 
         $processed = 0;
         if ($process && $created) {
-            $engine = app(ContentEngine::class);
-            $processed = count($engine->process(
-                collect($created)->map(fn ($news) => $engine->buildNews($news))->all()
-            ));
+            $engine = app(\App\Services\AI\ContentEngine::class);
+            $processed = count($engine->process(collect($created)->map(fn ($news) => $engine->buildNews($news))->all()));
         }
 
-        return [
-            'fetched' => count($articles),
-            'created' => count($created),
-            'processed' => $processed,
-            'ids' => collect($created)->pluck('id')->all(),
-        ];
+        return ['fetched' => count($articles), 'created' => count($created), 'processed' => $processed, 'ids' => collect($created)->pluck('id')->all()];
     }
 
-    private function fetch(string $query, int $limit): array
+    private function fetch(string $query, int $limit, array $filters = []): array
     {
         $out = [];
-        $newsDataKey = config('services.newsdata.key');
+        $source = $filters['source'] ?? 'all';
+        $geography = $filters['geography'] ?? 'chhattisgarh';
+        $topic = trim((string) ($filters['topic'] ?? ''));
+        $from = $filters['from'] ?? null;
+        $to = $filters['to'] ?? null;
 
-        if ($newsDataKey) {
+        $locationTerms = [
+            'chhattisgarh' => 'Chhattisgarh',
+            'india' => 'India',
+            'world' => 'world international',
+        ];
+        $location = $locationTerms[$geography] ?? 'Chhattisgarh';
+        $searchQuery = trim($query . ' ' . $location . ' ' . $topic);
+        if ($searchQuery === '') $searchQuery = $location . ' ' . ($topic ?: 'latest news');
+
+        if (in_array($source, ['all', 'newsdata'], true) && ($key = config('services.newsdata.key'))) {
             try {
-                $r = Http::timeout(20)->get('https://newsdata.io/api/1/news', [
-                    'apikey' => $newsDataKey,
-                    'q' => $query,
-                    'country' => 'in',
-                    'language' => 'en',
-                    'size' => min($limit, 10),
-                ]);
-                if ($r->successful()) {
-                    foreach (($r->json('results') ?: []) as $item) {
-                        $out[] = [
-                            'title' => $item['title'] ?? '',
-                            'description' => $item['description'] ?? '',
-                            'source' => $item['source_id'] ?? 'NewsData',
-                            'url' => $item['link'] ?? '',
-                            'image' => $item['image_url'] ?? null,
-                            'published_at' => $item['pubDate'] ?? null,
-                        ];
-                    }
+                $params = ['apikey' => $key, 'q' => $searchQuery, 'language' => 'en', 'size' => min($limit, 10)];
+                if ($geography === 'india') $params['country'] = 'in';
+                if ($from) $params['from_date'] = $from;
+                if ($to) $params['to_date'] = $to;
+                $r = Http::timeout(20)->get('https://newsdata.io/api/1/news', $params);
+                if ($r->successful()) foreach (($r->json('results') ?: []) as $item) {
+                    $out[] = ['title'=>$item['title']??'', 'description'=>$item['description']??'', 'source'=>$item['source_id']??'NewsData', 'url'=>$item['link']??'', 'image'=>$item['image_url']??null, 'published_at'=>$item['pubDate']??null];
                 }
-            } catch (\Throwable) {
-                // Continue to the next source.
-            }
+            } catch (\Throwable) {}
         }
 
-        if (count($out) < $limit && ($newsApiKey = config('services.newsapi.key'))) {
+        if (count($out) < $limit && in_array($source, ['all', 'newsapi'], true) && ($key = config('services.newsapi.key'))) {
             try {
-                $r = Http::timeout(20)->get('https://newsapi.org/v2/everything', [
-                    'apiKey' => $newsApiKey,
-                    'q' => $query,
-                    'language' => 'en',
-                    'sortBy' => 'publishedAt',
-                    'pageSize' => min($limit, 100),
-                ]);
-                if ($r->successful()) {
-                    foreach (($r->json('articles') ?: []) as $item) {
-                        $out[] = [
-                            'title' => $item['title'] ?? '',
-                            'description' => $item['description'] ?? '',
-                            'source' => $item['source']['name'] ?? 'NewsAPI',
-                            'url' => $item['url'] ?? '',
-                            'image' => $item['urlToImage'] ?? null,
-                            'published_at' => $item['publishedAt'] ?? null,
-                        ];
-                    }
+                $params = ['apiKey'=>$key, 'q'=>$searchQuery, 'language'=>'en', 'sortBy'=>'publishedAt', 'pageSize'=>min($limit,100)];
+                if ($from) $params['from'] = $from;
+                if ($to) $params['to'] = $to;
+                $r = Http::timeout(20)->get('https://newsapi.org/v2/everything', $params);
+                if ($r->successful()) foreach (($r->json('articles') ?: []) as $item) {
+                    $out[] = ['title'=>$item['title']??'', 'description'=>$item['description']??'', 'source'=>$item['source']['name']??'NewsAPI', 'url'=>$item['url']??'', 'image'=>$item['urlToImage']??null, 'published_at'=>$item['publishedAt']??null];
                 }
-            } catch (\Throwable) {
-                // Continue to RSS fallback.
-            }
+            } catch (\Throwable) {}
         }
 
-        // RSS is used to fill the requested limit when paid/API sources return too few
-        // results. The fallback service searches several focused feeds for the default
-        // Chhattisgarh query, so a successful API response of only 2-3 stories does not
-        // unnecessarily leave the admin feed almost empty.
-        if (count($out) < $limit) {
-            $rss = app(NewsRssFallback::class)->fetch($query, $limit - count($out));
+        if (count($out) < $limit && in_array($source, ['all', 'google_trending', 'google_news'], true)) {
+            $rssFilters = $filters;
+            $rssFilters['query'] = $searchQuery;
+            $rssFilters['from'] = $from;
+            $rssFilters['to'] = $to;
+            $rss = app(NewsRssFallback::class)->fetch($searchQuery, $limit - count($out), $rssFilters);
             $out = array_merge($out, $rss);
         }
 
-        $seenUrls = [];
-        $seenTitles = [];
-        $unique = [];
+        $seenUrls = $seenTitles = []; $unique = [];
         foreach ($out as $article) {
             $title = Str::lower(trim((string) ($article['title'] ?? '')));
             $url = Str::lower(trim((string) ($article['url'] ?? '')));
-            if ($title === '') {
-                continue;
-            }
-            if (isset($seenTitles[$title])) {
-                continue;
-            }
-            if ($url !== '' && isset($seenUrls[$url])) {
-                continue;
-            }
-            if ($url !== '') {
-                $seenUrls[$url] = true;
-            }
-            $seenTitles[$title] = true;
-            $unique[] = $article;
+            if ($title === '' || isset($seenTitles[$title]) || ($url !== '' && isset($seenUrls[$url]))) continue;
+            if ($url !== '') $seenUrls[$url] = true;
+            $seenTitles[$title] = true; $unique[] = $article;
         }
-
         return array_slice($unique, 0, $limit);
     }
 
-    private function category(string $title): string
+    private function category(string $text): string
     {
-        $t = Str::lower($title);
-        if (Str::contains($t, ['police', 'constable', 'sub inspector'])) return 'CG Police';
-        if (Str::contains($t, ['psc', 'state service'])) return 'CGPSC';
-        if (Str::contains($t, ['teacher', 'school', 'education', 'tet'])) return 'CG Education';
-        if (Str::contains($t, ['health', 'doctor', 'nurse', 'medical'])) return 'CG Health';
+        $t = Str::lower($text);
+        $map = [
+            'Environment & Ecology'=>['environment','climate','forest','wildlife','pollution','river','biodiversity','tiger','elephant'],
+            'Economy & Banking'=>['economy','bank','rbi','inflation','budget','gdp','market','finance','rupee','tax','investment'],
+            'Science & Technology'=>['science','technology','ai ','artificial intelligence','space','isro','research','digital'],
+            'Defence'=>['defence','army','navy','air force','missile','military'],
+            'Sports'=>['sport','cricket','football','hockey','olympic','medal'],
+            'Awards & Appointments'=>['award','appointed','appointment','chairman','president','director','honour'],
+            'Reports & Indexes'=>['report','index','ranking','ranked','survey'],
+            'Polity & Governance'=>['government','governance','parliament','minister','cabinet','election','policy','scheme'],
+            'International'=>['international','united nations','un','usa','china','russia','ukraine','global','world'],
+            'CGPSC'=>['cgpsc','state service'],
+            'CG Education'=>['education','school','teacher','university','college','tet'],
+            'CG Health'=>['health','hospital','doctor','nurse','medical'],
+            'CG Police'=>['police','constable','sub inspector'],
+            'Chhattisgarh'=>['chhattisgarh','raipur','bilaspur','durg','bastar','korba'],
+            'India'=>['india','indian','new delhi'],
+        ];
+        foreach ($map as $category => $keywords) if (Str::contains($t, $keywords)) return $category;
         return 'Current Affairs';
     }
 
-    private function relevance(string $title): int
+    private function relevance(string $text): int
     {
-        $t = Str::lower($title);
-        return Str::contains($t, ['cgpsc', 'vyapam', 'chhattisgarh', 'government job', 'recruitment', 'exam', 'teacher', 'police']) ? 5 : 3;
+        $t = Str::lower($text);
+        return Str::contains($t, ['cgpsc','vyapam','chhattisgarh','government job','recruitment','exam','teacher','police','scheme']) ? 5 : 3;
     }
 
-    private function tags(string $title): array
+    private function tags(string $text): array
     {
-        $tags = ['Current Affairs'];
-        $t = Str::lower($title);
-        foreach (['CGPSC', 'CG Vyapam', 'Chhattisgarh', 'Recruitment', 'Government Jobs', 'Education', 'Police', 'Health'] as $tag) {
-            if (Str::contains($t, Str::lower($tag))) $tags[] = $tag;
-        }
+        $tags = ['Current Affairs']; $t = Str::lower($text);
+        foreach (['CGPSC','CG Vyapam','Chhattisgarh','India','International','Economy','Environment','Science & Technology','Defence','Education','Police','Health','Government Schemes'] as $tag) if (Str::contains($t, Str::lower($tag))) $tags[] = $tag;
         return array_values(array_unique($tags));
     }
 }
