@@ -11,7 +11,10 @@ class NewsApiController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = News::query()->published();
+        $channel = $request->query('channel');
+        $query = $channel === 'mobile' || $channel === 'web'
+            ? News::query()->publishedOn($channel)
+            : News::query()->published();
 
         if ($request->filled('category') && !in_array($request->category, ['सभी', 'All'], true)) {
             $category = $request->category;
@@ -36,13 +39,18 @@ class NewsApiController extends Controller
         return response()->json([
             'success' => true,
             'count' => $items->count(),
+            'channel' => $channel ?: 'published',
             'news' => $items->map(fn ($item) => $item->toApiArray($this->language($request)))->values(),
         ]);
     }
 
     public function show(Request $request, int $id): JsonResponse
     {
-        $item = News::query()->published()->find($id);
+        $channel = $request->query('channel');
+        $query = $channel === 'mobile' || $channel === 'web'
+            ? News::query()->publishedOn($channel)
+            : News::query()->published();
+        $item = $query->find($id);
 
         if (!$item) {
             return response()->json(['success' => false, 'message' => 'News article not found'], 404);
