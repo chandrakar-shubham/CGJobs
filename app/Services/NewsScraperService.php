@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Job;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class NewsScraperService
@@ -138,13 +139,16 @@ class NewsScraperService
         }
 
         // 4. Save to database strictly in section 'news' (Keeping Jobs and News completely separate!)
+        $jobColumns = Schema::hasTable('jobs') ? Schema::getColumnListing('jobs') : [];
+        $jobColumnsMap = array_flip($jobColumns);
+
         foreach ($articles as $art) {
             if (empty($art['title'])) continue;
 
             $exists = Job::where('title', $art['title'])->exists();
             if (!$exists) {
                 $slug = Str::slug(Str::limit($art['title'], 60, '')) . '-' . rand(100, 999);
-                Job::create([
+                $data = [
                     'custom_id' => 'news-' . Str::uuid(),
                     'slug' => $slug,
                     'title' => $art['title'],
@@ -163,7 +167,13 @@ class NewsScraperService
                     'is_new' => true,
                     'application_start' => 'लागू',
                     'last_date' => 'परीक्षा उपयोगी',
-                ]);
+                ];
+
+                if (!empty($jobColumns)) {
+                    $data = array_intersect_key($data, $jobColumnsMap);
+                }
+
+                Job::create($data);
                 $importedCount++;
             }
         }
