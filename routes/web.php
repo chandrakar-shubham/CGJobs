@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\JobAdvancedController;
 use App\Http\Controllers\Admin\JobManagementController;
 use App\Http\Controllers\Admin\JobPosterTemplateController;
+use App\Http\Controllers\Admin\JobScraperConsoleController;
 use App\Http\Controllers\Admin\JobSourceController;
 use App\Http\Controllers\Admin\NewsController;
 use App\Http\Controllers\Admin\NewsStudioController;
@@ -56,6 +57,13 @@ Route::prefix('admin')->name('admin.')->middleware('admin.auth')->group(function
     // Job Management (Dashboard, CRUD, Bulk, Actions, Templates)
     Route::get('/jobs/dashboard', [JobManagementController::class, 'dashboard'])->name('jobs.dashboard');
     Route::get('/jobs', [JobManagementController::class, 'index'])->name('jobs.index');
+    Route::get('/jobs/scraper-console', [JobScraperConsoleController::class, 'index'])->name('jobs.scraper-console');
+    Route::post('/jobs/scraper-console/scrape', [JobScraperConsoleController::class, 'runScrape'])->name('jobs.scraper-console.scrape');
+    Route::post('/jobs/scraper-console/delete-staged', [JobScraperConsoleController::class, 'deleteStaged'])->name('jobs.scraper-console.delete-staged');
+    Route::post('/jobs/scraper-console/batch-gemini', [JobScraperConsoleController::class, 'processBatchGemini'])->name('jobs.scraper-console.batch-gemini');
+    Route::post('/jobs/scraper-console/publish/{job}', [JobScraperConsoleController::class, 'publishJob'])->name('jobs.scraper-console.publish');
+    Route::post('/jobs/scraper-console/schedule/{job}', [JobScraperConsoleController::class, 'scheduleJob'])->name('jobs.scraper-console.schedule');
+    Route::delete('/jobs/scraper-console/draft/{job}', [JobScraperConsoleController::class, 'deleteDraft'])->name('jobs.scraper-console.delete-draft');
     Route::get('/jobs/create', [JobManagementController::class, 'create'])->name('jobs.create');
     Route::post('/jobs', [JobManagementController::class, 'store'])->name('jobs.store');
     Route::post('/jobs/bulk-action', [JobManagementController::class, 'bulkAction'])->name('jobs.bulk-action');

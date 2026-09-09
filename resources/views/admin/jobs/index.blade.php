@@ -17,6 +17,10 @@
         </div>
 
         <div class="flex items-center gap-2.5">
+            <a href="{{ route('admin.jobs.scraper-console') }}" class="px-4 py-2.5 rounded-xl border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition shadow-2xs flex items-center gap-1.5">
+                <i class="fa-solid fa-cloud-arrow-down text-amber-600"></i>
+                <span>भर्ती स्क्रैपर (Console)</span>
+            </a>
             <a href="{{ route('admin.jobs.dashboard') }}" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition shadow-2xs flex items-center gap-1.5">
                 <i class="fa-solid fa-chart-pie text-brand-600"></i>
                 <span>Analytics</span>

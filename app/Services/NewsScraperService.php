@@ -40,9 +40,9 @@ class NewsScraperService
             'state_specific' => true,
         ],
         [
-            'source' => 'Amar Ujala (करेंट अफेयर्स)',
-            'url' => 'https://www.amarujala.com/rss/jobs.xml',
-            'category' => 'प्रतियोगी परीक्षा समसामयिकी',
+            'source' => 'Amar Ujala (राष्ट्रीय)',
+            'url' => 'https://www.amarujala.com/rss/national-news.xml',
+            'category' => 'राष्ट्रीय व योजनाएं',
             'state_specific' => false,
         ],
     ];
@@ -255,6 +255,20 @@ class NewsScraperService
      */
     protected function isExamRelevant(string $text): bool
     {
+        // Negative filter: Discard recruitment notices, job vacancies, admit cards from Current Affairs!
+        $negativeKeywords = [
+            'पदों पर भर्ती', 'आवेदन मांगे', 'ऑनलाइन आवेदन', 'अंतिम तिथि', 'एडमिट कार्ड',
+            'प्रवेश पत्र', 'मॉडल उत्तर', 'उत्तर कुंजी', 'रिक्तियां', 'vacancies',
+            'apply online', 'qualification', 'last date to apply', 'भर्ती अधिसूचना',
+            'वेतनमान', 'योग्यता 10वीं', 'योग्यता 12वीं', 'स्नातक पास'
+        ];
+
+        foreach ($negativeKeywords as $nkw) {
+            if (mb_stripos($text, $nkw) !== false) {
+                return false; // Strictly reject recruitment notices from news
+            }
+        }
+
         $keywords = [
             'योजना', 'कैबिनेट', 'मंजूरी', 'आयोग', 'छत्तीसगढ़', 'बजट', 'नियुक्ति',
             'पुरस्कार', 'शिखर सम्मेलन', 'जीआई टैग', 'अभियान', 'पोर्टल', 'उद्घाटन',

@@ -213,6 +213,14 @@
                             <span>+ नई भर्ती पोस्ट करें</span>
                         </a>
 
+                        <a href="{{ route('admin.jobs.scraper-console') }}" class="flex items-center justify-between px-3.5 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.jobs.scraper-console') ? 'bg-brand-600 text-white shadow-md shadow-brand-600/30' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white' }}">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-cloud-arrow-down w-5 text-center text-xs text-amber-400"></i>
+                                <span>भर्ती स्क्रैपर (Scraper Console)</span>
+                            </div>
+                            <span class="text-[9px] font-black px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300">Smart AI</span>
+                        </a>
+
                         <!-- Workflow Sub-filters -->
                         <div class="pl-4 pr-1 py-1 space-y-0.5 border-l border-slate-800 ml-5">
                             <a href="{{ $safeRoute('admin.jobs.index', ['section'=>'jobs', 'workflow_status'=>'draft'], '/admin/jobs?workflow_status=draft') }}" class="flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs {{ request()->query('workflow_status')==='draft' ? 'bg-amber-500/20 text-amber-300 font-bold' : 'text-slate-400 hover:text-slate-200' }}">
